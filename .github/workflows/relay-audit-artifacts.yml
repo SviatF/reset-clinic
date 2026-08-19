@@ -1,0 +1,50 @@
+name: Relay WordPress audit artifacts
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for audit and download its artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p relay
+          RUN_ID=""
+          for i in $(seq 1 90); do
+            RUN_ID=$(gh api "repos/$REPO/actions/workflows/wordpress-audit.yml/runs?branch=migration-next-ssr&event=push&per_page=10" --jq '.workflow_runs[0].id // empty')
+            STATUS=$(gh api "repos/$REPO/actions/workflows/wordpress-audit.yml/runs?branch=migration-next-ssr&event=push&per_page=10" --jq '.workflow_runs[0].status // empty')
+            CONCLUSION=$(gh api "repos/$REPO/actions/workflows/wordpress-audit.yml/runs?branch=migration-next-ssr&event=push&per_page=10" --jq '.workflow_runs[0].conclusion // empty')
+            echo "audit_run=$RUN_ID status=$STATUS conclusion=$CONCLUSION"
+            if [ -n "$RUN_ID" ] && [ "$STATUS" = "completed" ]; then break; fi
+            sleep 20
+          done
+          if [ -z "$RUN_ID" ]; then
+            echo "No audit workflow run found" >&2
+            exit 1
+          fi
+          gh run download "$RUN_ID" --repo "$REPO" --dir relay
+          find relay -maxdepth 3 -type f -printf '%p %s bytes\n' | sort
+
+      - name: Upload relayed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: relayed-wordpress-audit
+          path: relay
+          compression-level: 0
+          retention-days: 2
