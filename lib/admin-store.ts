@@ -67,7 +67,7 @@ export async function listJson<T>(prefix: string, limit = 500): Promise<T[]> {
     .slice(0, limit);
 
   const rows = await Promise.all(
-    selected.map(async (blob) => {
+    selected.map(async (blob): Promise<T | null> => {
       try {
         const result = await get(blob.url, { access: "private", token: auth });
         if (!result) return null;
@@ -78,5 +78,5 @@ export async function listJson<T>(prefix: string, limit = 500): Promise<T[]> {
     }),
   );
 
-  return rows.filter((row): row is T => row !== null);
+  return rows.filter((row) => row !== null) as T[];
 }
