@@ -1,5 +1,5 @@
 {
-  "run_id": 32357132133,
+  "run_id": 32357929498,
   "stages": {
     "build": "success",
     "start": "success",
@@ -24,9 +24,9 @@
         ],
         "size_match": false,
         "height_delta": -1,
-        "mae": 0.02484,
-        "rms": 0.10741,
-        "changed_ratio": 0.0748
+        "mae": 0.01139,
+        "rms": 0.05935,
+        "changed_ratio": 0.04598
       }
     ],
     "screens": [
@@ -42,9 +42,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.05582,
-        "rms": 0.13295,
-        "changed_ratio": 0.22311
+        "mae": 0.10315,
+        "rms": 0.22345,
+        "changed_ratio": 0.30632
       },
       {
         "file": "01-home-mobile.png",
@@ -106,9 +106,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.06436,
-        "rms": 0.18526,
-        "changed_ratio": 0.16303
+        "mae": 0.07583,
+        "rms": 0.20343,
+        "changed_ratio": 0.18698
       },
       {
         "file": "03-doctors-mobile.png",
@@ -122,9 +122,9 @@
         ],
         "size_match": false,
         "height_delta": -1,
-        "mae": 0.02484,
-        "rms": 0.10741,
-        "changed_ratio": 0.0748
+        "mae": 0.01139,
+        "rms": 0.05935,
+        "changed_ratio": 0.04598
       },
       {
         "file": "04-contacts-desktop.png",
@@ -138,9 +138,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.2393,
-        "rms": 0.39673,
-        "changed_ratio": 0.49468
+        "mae": 0.23932,
+        "rms": 0.39676,
+        "changed_ratio": 0.49481
       },
       {
         "file": "04-contacts-mobile.png",
@@ -170,9 +170,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.06968,
-        "rms": 0.20983,
-        "changed_ratio": 0.15502
+        "mae": 0.1127,
+        "rms": 0.26564,
+        "changed_ratio": 0.24025
       },
       {
         "file": "05-about-mobile.png",
@@ -289,5 +289,5 @@
     ]
   },
   "capture_log": "desktop / 2228 5179\ndesktop /price/ 1354 3154\ndesktop /doctors/ 2014 8574\ndesktop /contacts/ 563 1992\ndesktop /about/ 4822 7486\ndesktop /services/ 1873 3346\ndesktop /thank-you/ 137 1000\ndesktop /booking/ 403 1022\nmobile / 2139 5564\nmobile /price/ 1265 3240\nmobile /doctors/ 1925 18694\nmobile /contacts/ 474 2170\nmobile /about/ 4733 10923\nmobile /services/ 1784 3859\nmobile /thank-you/ 109 844\nmobile /booking/ 342 1270\n",
-  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.1.166:3000\n\n \u2713 Starting...\n \u2713 Ready in 626ms\n"
+  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.145:3000\n\n \u2713 Starting...\n \u2713 Ready in 546ms\n"
 }
