@@ -1,0 +1,119 @@
+name: RESET exact reference v3
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Prepare
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -q gdown
+          npm init -y >/dev/null 2>&1
+          npm install --silent --no-save playwright-core@1.55.0
+          mkdir -p work/site work/pages work/screens work/resources out
+
+      - name: Restore backup
+        run: |
+          set -euo pipefail
+          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O work/source.zip
+          unzip -q work/source.zip -d work/site
+          SQL=$(find work/site/dup-installer -name 'dup-database*.sql' | head -1)
+          docker network create reset-v3
+          docker run -d --name reset-db-v3 --network reset-v3 -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
+          READY=0
+          for i in $(seq 1 90); do
+            if docker exec reset-db-v3 mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1; then READY=1; break; fi
+            sleep 2
+          done
+          test "$READY" = 1
+          docker exec -i reset-db-v3 mariadb -uroot -proot wordpress < "$SQL"
+          cat > work/site/wp-config.php <<'PHP'
+          <?php
+          define('DB_NAME','wordpress');define('DB_USER','root');define('DB_PASSWORD','root');define('DB_HOST','reset-db-v3:3306');
+          define('DB_CHARSET','utf8mb4');define('DB_COLLATE','');define('WP_HOME','http://127.0.0.1:8080');define('WP_SITEURL','http://127.0.0.1:8080');define('WP_DEBUG',false);
+          define('AUTH_KEY','x');define('SECURE_AUTH_KEY','x');define('LOGGED_IN_KEY','x');define('NONCE_KEY','x');define('AUTH_SALT','x');define('SECURE_AUTH_SALT','x');define('LOGGED_IN_SALT','x');define('NONCE_SALT','x');
+          $table_prefix='wp_';if(!defined('ABSPATH'))define('ABSPATH',__DIR__.'/');require_once ABSPATH.'wp-settings.php';
+          PHP
+          chmod -R a+rX work/site
+          docker run -d --name reset-wp-v3 --network reset-v3 -p 8080:80 -v "$PWD/work/site:/var/www/html" wordpress:php8.2-apache
+          READY=0
+          for i in $(seq 1 90); do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true)
+            if [ "$CODE" = 200 ]; then READY=1; break; fi
+            sleep 2
+          done
+          test "$READY" = 1
+
+      - name: Configure local reference
+        run: |
+          set -euo pipefail
+          docker run --rm --network reset-v3 -v "$PWD/work/site:/var/www/html" -w /var/www/html wordpress:cli-php8.2 wp --allow-root search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
+          docker run --rm --network reset-v3 -v "$PWD/work/site:/var/www/html" -w /var/www/html wordpress:cli-php8.2 wp --allow-root search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
+          docker run --rm --network reset-v3 -v "$PWD/work/site:/var/www/html" -w /var/www/html wordpress:cli-php8.2 wp --allow-root plugin deactivate litespeed-cache hostinger hostinger-ai-assistant hostinger-easy-onboarding hostinger-reach wp-smush-pro || true
+          docker run --rm --network reset-v3 -v "$PWD/work/site:/var/www/html" -w /var/www/html wordpress:cli-php8.2 wp --allow-root rewrite structure '/%postname%/'
+          docker run --rm --network reset-v3 -v "$PWD/work/site:/var/www/html" -w /var/www/html wordpress:cli-php8.2 wp --allow-root elementor flush-css || true
+          cat > work/site/.htaccess <<'HT'
+          <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.php$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . /index.php [L]
+          </IfModule>
+          HT
+          docker exec reset-wp-v3 sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf"
+          docker exec reset-wp-v3 a2enmod rewrite || true
+          docker exec reset-wp-v3 apachectl -k graceful || true
+          sleep 4
+          FAIL=0
+          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r" || true)
+            echo "$r $CODE"
+            [ "$CODE" = 200 ] || FAIL=1
+          done
+          test "$FAIL" = 0
+
+      - name: Capture references
+        run: |
+          set -euo pipefail
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          cat > work/capture.mjs <<'JS'
+          import fs from 'fs';import crypto from 'crypto';import {chromium} from 'playwright-core';
+          const base='http://127.0.0.1:8080';const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
+          const resources={};const pages=[];const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+          async function run(device,width,height,mobile=false){
+            const ctx=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile});const page=await ctx.newPage();
+            if(device==='desktop')page.on('response',async res=>{try{const req=res.request();if(!['stylesheet','script','image','font'].includes(req.resourceType()))return;const url=res.url();if(resources[url])return;const body=await res.body();if(!body?.length)return;const ct=(res.headers()['content-type']||'').split(';')[0];let ext=(new URL(url).pathname.match(/\.([A-Za-z0-9]{1,8})$/)?.[1]||'').toLowerCase();if(!ext){if(ct.includes('css'))ext='css';else if(ct.includes('javascript'))ext='js';else if(ct.includes('woff2'))ext='woff2';else if(ct.includes('woff'))ext='woff';else if(ct.includes('svg'))ext='svg';else if(ct.includes('png'))ext='png';else if(ct.includes('jpeg'))ext='jpg';else if(ct.includes('webp'))ext='webp';else ext='bin';}const hash=crypto.createHash('sha1').update(url).digest('hex');const file=`${hash}.${ext}`;fs.writeFileSync(`work/resources/${file}`,body);resources[url]={file,type:req.resourceType(),contentType:ct,status:res.status(),bytes:body.length};}catch{}});
+            for(let i=0;i<routes.length;i++){const route=routes[i],slug=route==='/'?'home':route.replace(/^\/+|\/+$/g,''),id=`${String(i+1).padStart(2,'0')}-${slug}`;try{const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,90));}window.scrollTo(0,0)});await page.waitForTimeout(800);await page.evaluate(()=>document.querySelectorAll('.elementor-invisible').forEach(el=>el.classList.remove('elementor-invisible')));const meta=await page.evaluate(()=>({title:document.title,bodyClass:document.body.className,height:document.documentElement.scrollHeight}));if(device==='desktop'){fs.writeFileSync(`work/pages/${id}.html`,await page.content());fs.writeFileSync(`work/pages/${id}.json`,JSON.stringify({url:base+route,...meta},null,2));}await page.screenshot({path:`work/screens/${id}-${device}.png`,fullPage:true});pages.push({id,route,device,status:res?.status()||0,...meta});}catch(e){pages.push({id,route,device,error:String(e)})}}
+            await ctx.close();
+          }
+          await run('desktop',1440,1000,false);await run('mobile',390,844,true);await browser.close();fs.writeFileSync('work/manifest.json',JSON.stringify({base,routes,pages,resources},null,2));
+          JS
+          CHROME="$CHROME" node work/capture.mjs
+          tar -czf out/reference-source-v3.tar.gz -C work pages resources manifest.json
+          tar -czf out/reference-screens-v3.tar.gz -C work/screens .
+          ls -lh out/*.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reference-source-v3
+          path: out/reference-source-v3.tar.gz
+          compression-level: 0
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reference-screens-v3
+          path: out/reference-screens-v3.tar.gz
+          compression-level: 0
+          retention-days: 2
