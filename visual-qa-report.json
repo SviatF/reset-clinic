@@ -1,1 +1,15 @@
-{"passed":false,"error":"report was not generated"}
+{
+  "stages": {
+    "build": "success",
+    "start": "success",
+    "reference": "success",
+    "capture": "failure",
+    "compare": "failure"
+  },
+  "visual": {
+    "passed": false,
+    "screens_compared": 0,
+    "hard_failures": [],
+    "screens": []
+  }
+}
