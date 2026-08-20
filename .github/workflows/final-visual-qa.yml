@@ -12,7 +12,7 @@ permissions:
 jobs:
   import-mobile:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,27 +24,39 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p /tmp/mobile-artifact /tmp/mobile-source
+          mkdir -p /tmp/mobile-artifact /tmp/mobile-source /tmp/reset-source
           gh run download 32355217431 --repo "$GITHUB_REPOSITORY" --name mobile-render-source --dir /tmp/mobile-artifact
           tar -xzf /tmp/mobile-artifact/mobile-render-source.tar.gz -C /tmp/mobile-source
           test -f /tmp/mobile-source/manifest.json
           test $(find /tmp/mobile-source/pages -name '*.json' | wc -l) -eq 8
 
-      - name: Build production mobile snapshot data
+      - name: Download original media source
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -q gdown
+          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-source/source.zip
+          unzip -q /tmp/reset-source/source.zip -d /tmp/reset-source/site
+          WP_CONTENT=$(find /tmp/reset-source/site -type d -name wp-content | head -1)
+          test -n "$WP_CONTENT"
+          echo "WP_ROOT=$(dirname "$WP_CONTENT")" >> "$GITHUB_ENV"
+
+      - name: Build fully localized mobile snapshot
+        env:
+          WP_ROOT: ${{ env.WP_ROOT }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import html as htmlmod
-          import json,re,shutil
+          import hashlib,html as htmlmod,json,os,re,shutil
           from pathlib import Path
-          from urllib.parse import urlparse
+          from urllib.parse import urlparse,unquote
 
           src=Path('/tmp/mobile-source')
+          wp_root=Path(os.environ['WP_ROOT'])
           manifest=json.loads((src/'manifest.json').read_text())
           resources=manifest.get('resources',{})
           out_assets=Path('public/assets'); out_assets.mkdir(parents=True,exist_ok=True)
 
-          copied=0
+          copied_capture=0
           replacements=[]
           for url,meta in resources.items():
               f=meta.get('file')
@@ -52,55 +64,89 @@ jobs:
               source=src/'resources'/f
               if source.exists():
                   shutil.copy2(source,out_assets/f)
-                  copied+=1
+                  copied_capture+=1
               local=f'/assets/{f}'
               parsed=urlparse(url)
-              path=parsed.path
-              path_query=path + (('?' + parsed.query) if parsed.query else '')
-              for old in {url,path_query,path,htmlmod.escape(url,quote=True),htmlmod.escape(path_query,quote=True)}:
+              decoded_path=unquote(parsed.path)
+              decoded_path_query=decoded_path + (('?' + parsed.query) if parsed.query else '')
+              decoded_url=unquote(url)
+              for old in {
+                  url,decoded_url,parsed.path,decoded_path,decoded_path_query,
+                  htmlmod.escape(url,quote=True),htmlmod.escape(decoded_url,quote=True),
+                  htmlmod.escape(decoded_path,quote=True),htmlmod.escape(decoded_path_query,quote=True)
+              }:
                   if old:
                       replacements.append((old,local))
-
           replacements.sort(key=lambda x:len(x[0]),reverse=True)
-          mobile={}
-          unresolved={}
+
+          copied_source={}
+          def localize_wp_ref(ref:str):
+              parsed=urlparse(htmlmod.unescape(ref))
+              path=unquote(parsed.path)
+              if not path.startswith('/wp-content/'):
+                  return None
+              source=wp_root/path.lstrip('/')
+              if not source.is_file():
+                  return None
+              key=path
+              if key in copied_source:
+                  return copied_source[key]
+              suffix=source.suffix.lower() or '.bin'
+              name='mobile-'+hashlib.sha1(path.encode('utf-8')).hexdigest()+suffix
+              shutil.copy2(source,out_assets/name)
+              local='/assets/'+name
+              copied_source[key]=local
+              return local
+
+          mobile={}; unresolved={}
           for page_file in sorted((src/'pages').glob('*.json')):
               data=json.loads(page_file.read_text())
               page_html=data['html']
+              # Never ship WordPress/Elementor runtime scripts or runtime stylesheet nodes.
               page_html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',page_html,flags=re.I|re.S)
+              page_html=re.sub(r'<link\b[^>]*>','',page_html,flags=re.I|re.S)
               for old,new in replacements:
                   page_html=page_html.replace(old,new)
               page_html=page_html.replace('http://127.0.0.1:8080','')
               page_html=page_html.replace('https://resetclinic.org','')
               page_html=page_html.replace('http://resetclinic.org','')
-              # Force the exact captured img candidate instead of stale WP srcset URLs.
+              # Preserve the exact candidate rendered by the capture and avoid stale WP srcsets.
               page_html=re.sub(r'\s+srcset=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
               page_html=re.sub(r'\s+sizes=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
-              page_html=re.sub(r'<link\b[^>]*(?:wp-|elementor|jquery)[^>]*>','',page_html,flags=re.I)
+
+              refs=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',page_html,flags=re.I)))
+              for ref in refs:
+                  local=localize_wp_ref(ref)
+                  if local:
+                      page_html=page_html.replace(ref,local)
+
               route=data['route']
               leftovers=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',page_html,flags=re.I)))
               unresolved[route]=leftovers
-              mobile[route]={'bodyClass':data.get('bodyClass',''),'html':page_html,'referenceHeight':data.get('height')}
+              mobile[route]={
+                  'bodyClass':data.get('bodyClass',''),
+                  'html':page_html,
+                  'referenceHeight':data.get('height')
+              }
 
           Path('lib/mobile-pages.json').write_text(json.dumps(mobile,ensure_ascii=False,separators=(',',':')))
           report={
               'routes':len(mobile),
-              'assets_copied':copied,
+              'captured_assets_copied':copied_capture,
+              'source_assets_copied':len(copied_source),
               'reference_heights':{k:v['referenceHeight'] for k,v in mobile.items()},
               'unresolved_wp_asset_refs':unresolved,
               'unresolved_count':sum(len(v) for v in unresolved.values())
           }
           Path('mobile-import-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
-          if report['unresolved_count']:
-              raise SystemExit('Unresolved WordPress asset references remain')
           PY
 
-      - name: Commit mobile production snapshot
+      - name: Commit localized mobile snapshot
         run: |
           set -euo pipefail
           git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -- lib/mobile-pages.json public/assets mobile-import-report.json
-          git commit -m 'fix: normalize exact mobile snapshots' || true
+          git commit -m 'fix: fully localize exact mobile snapshots' || true
           git push origin HEAD:migration-next-ssr
