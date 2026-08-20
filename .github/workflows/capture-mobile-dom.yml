@@ -1,4 +1,4 @@
-name: RESET isolate mobile snapshot
+name: RESET import exact desktop render
 
 on:
   push:
@@ -9,52 +9,170 @@ permissions:
   contents: write
 
 jobs:
-  isolate-mobile:
+  import-desktop:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Remove runtime style nodes from captured mobile DOM
+      - name: Prepare source renderer
         run: |
           set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -q gdown
+          npm install --no-save playwright-core@1.55.0
+          mkdir -p /tmp/reset-wp/site /tmp/desktop-pages
+          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-wp/source.zip
+          unzip -q /tmp/reset-wp/source.zip -d /tmp/reset-wp/site
+          SQL=$(find /tmp/reset-wp/site/dup-installer -name 'dup-database*.sql' | head -1)
+          test -n "$SQL"
+          docker network create reset-desktop || true
+          docker run -d --name reset-desktop-db --network reset-desktop -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
+          for i in $(seq 1 90); do docker exec reset-desktop-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i reset-desktop-db mariadb -uroot -proot wordpress < "$SQL"
+          cat > /tmp/reset-wp/site/wp-config.php <<'PHP'
+          <?php
+          define('DB_NAME','wordpress'); define('DB_USER','root'); define('DB_PASSWORD','root'); define('DB_HOST','reset-desktop-db:3306');
+          define('DB_CHARSET','utf8mb4'); define('DB_COLLATE',''); define('WP_HOME','http://127.0.0.1:8080'); define('WP_SITEURL','http://127.0.0.1:8080'); define('WP_DEBUG',false);
+          define('AUTH_KEY','x');define('SECURE_AUTH_KEY','x');define('LOGGED_IN_KEY','x');define('NONCE_KEY','x');define('AUTH_SALT','x');define('SECURE_AUTH_SALT','x');define('LOGGED_IN_SALT','x');define('NONCE_SALT','x');
+          $table_prefix='wp_'; if(!defined('ABSPATH')) define('ABSPATH',__DIR__.'/'); require_once ABSPATH.'wp-settings.php';
+          PHP
+          chmod -R a+rX /tmp/reset-wp/site
+          docker run -d --name reset-desktop-wp --network reset-desktop -p 8080:80 -v /tmp/reset-wp/site:/var/www/html wordpress:php8.2-apache
+          for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true); [ "$code" = 200 ] && break; sleep 2; done
+
+      - name: Configure exact WordPress reference
+        run: |
+          set -euo pipefail
+          CLI="docker run --rm --network reset-desktop -v /tmp/reset-wp/site:/var/www/html -w /var/www/html wordpress:cli-php8.2 wp --allow-root"
+          $CLI search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
+          $CLI search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
+          $CLI plugin deactivate litespeed-cache hostinger hostinger-ai-assistant hostinger-easy-onboarding hostinger-reach wp-smush-pro || true
+          $CLI rewrite structure '/%postname%/' --hard
+          $CLI rewrite flush --hard
+          $CLI elementor flush-css || true
+          cat > /tmp/reset-wp/site/.htaccess <<'HT'
+          <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.php$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . /index.php [L]
+          </IfModule>
+          HT
+          docker exec reset-desktop-wp a2enmod rewrite || true
+          docker exec reset-desktop-wp sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf; apachectl graceful" || true
+          sleep 3
+          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r"); echo "$r $code"; [ "$code" = 200 ]; done
+
+      - name: Capture exact post-JS desktop DOM
+        run: |
+          set -euo pipefail
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          cat > desktop-capture.mjs <<'JS'
+          import fs from 'fs'; import { chromium } from 'playwright-core';
+          const base='http://127.0.0.1:8080';
+          const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
+          const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+          const ctx=await browser.newContext({viewport:{width:1440,height:1000}});
+          const page=await ctx.newPage(); const pages=[];
+          for(let i=0;i<routes.length;i++){
+            const route=routes[i], id=`${String(i+1).padStart(2,'0')}-${names[i]}`;
+            const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});
+            if(!res||res.status()!==200) throw new Error(`${route} ${res?.status()}`);
+            await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0)});
+            await page.waitForTimeout(1200);
+            await page.evaluate(()=>document.querySelectorAll('.elementor-invisible').forEach(el=>el.classList.remove('elementor-invisible')));
+            const info=await page.evaluate(()=>({title:document.title,bodyClass:document.body.className,height:document.documentElement.scrollHeight,html:document.body.innerHTML}));
+            fs.writeFileSync(`/tmp/desktop-pages/${id}.json`,JSON.stringify({route,...info}));
+            pages.push({route,height:info.height,bodyClass:info.bodyClass});
+          }
+          fs.writeFileSync('/tmp/desktop-manifest.json',JSON.stringify({pages},null,2));
+          await ctx.close(); await browser.close();
+          JS
+          CHROME="$CHROME" node ./desktop-capture.mjs
+          cat /tmp/desktop-manifest.json
+
+      - name: Localize desktop DOM and update pages.json
+        run: |
+          set -euo pipefail
+          WP_CONTENT=$(find /tmp/reset-wp/site -type d -name wp-content | head -1)
+          export WP_ROOT=$(dirname "$WP_CONTENT")
           python3 - <<'PY'
-          import json,re
+          import hashlib,html as htmlmod,json,os,re,shutil
           from pathlib import Path
-          path=Path('lib/mobile-pages.json')
-          pages=json.loads(path.read_text(encoding='utf-8'))
-          report={}
-          for route,data in pages.items():
-              html=data['html']
-              before=len(html)
-              counts={
-                  'style':len(re.findall(r'<style\b',html,flags=re.I)),
-                  'link':len(re.findall(r'<link\b',html,flags=re.I)),
-                  'script':len(re.findall(r'<script\b',html,flags=re.I)),
-              }
-              html=re.sub(r'<style\b[^>]*>.*?</style\s*>','',html,flags=re.I|re.S)
-              html=re.sub(r'<link\b[^>]*>','',html,flags=re.I|re.S)
-              html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',html,flags=re.I|re.S)
-              html=re.sub(r'<noscript>\s*<iframe[^>]*googletagmanager[^>]*>.*?</iframe>\s*</noscript>','',html,flags=re.I|re.S)
-              data['html']=html
-              report[route]={**counts,'bytes_removed':before-len(html)}
-          path.write_text(json.dumps(pages,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
-          Path('mobile-isolation-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
-          print(json.dumps(report,indent=2,ensure_ascii=False))
+          from urllib.parse import urlparse,unquote
+
+          pages_path=Path('lib/pages.json')
+          pages=json.loads(pages_path.read_text(encoding='utf-8'))
+          wp_root=Path(os.environ['WP_ROOT'])
+          assets=Path('public/assets'); assets.mkdir(parents=True,exist_ok=True)
+          copied={}
+
+          def localize(ref):
+              raw=htmlmod.unescape(ref)
+              parsed=urlparse(raw)
+              path=unquote(parsed.path)
+              if not path.startswith('/wp-content/'):
+                  return None
+              source=wp_root/path.lstrip('/')
+              if not source.is_file():
+                  return None
+              if path in copied: return copied[path]
+              suffix=source.suffix.lower() or '.bin'
+              name='desktop-'+hashlib.sha1(path.encode('utf-8')).hexdigest()+suffix
+              shutil.copy2(source,assets/name)
+              local='/assets/'+name
+              copied[path]=local
+              return local
+
+          report={}; unresolved={}
+          for f in sorted(Path('/tmp/desktop-pages').glob('*.json')):
+              captured=json.loads(f.read_text())
+              route=captured['route']
+              body=captured['html']
+              # Static post-runtime DOM only; existing local page CSS remains authoritative.
+              body=re.sub(r'<script\b[^>]*>.*?</script\s*>','',body,flags=re.I|re.S)
+              body=re.sub(r'<style\b[^>]*>.*?</style\s*>','',body,flags=re.I|re.S)
+              body=re.sub(r'<link\b[^>]*>','',body,flags=re.I|re.S)
+              body=re.sub(r'<noscript>\s*<iframe[^>]*googletagmanager[^>]*>.*?</iframe>\s*</noscript>','',body,flags=re.I|re.S)
+              body=body.replace('http://127.0.0.1:8080','').replace('https://resetclinic.org','').replace('http://resetclinic.org','')
+              refs=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',body,flags=re.I)))
+              # Also localize every wp-content URL appearing in srcset or inline attributes.
+              refs += [x for x in re.findall(r'(/wp-content/[^\s"\',>]+)',body) if x not in refs]
+              for ref in sorted(set(refs),key=len,reverse=True):
+                  local=localize(ref)
+                  if local:
+                      body=body.replace(ref,local)
+              leftovers=sorted(set(re.findall(r'/wp-content/[^\s"\',>]+',body)))
+              unresolved[route]=leftovers
+              if route not in pages: raise SystemExit(f'Unknown route {route}')
+              pages[route]['html']=body
+              pages[route]['bodyClass']=captured.get('bodyClass',pages[route].get('bodyClass',''))
+              report[route]={'referenceHeight':captured['height'],'localizedAssets':len(copied),'unresolved':len(leftovers)}
+
+          pages_path.write_text(json.dumps(pages,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+          summary={'routes':len(report),'new_assets':len(copied),'pages':report,'unresolved_count':sum(len(v) for v in unresolved.values()),'unresolved':unresolved}
+          Path('desktop-import-report.json').write_text(json.dumps(summary,indent=2,ensure_ascii=False))
+          print(json.dumps(summary,indent=2,ensure_ascii=False))
+          if summary['unresolved_count']:
+              raise SystemExit('Unresolved desktop wp-content references remain')
           PY
 
-          if grep -Eoi '<(style|link|script)\b' lib/mobile-pages.json | head -1 | grep -q .; then
-            echo 'Runtime style/script/link tags still remain in mobile-pages.json'
-            exit 1
-          fi
-
-      - name: Commit isolated mobile DOM
+      - name: Verify and commit exact desktop snapshots
         run: |
           set -euo pipefail
+          if find public/assets -maxdepth 1 -type f -name '*.js' | grep -q .; then
+            echo 'Unexpected legacy JS assets'; exit 1
+          fi
+          npm ci
+          npm run build
           git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- lib/mobile-pages.json mobile-isolation-report.json
-          git commit -m 'fix: isolate mobile snapshot styles from desktop' || true
+          git add -- lib/pages.json public/assets desktop-import-report.json
+          git commit -m 'fix: use exact post-JS desktop snapshots' || true
           git push origin HEAD:migration-next-ssr
