@@ -5,7 +5,13 @@ import { getBlogPost } from "../../../../../lib/admin-data";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
+};
+
+const errorMessages: Record<string, string> = {
+  missing: "Заголовок і slug не можуть бути порожніми.",
+  slug: "Такий slug уже використовується іншим матеріалом.",
+  save: "Не вдалося зберегти зміни. Спробуйте ще раз.",
 };
 
 export default async function AdminBlogEditorPage({ params, searchParams }: Props) {
@@ -19,9 +25,10 @@ export default async function AdminBlogEditorPage({ params, searchParams }: Prop
     <>
       <header className="admin-topbar">
         <div><div className="admin-label"><Link href="/admin/blog/">← Блог</Link></div><h1>Редагування</h1><div className="admin-subtitle">{post.title}</div></div>
-        <a className="admin-btn secondary" href={`/blog/${post.slug}/`} target="_blank" rel="noreferrer">Переглянути</a>
+        {post.status === "published" ? <a className="admin-btn secondary" href={`/blog/${post.slug}/`} target="_blank" rel="noreferrer">Переглянути</a> : null}
       </header>
       {state.saved ? <div className="admin-alert good">Зміни збережені.</div> : null}
+      {state.error ? <div className="admin-alert bad">{errorMessages[state.error] || "Не вдалося зберегти зміни."}</div> : null}
       <section className="admin-card">
         <form className="admin-form" action={`/api/admin/blog/${post.id}`} method="post">
           <div className="admin-form-row"><label>Заголовок<input name="title" defaultValue={post.title} required /></label><label>Slug<input name="slug" defaultValue={post.slug} required /></label></div>
