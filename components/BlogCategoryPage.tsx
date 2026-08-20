@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 import { getPublishedPostsByCategory } from "../lib/blog";
 import {
   BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
@@ -87,32 +88,36 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
   };
 
   return (
-    <main>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
-      <section className="reset-blog-hero">
-        <div className="reset-blog-eyebrow"><Link href="/blog/">Блог</Link> · {state.category.name}</div>
-        <h1>{state.category.name}</h1>
-        <p className="reset-blog-lead">{state.category.description}</p>
-        <p className="reset-blog-meta">
-          <Link href={state.category.landingPath}>Перейти до основного тематичного розділу →</Link>
-        </p>
-      </section>
-      <section className="reset-blog-grid">
-        {state.posts.length ? state.posts.map((post) => (
-          <Link className="reset-blog-card" href={`/blog/${post.slug}/`} key={post.id}>
-            <div>
-              <div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : state.category.name}</div>
-              <h2>{post.title}</h2>
-              <p>{post.excerpt || "Читати матеріал RESET Clinic."}</p>
+    <div className="seo-site">
+      <PublicSiteHeader />
+      <main>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
+        <section className="reset-blog-hero">
+          <div className="reset-blog-eyebrow"><Link href="/blog/">Блог</Link> · {state.category.name}</div>
+          <h1>{state.category.name}</h1>
+          <p className="reset-blog-lead">{state.category.description}</p>
+          <p className="reset-blog-meta">
+            <Link href={state.category.landingPath}>Перейти до основного тематичного розділу →</Link>
+          </p>
+        </section>
+        <section className="reset-blog-grid">
+          {state.posts.length ? state.posts.map((post) => (
+            <Link className="reset-blog-card" href={`/blog/${post.slug}/`} key={post.id}>
+              <div>
+                <div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : state.category.name}</div>
+                <h2>{post.title}</h2>
+                <p>{post.excerpt || "Читати матеріал RESET Clinic."}</p>
+              </div>
+              <div className="reset-blog-meta">{post.author_name || SITE_NAME} →</div>
+            </Link>
+          )) : (
+            <div className="reset-blog-card">
+              <div><div className="reset-blog-meta">Категорія підготовлена</div><h2>Матеріали готуються</h2><p>Сторінка залишається noindex, доки тут не буде щонайменше {BLOG_CATEGORY_MIN_INDEXABLE_POSTS} якісних indexable матеріалів.</p></div>
             </div>
-            <div className="reset-blog-meta">{post.author_name || SITE_NAME} →</div>
-          </Link>
-        )) : (
-          <div className="reset-blog-card">
-            <div><div className="reset-blog-meta">Категорія підготовлена</div><h2>Матеріали готуються</h2><p>Сторінка залишається noindex, доки тут не буде щонайменше {BLOG_CATEGORY_MIN_INDEXABLE_POSTS} якісних indexable матеріали.</p></div>
-          </div>
-        )}
-      </section>
-    </main>
+          )}
+        </section>
+      </main>
+      <PublicSiteFooter />
+    </div>
   );
 }
