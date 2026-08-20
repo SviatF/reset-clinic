@@ -34,8 +34,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import html as htmlmod
           import json,re,shutil
           from pathlib import Path
+          from urllib.parse import urlparse
 
           src=Path('/tmp/mobile-source')
           manifest=json.loads((src/'manifest.json').read_text())
@@ -43,43 +45,55 @@ jobs:
           out_assets=Path('public/assets'); out_assets.mkdir(parents=True,exist_ok=True)
 
           copied=0
-          for _,meta in resources.items():
+          replacements=[]
+          for url,meta in resources.items():
               f=meta.get('file')
               if not f: continue
               source=src/'resources'/f
               if source.exists():
                   shutil.copy2(source,out_assets/f)
                   copied+=1
+              local=f'/assets/{f}'
+              parsed=urlparse(url)
+              path=parsed.path
+              path_query=path + (('?' + parsed.query) if parsed.query else '')
+              for old in {url,path_query,path,htmlmod.escape(url,quote=True),htmlmod.escape(path_query,quote=True)}:
+                  if old:
+                      replacements.append((old,local))
 
+          replacements.sort(key=lambda x:len(x[0]),reverse=True)
           mobile={}
+          unresolved={}
           for page_file in sorted((src/'pages').glob('*.json')):
               data=json.loads(page_file.read_text())
-              html=data['html']
-              # Post-JS DOM is kept, but WordPress runtime scripts are removed.
-              html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',html,flags=re.I|re.S)
-              # Rewrite every captured WP asset to a local immutable asset.
-              for url,meta in resources.items():
-                  f=meta.get('file')
-                  if f:
-                      html=html.replace(url,f'/assets/{f}')
-                      html=html.replace(url.replace('&','&amp;'),f'/assets/{f}')
-              # All internal links/forms remain local to the Next app.
-              html=html.replace('http://127.0.0.1:8080','')
-              html=html.replace('https://resetclinic.org','')
-              html=html.replace('http://resetclinic.org','')
-              # Remove leftover WP preload/module hints that have no runtime role.
-              html=re.sub(r'<link\b[^>]*(?:wp-|elementor|jquery)[^>]*>','',html,flags=re.I)
+              page_html=data['html']
+              page_html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',page_html,flags=re.I|re.S)
+              for old,new in replacements:
+                  page_html=page_html.replace(old,new)
+              page_html=page_html.replace('http://127.0.0.1:8080','')
+              page_html=page_html.replace('https://resetclinic.org','')
+              page_html=page_html.replace('http://resetclinic.org','')
+              # Force the exact captured img candidate instead of stale WP srcset URLs.
+              page_html=re.sub(r'\s+srcset=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
+              page_html=re.sub(r'\s+sizes=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
+              page_html=re.sub(r'<link\b[^>]*(?:wp-|elementor|jquery)[^>]*>','',page_html,flags=re.I)
               route=data['route']
-              mobile[route]={
-                  'bodyClass':data.get('bodyClass',''),
-                  'html':html,
-                  'referenceHeight':data.get('height')
-              }
+              leftovers=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',page_html,flags=re.I)))
+              unresolved[route]=leftovers
+              mobile[route]={'bodyClass':data.get('bodyClass',''),'html':page_html,'referenceHeight':data.get('height')}
 
           Path('lib/mobile-pages.json').write_text(json.dumps(mobile,ensure_ascii=False,separators=(',',':')))
-          report={'routes':len(mobile),'assets_copied':copied,'reference_heights':{k:v['referenceHeight'] for k,v in mobile.items()}}
+          report={
+              'routes':len(mobile),
+              'assets_copied':copied,
+              'reference_heights':{k:v['referenceHeight'] for k,v in mobile.items()},
+              'unresolved_wp_asset_refs':unresolved,
+              'unresolved_count':sum(len(v) for v in unresolved.values())
+          }
           Path('mobile-import-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
           print(json.dumps(report,indent=2,ensure_ascii=False))
+          if report['unresolved_count']:
+              raise SystemExit('Unresolved WordPress asset references remain')
           PY
 
       - name: Commit mobile production snapshot
@@ -88,5 +102,5 @@ jobs:
           git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -- lib/mobile-pages.json public/assets mobile-import-report.json
-          git commit -m 'feat: add exact mobile rendered snapshots' || true
+          git commit -m 'fix: normalize exact mobile snapshots' || true
           git push origin HEAD:migration-next-ssr
