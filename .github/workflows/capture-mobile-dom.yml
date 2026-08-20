@@ -1,13 +1,107 @@
-name: RESET exact desktop snapshot
+name: RESET localize CSS assets
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  archived:
+  localize-css:
     runs-on: ubuntu-latest
     steps:
-      - run: echo 'Desktop snapshot already imported into migration-next-ssr.'
+      - uses: actions/checkout@v4
+        with:
+          ref: migration-next-ssr
+          fetch-depth: 0
+
+      - name: Rewrite WordPress CSS asset URLs to local files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,re
+          from pathlib import Path
+          from urllib.parse import urlparse,unquote
+
+          root=Path('public/assets')
+          report={'files_changed':0,'refs_rewritten':0,'unresolved':[]}
+          pattern=re.compile(r'url\(([^)]+)\)',re.I)
+
+          def ext_for(path):
+              suffix=Path(unquote(urlparse(path).path)).suffix.lower()
+              return suffix or '.bin'
+
+          def resolve(ref):
+              raw=ref.strip().strip('"\'')
+              if 'wp-content' not in raw:
+                  return None,None
+              if raw.startswith('http://127.0.0.1:8080'):
+                  full=raw
+                  path=urlparse(raw).path
+              elif raw.startswith('https://resetclinic.org') or raw.startswith('http://resetclinic.org'):
+                  path=urlparse(raw).path
+                  full='http://127.0.0.1:8080'+path
+                  if urlparse(raw).query:
+                      full+='?'+urlparse(raw).query
+              elif raw.startswith('/wp-content/'):
+                  path=urlparse(raw).path
+                  full='http://127.0.0.1:8080'+raw
+              else:
+                  return raw,None
+              ext=ext_for(raw)
+              candidates=[
+                  hashlib.sha1(full.encode()).hexdigest()+ext,
+                  'desktop-'+hashlib.sha1(path.encode()).hexdigest()+ext,
+                  'mobile-'+hashlib.sha1(path.encode()).hexdigest()+ext,
+                  hashlib.sha1(path.encode()).hexdigest()+ext,
+              ]
+              for name in candidates:
+                  if (root/name).is_file():
+                      return raw,'/assets/'+name
+              return raw,None
+
+          for css in sorted(root.glob('*.css')):
+              text=css.read_text(encoding='utf-8',errors='ignore')
+              changed=False
+              def repl(m):
+                  nonlocal_changed=[False]
+                  raw=m.group(1)
+                  original,new=resolve(raw)
+                  if original is None:
+                      return m.group(0)
+                  if new:
+                      report['refs_rewritten']+=1
+                      nonlocal_changed[0]=True
+                      return f'url("{new}")'
+                  report['unresolved'].append({'css':css.name,'ref':original})
+                  return m.group(0)
+              new_text=pattern.sub(repl,text)
+              if new_text!=text:
+                  css.write_text(new_text,encoding='utf-8')
+                  report['files_changed']+=1
+
+          # De-duplicate unresolved rows.
+          seen=set(); uniq=[]
+          for row in report['unresolved']:
+              key=(row['css'],row['ref'])
+              if key not in seen:
+                  seen.add(key); uniq.append(row)
+          report['unresolved']=uniq
+          report['unresolved_count']=len(uniq)
+          Path('css-localization-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
+          print(json.dumps(report,indent=2,ensure_ascii=False))
+          PY
+
+      - name: Verify and commit CSS localization
+        run: |
+          set -euo pipefail
+          # Direct WordPress runtime URLs must no longer appear in production CSS when a local asset exists.
+          npm ci
+          npm run build
+          git config user.name 'RESET Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- public/assets/*.css css-localization-report.json
+          git commit -m 'fix: localize background and font assets in CSS' || true
+          git push origin HEAD:migration-next-ssr
