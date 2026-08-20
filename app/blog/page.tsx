@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getPublishedPosts } from "../../lib/blog";
+import { BLOG_CATEGORIES, blogCategoryPath } from "../../lib/blog-categories";
 import { SITE_URL } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,21 @@ export default async function BlogIndexPage() {
         <h1>Блог про шкіру, естетику та здоров’я.</h1>
         <p className="reset-blog-lead">Матеріали з медичним review, зрозумілими поясненнями процедур і відповідями на реальні пошукові запити.</p>
       </section>
-      <section className="reset-blog-grid">
+
+      <section className="reset-blog-grid" aria-label="Категорії блогу">
+        {BLOG_CATEGORIES.map((category) => (
+          <Link className="reset-blog-card" href={blogCategoryPath(category.slug)} key={category.slug}>
+            <div>
+              <div className="reset-blog-meta">SEO cluster</div>
+              <h2>{category.name}</h2>
+              <p>{category.description}</p>
+            </div>
+            <div className="reset-blog-meta">Переглянути →</div>
+          </Link>
+        ))}
+      </section>
+
+      <section className="reset-blog-grid" aria-label="Останні матеріали">
         {posts.length ? posts.map((post) => (
           <Link className="reset-blog-card" href={`/blog/${post.slug}/`} key={post.id}>
             <div><div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : "RESET Clinic"}</div><h2>{post.title}</h2><p>{post.excerpt || "Читати матеріал RESET Clinic."}</p></div>
