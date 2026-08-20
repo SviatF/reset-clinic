@@ -1,4 +1,4 @@
-name: RESET restore desktop assets
+name: RESET isolate mobile snapshot
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  restore-assets:
+  isolate-mobile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,49 +17,44 @@ jobs:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Restore known-good desktop assets without removing mobile-only files
+      - name: Remove runtime style nodes from captured mobile DOM
         run: |
           set -euo pipefail
-          GOOD=bbf82b15b16efc65adcce6cdca4c49ed6b7fc59b
-          git cat-file -e "$GOOD^{commit}"
-          git ls-tree -r --name-only "$GOOD" -- public/assets > /tmp/good-assets.txt
-          test -s /tmp/good-assets.txt
-          restored=0
-          while IFS= read -r path; do
-            [ -n "$path" ] || continue
-            git checkout "$GOOD" -- "$path"
-            restored=$((restored+1))
-          done < /tmp/good-assets.txt
-          echo "Restored $restored desktop assets from $GOOD"
-
           python3 - <<'PY'
+          import json,re
           from pathlib import Path
-          import re
-          missing=[]
-          for source in [Path('lib/pages.json'),Path('lib/mobile-pages.json')]:
-              text=source.read_text(encoding='utf-8',errors='ignore')
-              for name in sorted(set(re.findall(r'/assets/([A-Za-z0-9._-]+)',text))):
-                  if not (Path('public/assets')/name).is_file():
-                      missing.append((source.as_posix(),name))
-          if missing:
-              print('Missing referenced assets:')
-              for src,name in missing: print(src,name)
-              raise SystemExit(1)
-          print('All desktop and mobile referenced assets exist')
+          path=Path('lib/mobile-pages.json')
+          pages=json.loads(path.read_text(encoding='utf-8'))
+          report={}
+          for route,data in pages.items():
+              html=data['html']
+              before=len(html)
+              counts={
+                  'style':len(re.findall(r'<style\b',html,flags=re.I)),
+                  'link':len(re.findall(r'<link\b',html,flags=re.I)),
+                  'script':len(re.findall(r'<script\b',html,flags=re.I)),
+              }
+              html=re.sub(r'<style\b[^>]*>.*?</style\s*>','',html,flags=re.I|re.S)
+              html=re.sub(r'<link\b[^>]*>','',html,flags=re.I|re.S)
+              html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',html,flags=re.I|re.S)
+              html=re.sub(r'<noscript>\s*<iframe[^>]*googletagmanager[^>]*>.*?</iframe>\s*</noscript>','',html,flags=re.I|re.S)
+              data['html']=html
+              report[route]={**counts,'bytes_removed':before-len(html)}
+          path.write_text(json.dumps(pages,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+          Path('mobile-isolation-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
+          print(json.dumps(report,indent=2,ensure_ascii=False))
           PY
 
-          if find public/assets -maxdepth 1 -type f -name '*.js' | grep -q .; then
-            echo 'Unexpected legacy JS assets found:'
-            find public/assets -maxdepth 1 -type f -name '*.js'
+          if grep -Eoi '<(style|link|script)\b' lib/mobile-pages.json | head -1 | grep -q .; then
+            echo 'Runtime style/script/link tags still remain in mobile-pages.json'
             exit 1
           fi
 
-      - name: Commit restored desktop assets
+      - name: Commit isolated mobile DOM
         run: |
           set -euo pipefail
-          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then echo 'Already restored'; exit 0; fi
           git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- public/assets
-          git commit -m 'fix: restore known-good desktop assets'
+          git add -- lib/mobile-pages.json mobile-isolation-report.json
+          git commit -m 'fix: isolate mobile snapshot styles from desktop' || true
           git push origin HEAD:migration-next-ssr
