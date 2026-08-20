@@ -1,0 +1,175 @@
+import { createHash, randomUUID } from "node:crypto";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getCrmConfig,
+  saveLead,
+  updateLead,
+  type CrmConfig,
+  type Lead,
+} from "../../../lib/admin-data";
+import { isAdminStoreConfigured } from "../../../lib/admin-store";
+import { decryptSecret } from "../../../lib/secret-box";
+
+type LeadPayload = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  message?: string;
+  service?: string;
+  formId?: string;
+  pageUrl?: string;
+  pagePath?: string;
+  referrer?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  gclid?: string;
+  fbclid?: string;
+  ttclid?: string;
+  startedAt?: number;
+  website?: string;
+  fields?: Record<string, unknown>;
+};
+
+type RuntimeCrm = {
+  endpoint: string;
+  token?: string;
+  provider?: string;
+  name?: string;
+};
+
+function text(value: unknown, max = 500) {
+  if (typeof value !== "string") return null;
+  const clean = value.trim();
+  return clean ? clean.slice(0, max) : null;
+}
+
+function ipHash(request: NextRequest) {
+  const salt = process.env.LEAD_IP_SALT;
+  if (!salt) return null;
+  const raw = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (!raw) return null;
+  return createHash("sha256").update(`${salt}:${raw}`).digest("hex");
+}
+
+function runtimeCrm(row: CrmConfig | null): RuntimeCrm | null {
+  if (row?.enabled && row.endpoint) {
+    let token = "";
+    try {
+      token = row.token_enc ? decryptSecret(row.token_enc) : "";
+    } catch {
+      token = "";
+    }
+    return { endpoint: row.endpoint, token: token || undefined, provider: row.provider, name: row.name };
+  }
+  return process.env.CRM_WEBHOOK_URL
+    ? {
+        endpoint: process.env.CRM_WEBHOOK_URL,
+        token: process.env.CRM_WEBHOOK_TOKEN || undefined,
+        provider: "webhook",
+        name: "Environment CRM",
+      }
+    : null;
+}
+
+export async function POST(request: NextRequest) {
+  if (!isAdminStoreConfigured()) {
+    return NextResponse.json({ ok: false, error: "lead_storage_not_configured" }, { status: 503 });
+  }
+
+  let payload: LeadPayload;
+  try {
+    payload = (await request.json()) as LeadPayload;
+  } catch {
+    return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
+  }
+
+  if (payload.website) return NextResponse.json({ ok: true });
+  if (payload.startedAt && Date.now() - payload.startedAt < 700) {
+    return NextResponse.json({ ok: false, error: "too_fast" }, { status: 429 });
+  }
+
+  const phone = text(payload.phone, 80);
+  const email = text(payload.email, 200);
+  const name = text(payload.name, 200);
+  if (!phone && !email) {
+    return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
+  }
+
+  const crm = runtimeCrm(await getCrmConfig());
+  const now = new Date().toISOString();
+  const lead: Lead = {
+    id: randomUUID(),
+    created_at: now,
+    updated_at: now,
+    status: "new",
+    name,
+    phone,
+    email,
+    message: text(payload.message, 2000),
+    service: text(payload.service, 300),
+    form_id: text(payload.formId, 200),
+    page_url: text(payload.pageUrl, 1500),
+    page_path: text(payload.pagePath, 500),
+    referrer: text(payload.referrer, 1500),
+    utm_source: text(payload.utmSource, 250),
+    utm_medium: text(payload.utmMedium, 250),
+    utm_campaign: text(payload.utmCampaign, 250),
+    utm_content: text(payload.utmContent, 250),
+    utm_term: text(payload.utmTerm, 250),
+    gclid: text(payload.gclid, 500),
+    fbclid: text(payload.fbclid, 500),
+    ttclid: text(payload.ttclid, 500),
+    ip_hash: ipHash(request),
+    user_agent: text(request.headers.get("user-agent"), 1000),
+    payload: payload.fields ?? {},
+    crm_status: crm ? "pending" : "disabled",
+    crm_error: null,
+    crm_external_id: null,
+  };
+
+  try {
+    await saveLead(lead);
+  } catch {
+    return NextResponse.json({ ok: false, error: "lead_save_failed" }, { status: 502 });
+  }
+
+  if (crm) {
+    try {
+      const crmResponse = await fetch(crm.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(crm.token ? { Authorization: `Bearer ${crm.token}` } : {}),
+        },
+        body: JSON.stringify({
+          event: "lead.created",
+          leadId: lead.id,
+          source: "resetclinic.org",
+          provider: crm.provider,
+          lead,
+        }),
+        cache: "no-store",
+      });
+      if (!crmResponse.ok) throw new Error(`CRM HTTP ${crmResponse.status}`);
+
+      let externalId: string | null = null;
+      try {
+        const body = (await crmResponse.json()) as { id?: string | number; leadId?: string | number };
+        externalId = String(body.id ?? body.leadId ?? "") || null;
+      } catch {
+        externalId = null;
+      }
+      await updateLead(lead.id, { crm_status: "sent", crm_error: null, crm_external_id: externalId });
+    } catch (error) {
+      await updateLead(lead.id, {
+        crm_status: "failed",
+        crm_error: error instanceof Error ? error.message.slice(0, 1000) : "CRM dispatch failed",
+      });
+    }
+  }
+
+  return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
+}

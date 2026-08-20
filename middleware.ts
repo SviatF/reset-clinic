@@ -13,11 +13,36 @@ const legacyPages: Record<string, string> = {
 
 const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
+const SESSION_COOKIE = "rc_admin_session";
 
 function isPrivateRoute(pathname: string) {
   return PRIVATE_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
+}
+
+function isProtectedAdmin(pathname: string) {
+  const adminPage =
+    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+    !pathname.startsWith("/admin/login");
+  const adminApi =
+    pathname.startsWith("/api/admin/") &&
+    !pathname.startsWith("/api/admin/login") &&
+    !pathname.startsWith("/api/admin/logout");
+  return adminPage || adminApi;
+}
+
+function applyPrivateHeaders(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", PRIVATE_ROBOTS);
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
+function loginRedirect(request: NextRequest) {
+  const login = new URL("/admin/login/", request.url);
+  const status = request.method === "GET" || request.method === "HEAD" ? 307 : 303;
+  return applyPrivateHeaders(NextResponse.redirect(login, status));
 }
 
 export function middleware(request: NextRequest) {
@@ -31,15 +56,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  const response = NextResponse.next();
+  const pathname = request.nextUrl.pathname;
 
-  if (isPrivateRoute(request.nextUrl.pathname)) {
-    response.headers.set("X-Robots-Tag", PRIVATE_ROBOTS);
-    response.headers.set("Cache-Control", "private, no-store, max-age=0");
-    response.headers.set("Pragma", "no-cache");
+  // Middleware only performs the cheap presence gate. Every protected page/API
+  // verifies the HMAC-signed cookie server-side before reading private data.
+  if (isProtectedAdmin(pathname) && !request.cookies.get(SESSION_COOKIE)?.value) {
+    return loginRedirect(request);
   }
 
-  return response;
+  const response = NextResponse.next();
+  return isPrivateRoute(pathname) ? applyPrivateHeaders(response) : response;
 }
 
 export const config = {

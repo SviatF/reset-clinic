@@ -2,11 +2,46 @@
 
 import { useLayoutEffect } from "react";
 
+const TRACKING_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "gclid",
+  "fbclid",
+  "ttclid",
+] as const;
+
+function firstValue(form: HTMLFormElement, selectors: string[]) {
+  for (const selector of selectors) {
+    const node = form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(selector);
+    if (node?.value?.trim()) return node.value.trim();
+  }
+  return undefined;
+}
+
+function rememberTracking() {
+  const params = new URLSearchParams(window.location.search);
+  TRACKING_KEYS.forEach((key) => {
+    const value = params.get(key);
+    if (value) sessionStorage.setItem(`reset_${key}`, value.slice(0, 500));
+  });
+}
+
+function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(key) ?? sessionStorage.getItem(`reset_${key}`) ?? undefined;
+}
+
 export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
   useLayoutEffect(() => {
     const clean: Array<() => void> = [];
     const previousBodyClass = document.body.className;
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const startedAt = Date.now();
+
+    rememberTracking();
 
     // Keep only the viewport-specific snapshot in the live DOM. This avoids
     // duplicate Elementor ids/targets from the hidden responsive snapshot.
@@ -31,11 +66,77 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
       ?.querySelectorAll<HTMLElement>(".e-con, [data-settings*='background_background']")
       .forEach((element) => element.classList.add("e-lazyloaded"));
 
-    active?.querySelectorAll<HTMLFormElement>("form").forEach((form) => {
-      const fn = (event: Event) => {
+    active?.querySelectorAll<HTMLFormElement>("form").forEach((form, formIndex) => {
+      const fn = async (event: Event) => {
         event.preventDefault();
-        window.location.href = "/thank-you/";
+
+        if (form.dataset.resetSubmitting === "1") return;
+        form.dataset.resetSubmitting = "1";
+
+        const submitButtons = [...form.querySelectorAll<HTMLButtonElement | HTMLInputElement>("button[type=submit], input[type=submit]")];
+        submitButtons.forEach((button) => (button.disabled = true));
+
+        const data = new FormData(form);
+        const fields: Record<string, string | string[]> = {};
+        data.forEach((value, key) => {
+          if (typeof value !== "string") return;
+          const current = fields[key];
+          fields[key] = current
+            ? Array.isArray(current)
+              ? [...current, value]
+              : [current, value]
+            : value;
+        });
+
+        const payload = {
+          name: firstValue(form, [
+            'input[name*="name" i]',
+            'input[name*="ім" i]',
+            'input[name*="pib" i]',
+            'input[autocomplete="name"]',
+          ]),
+          phone: firstValue(form, [
+            'input[type="tel"]',
+            'input[name*="phone" i]',
+            'input[name*="tel" i]',
+            'input[autocomplete="tel"]',
+          ]),
+          email: firstValue(form, ['input[type="email"]', 'input[name*="email" i]']),
+          message: firstValue(form, ['textarea', 'input[name*="message" i]', 'input[name*="comment" i]']),
+          service: firstValue(form, ['select[name*="service" i]', 'input[name*="service" i]', 'select']),
+          formId: form.id || form.getAttribute("name") || `legacy-form-${formIndex + 1}`,
+          pageUrl: window.location.href,
+          pagePath: window.location.pathname,
+          referrer: document.referrer || undefined,
+          utmSource: trackingValue("utm_source"),
+          utmMedium: trackingValue("utm_medium"),
+          utmCampaign: trackingValue("utm_campaign"),
+          utmContent: trackingValue("utm_content"),
+          utmTerm: trackingValue("utm_term"),
+          gclid: trackingValue("gclid"),
+          fbclid: trackingValue("fbclid"),
+          ttclid: trackingValue("ttclid"),
+          startedAt,
+          fields,
+        };
+
+        try {
+          const response = await fetch("/api/leads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) throw new Error(`Lead API ${response.status}`);
+          window.location.href = "/thank-you/";
+        } catch (error) {
+          console.error("RESET lead submission failed", error);
+          form.dataset.resetSubmitting = "0";
+          submitButtons.forEach((button) => (button.disabled = false));
+          window.alert("Не вдалося надіслати заявку. Спробуйте ще раз або зателефонуйте нам.");
+        }
       };
+
       form.addEventListener("submit", fn);
       clean.push(() => form.removeEventListener("submit", fn));
     });
