@@ -1,0 +1,50 @@
+{
+  "/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  },
+  "/price/": {
+    "style": 1,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 2529
+  },
+  "/doctors/": {
+    "style": 1,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 2338
+  },
+  "/contacts/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  },
+  "/about/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  },
+  "/services/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  },
+  "/thank-you/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  },
+  "/booking/": {
+    "style": 0,
+    "link": 0,
+    "script": 0,
+    "bytes_removed": 161
+  }
+}
