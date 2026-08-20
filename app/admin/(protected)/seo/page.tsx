@@ -1,8 +1,11 @@
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { averageSeoScore, getGscRows, getSeoPages } from "../../../../lib/admin-data";
 
-export default async function AdminSeoPage() {
+type Props = { searchParams: Promise<{ audited?: string }> };
+
+export default async function AdminSeoPage({ searchParams }: Props) {
   const { accessToken } = await requireAdmin();
+  const params = await searchParams;
   const [pages, gsc] = await Promise.all([getSeoPages(accessToken), getGscRows(accessToken, 1000)]);
   const score = averageSeoScore(pages);
   const impressions = gsc.reduce((sum, row) => sum + Number(row.impressions || 0), 0);
@@ -17,13 +20,15 @@ export default async function AdminSeoPage() {
     <>
       <header className="admin-topbar">
         <div><h1>SEO Center</h1><div className="admin-subtitle">Технічне SEO, сторінки, індексація, GSC та семантичні цілі.</div></div>
-        <div className="admin-label">SEO Health {score}/100</div>
+        <form action="/api/admin/audit-seo" method="post"><button className="admin-btn" type="submit">Запустити SEO audit</button></form>
       </header>
 
+      {params.audited ? <div className="admin-alert good">SEO audit завершено: перевірено {params.audited} сторінок.</div> : null}
+
       <section className="admin-grid">
+        <div className="admin-card"><div className="admin-label">SEO Health</div><div className="admin-metric">{score}/100</div><div className="admin-progress"><span style={{ width: `${score}%` }} /></div></div>
         <div className="admin-card"><div className="admin-label">SEO сторінок</div><div className="admin-metric">{pages.length}</div><div className="admin-kpi-note">Indexable: {pages.filter((p) => p.indexable).length}</div></div>
-        <div className="admin-card"><div className="admin-label">GSC покази</div><div className="admin-metric">{gsc.length ? Math.round(impressions).toLocaleString("uk-UA") : "—"}</div><div className="admin-kpi-note">Імпортовані рядки: {gsc.length}</div></div>
-        <div className="admin-card"><div className="admin-label">GSC кліки</div><div className="admin-metric">{gsc.length ? Math.round(clicks).toLocaleString("uk-UA") : "—"}</div><div className="admin-kpi-note">CTR: {gsc.length ? `${ctr.toFixed(2)}%` : "—"}</div></div>
+        <div className="admin-card"><div className="admin-label">GSC кліки / покази</div><div className="admin-metric">{gsc.length ? `${Math.round(clicks).toLocaleString("uk-UA")} / ${Math.round(impressions).toLocaleString("uk-UA")}` : "—"}</div><div className="admin-kpi-note">CTR: {gsc.length ? `${ctr.toFixed(2)}%` : "—"}</div></div>
         <div className="admin-card"><div className="admin-label">Середня позиція</div><div className="admin-metric">{gsc.length ? weightedPosition.toFixed(1) : "—"}</div><div className="admin-kpi-note">Зважено по impressions</div></div>
       </section>
 
