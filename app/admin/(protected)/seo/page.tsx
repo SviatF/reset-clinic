@@ -1,7 +1,7 @@
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { averageSeoScore, getGscRows, getSeoPages } from "../../../../lib/admin-data";
 
-type Props = { searchParams: Promise<{ audited?: string }> };
+type Props = { searchParams: Promise<{ audited?: string; failed?: string }> };
 
 export default async function AdminSeoPage({ searchParams }: Props) {
   await requireAdmin();
@@ -15,6 +15,7 @@ export default async function AdminSeoPage({ searchParams }: Props) {
   const weightedPosition = impressions
     ? positions.reduce((sum, row) => sum + Number(row.position || 0) * Number(row.impressions || 0), 0) / impressions
     : 0;
+  const failed = Number(params.failed || 0);
 
   return (
     <>
@@ -23,7 +24,7 @@ export default async function AdminSeoPage({ searchParams }: Props) {
         <form action="/api/admin/audit-seo" method="post"><button className="admin-btn" type="submit">Запустити SEO audit</button></form>
       </header>
 
-      {params.audited ? <div className="admin-alert good">SEO audit завершено: перевірено {params.audited} сторінок.</div> : null}
+      {params.audited ? <div className={`admin-alert ${failed ? "" : "good"}`}>SEO audit завершено: перевірено {params.audited} сторінок{failed ? `, не вдалося перевірити ${failed}.` : "."}</div> : null}
 
       <section className="admin-grid">
         <div className="admin-card"><div className="admin-label">SEO Health</div><div className="admin-metric">{score}/100</div><div className="admin-progress"><span style={{ width: `${score}%` }} /></div></div>
@@ -37,7 +38,7 @@ export default async function AdminSeoPage({ searchParams }: Props) {
       <section className="admin-section">
         <div className="admin-section-header"><h2>SEO сторінки</h2><span>{pages.filter((p) => p.seo_score < 85 && p.indexable).length} потребують уваги</span></div>
         <div className="admin-table-wrap">
-          {pages.length ? <table className="admin-table"><thead><tr><th>URL</th><th>Target</th><th>Title / H1</th><th>Index</th><th>Score</th><th>Google</th></tr></thead><tbody>{pages.map((page) => <tr key={page.id}><td><span className="admin-code">{page.path}</span><br />{page.page_type}</td><td>{page.primary_keyword || "—"}</td><td><strong>{page.title || "—"}</strong><br /><span className="admin-kpi-note">H1: {page.h1 || "не зафіксовано"}</span></td><td><span className={`admin-badge ${page.indexable ? "good" : "warn"}`}>{page.indexable ? "index" : "noindex"}</span></td><td><strong>{page.seo_score}/100</strong><div className="admin-progress"><span style={{ width: `${page.seo_score}%` }} /></div></td><td>{page.indexed_status || "not synced"}</td></tr>)}</tbody></table> : <div className="admin-empty">SEO records ще не створені.</div>}
+          {pages.length ? <table className="admin-table"><thead><tr><th>URL</th><th>Target</th><th>Title / H1</th><th>Index</th><th>Score</th><th>Google</th></tr></thead><tbody>{pages.map((page) => <tr key={page.id}><td><a href={page.path} target="_blank" rel="noreferrer" className="admin-code">{page.path}</a><br />{page.page_type}</td><td>{page.primary_keyword || "—"}</td><td><strong>{page.title || "—"}</strong><br /><span className="admin-kpi-note">H1: {page.h1 || "не зафіксовано"}</span></td><td><span className={`admin-badge ${page.indexable ? "good" : "warn"}`}>{page.indexable ? "index" : "noindex"}</span></td><td><strong>{page.seo_score}/100</strong><div className="admin-progress"><span style={{ width: `${page.seo_score}%` }} /></div></td><td>{page.indexed_status || "not synced"}</td></tr>)}</tbody></table> : <div className="admin-empty">SEO records ще не створені.</div>}
         </div>
       </section>
 
