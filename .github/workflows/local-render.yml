@@ -36,10 +36,12 @@ jobs:
           set -euo pipefail
           docker network create reset-render
           docker run -d --name reset-db --network reset-render -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
-          for i in $(seq 1 60); do
-            if docker exec reset-db mariadb-admin ping -uroot -proot --silent; then break; fi
+          READY=0
+          for i in $(seq 1 90); do
+            if docker exec reset-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1; then READY=1; break; fi
             sleep 2
           done
+          if [ "$READY" != '1' ]; then docker logs reset-db; exit 1; fi
           SQL=$(cat work/sql-path.txt)
           docker exec -i reset-db mariadb -uroot -proot wordpress < "$SQL"
           echo 'database imported'
@@ -72,13 +74,15 @@ jobs:
           PHP
           chmod -R a+rX work/site
           docker run -d --name reset-wp --network reset-render -p 8080:80 -v "$PWD/work/site:/var/www/html" wordpress:php8.2-apache
-          for i in $(seq 1 60); do
+          READY=0
+          for i in $(seq 1 90); do
             CODE=$(curl -s -o /tmp/home.html -w '%{http_code}' http://127.0.0.1:8080/ || true)
             echo "try=$i code=$CODE"
-            if [ "$CODE" = '200' ] || [ "$CODE" = '302' ]; then break; fi
+            if [ "$CODE" = '200' ] || [ "$CODE" = '302' ]; then READY=1; break; fi
             sleep 2
           done
           docker logs --tail 100 reset-wp || true
+          test "$READY" = '1'
 
       - name: Search-replace original domain locally
         run: |
