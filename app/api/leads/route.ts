@@ -1,7 +1,14 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  getCrmConfig,
+  saveLead,
+  updateLead,
+  type CrmConfig,
+  type Lead,
+} from "../../../lib/admin-data";
+import { isAdminStoreConfigured } from "../../../lib/admin-store";
 import { decryptSecret } from "../../../lib/secret-box";
-import { hasServiceRole, isSupabaseConfigured, supabaseRest } from "../../../lib/supabase";
 
 type LeadPayload = {
   name?: string;
@@ -26,7 +33,7 @@ type LeadPayload = {
   fields?: Record<string, unknown>;
 };
 
-type CrmConfig = {
+type RuntimeCrm = {
   endpoint: string;
   token?: string;
   provider?: string;
@@ -47,27 +54,16 @@ function ipHash(request: NextRequest) {
   return createHash("sha256").update(`${salt}:${raw}`).digest("hex");
 }
 
-async function getCrmConfig(): Promise<CrmConfig | null> {
-  if (hasServiceRole()) {
-    const result = await supabaseRest<
-      Array<{ endpoint: string | null; provider: string; name: string; config: { token_enc?: string } | null }>
-    >(
-      "crm_integrations?select=endpoint,provider,name,config&enabled=eq.true&order=created_at.asc&limit=1",
-      { method: "GET" },
-      { service: true },
-    );
-    const row = result.data?.[0];
-    if (row?.endpoint) {
-      let token = "";
-      try {
-        token = row.config?.token_enc ? decryptSecret(row.config.token_enc) : "";
-      } catch {
-        token = "";
-      }
-      return { endpoint: row.endpoint, token: token || undefined, provider: row.provider, name: row.name };
+function runtimeCrm(row: CrmConfig | null): RuntimeCrm | null {
+  if (row?.enabled && row.endpoint) {
+    let token = "";
+    try {
+      token = row.token_enc ? decryptSecret(row.token_enc) : "";
+    } catch {
+      token = "";
     }
+    return { endpoint: row.endpoint, token: token || undefined, provider: row.provider, name: row.name };
   }
-
   return process.env.CRM_WEBHOOK_URL
     ? {
         endpoint: process.env.CRM_WEBHOOK_URL,
@@ -78,22 +74,9 @@ async function getCrmConfig(): Promise<CrmConfig | null> {
     : null;
 }
 
-async function updateCrmState(id: string, state: Record<string, unknown>) {
-  if (!hasServiceRole()) return;
-  await supabaseRest(
-    `leads?id=eq.${encodeURIComponent(id)}`,
-    {
-      method: "PATCH",
-      headers: { Prefer: "return=minimal" },
-      body: JSON.stringify(state),
-    },
-    { service: true },
-  );
-}
-
 export async function POST(request: NextRequest) {
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ ok: false, error: "lead_backend_not_configured" }, { status: 503 });
+  if (!isAdminStoreConfigured()) {
+    return NextResponse.json({ ok: false, error: "lead_storage_not_configured" }, { status: 503 });
   }
 
   let payload: LeadPayload;
@@ -103,8 +86,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
 
-  // Honeypot and minimum human interaction time. These do not replace WAF/rate limiting,
-  // but remove the simplest form bots without changing the visible form.
   if (payload.website) return NextResponse.json({ ok: true });
   if (payload.startedAt && Date.now() - payload.startedAt < 700) {
     return NextResponse.json({ ok: false, error: "too_fast" }, { status: 429 });
@@ -117,8 +98,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
   }
 
-  const crm = await getCrmConfig();
-  const lead = {
+  const crm = runtimeCrm(await getCrmConfig());
+  const now = new Date().toISOString();
+  const lead: Lead = {
+    id: randomUUID(),
+    created_at: now,
+    updated_at: now,
+    status: "new",
     name,
     phone,
     email,
@@ -140,19 +126,13 @@ export async function POST(request: NextRequest) {
     user_agent: text(request.headers.get("user-agent"), 1000),
     payload: payload.fields ?? {},
     crm_status: crm ? "pending" : "disabled",
+    crm_error: null,
+    crm_external_id: null,
   };
 
-  const inserted = await supabaseRest<Array<{ id: string; created_at: string }>>(
-    "leads?select=id,created_at",
-    {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(lead),
-    },
-  );
-
-  const saved = inserted.data?.[0];
-  if (!inserted.ok || !saved) {
+  try {
+    await saveLead(lead);
+  } catch {
     return NextResponse.json({ ok: false, error: "lead_save_failed" }, { status: 502 });
   }
 
@@ -166,30 +146,30 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           event: "lead.created",
-          leadId: saved.id,
+          leadId: lead.id,
           source: "resetclinic.org",
           provider: crm.provider,
           lead,
         }),
         cache: "no-store",
       });
-
       if (!crmResponse.ok) throw new Error(`CRM HTTP ${crmResponse.status}`);
+
       let externalId: string | null = null;
       try {
-        const crmBody = (await crmResponse.json()) as { id?: string | number; leadId?: string | number };
-        externalId = String(crmBody.id ?? crmBody.leadId ?? "") || null;
+        const body = (await crmResponse.json()) as { id?: string | number; leadId?: string | number };
+        externalId = String(body.id ?? body.leadId ?? "") || null;
       } catch {
         externalId = null;
       }
-      await updateCrmState(saved.id, { crm_status: "sent", crm_error: null, crm_external_id: externalId });
+      await updateLead(lead.id, { crm_status: "sent", crm_error: null, crm_external_id: externalId });
     } catch (error) {
-      await updateCrmState(saved.id, {
+      await updateLead(lead.id, {
         crm_status: "failed",
         crm_error: error instanceof Error ? error.message.slice(0, 1000) : "CRM dispatch failed",
       });
     }
   }
 
-  return NextResponse.json({ ok: true, id: saved.id }, { status: 201 });
+  return NextResponse.json({ ok: true, id: lead.id }, { status: 201 });
 }

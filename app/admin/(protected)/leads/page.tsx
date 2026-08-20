@@ -2,8 +2,8 @@ import { requireAdmin } from "../../../../lib/admin-auth";
 import { getLeads } from "../../../../lib/admin-data";
 
 export default async function AdminLeadsPage() {
-  const { accessToken } = await requireAdmin();
-  const leads = await getLeads(accessToken, 500);
+  await requireAdmin();
+  const leads = await getLeads(500);
 
   return (
     <>
@@ -34,12 +34,12 @@ export default async function AdminLeadsPage() {
                       <button className="admin-btn secondary" type="submit">Зберегти</button>
                     </form>
                   </td>
-                  <td><span className={`admin-badge ${lead.crm_status === "sent" ? "good" : lead.crm_status === "failed" ? "bad" : "warn"}`}>{lead.crm_status}</span></td>
+                  <td><span className={`admin-badge ${lead.crm_status === "sent" ? "good" : lead.crm_status === "failed" ? "bad" : "warn"}`}>{lead.crm_status}</span>{lead.crm_error ? <><br /><span className="admin-kpi-note">{lead.crm_error}</span></> : null}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        ) : <div className="admin-empty">Заявок ще немає. Після підключення Supabase форми почнуть зберігатися тут.</div>}
+        ) : <div className="admin-empty">Заявок ще немає. Після підключення private Vercel Blob вони автоматично зберігатимуться тут.</div>}
       </div>
     </>
   );

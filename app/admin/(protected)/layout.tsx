@@ -16,7 +16,7 @@ export default async function ProtectedAdminLayout({ children }: { children: Rea
           <Link href="/admin/integrations/">Інтеграції</Link>
         </nav>
         <div className="admin-sidebar-footer">
-          <div>{session.user.email}</div>
+          <div>{session.user.username}</div>
           <div>{session.admin.role}</div>
           <form action="/api/admin/logout" method="post">
             <button className="admin-btn secondary" type="submit">Вийти</button>

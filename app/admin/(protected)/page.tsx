@@ -18,16 +18,15 @@ function number(value: number) {
 }
 
 export default async function AdminDashboardPage() {
-  const { accessToken } = await requireAdmin();
+  await requireAdmin();
   const [leads, seoPages, posts, gsc, ga4] = await Promise.all([
-    getLeads(accessToken, 500),
-    getSeoPages(accessToken),
-    getBlogPosts(accessToken),
-    getGscRows(accessToken),
-    getGa4Rows(accessToken),
+    getLeads(500),
+    getSeoPages(),
+    getBlogPosts(),
+    getGscRows(),
+    getGa4Rows(),
   ]);
 
-  const now = Date.now();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const leadsToday = leads.filter((lead) => new Date(lead.created_at).getTime() >= todayStart.getTime()).length;
@@ -39,15 +38,11 @@ export default async function AdminDashboardPage() {
   const impressions = gsc28.reduce((sum, row) => sum + Number(row.impressions || 0), 0);
   const clicks = gsc28.reduce((sum, row) => sum + Number(row.clicks || 0), 0);
   const ctr = impressions ? (clicks / impressions) * 100 : 0;
-
   const ga28 = ga4.filter((row) => new Date(row.date).getTime() >= sinceDays(28));
   const sessions = ga28.reduce((sum, row) => sum + Number(row.sessions || 0), 0);
   const conversions = ga28.reduce((sum, row) => sum + Number(row.conversions || 0), 0);
-
   const newestLeads = leads.slice(0, 8);
   const weakPages = seoPages.filter((page) => page.indexable).slice(0, 6);
-  const gscConnected = gsc.length > 0;
-  const gaConnected = ga4.length > 0;
 
   return (
     <>
@@ -56,20 +51,20 @@ export default async function AdminDashboardPage() {
           <h1>Dashboard</h1>
           <div className="admin-subtitle">Ліди, SEO, контент і органічна ефективність RESET Clinic.</div>
         </div>
-        <div className="admin-label">{new Date(now).toLocaleString("uk-UA")}</div>
+        <div className="admin-label">{new Date().toLocaleString("uk-UA")}</div>
       </header>
 
       <section className="admin-grid">
         <div className="admin-card"><div className="admin-label">Заявки сьогодні</div><div className="admin-metric">{leadsToday}</div><div className="admin-kpi-note">За 30 днів: {leads30}</div></div>
         <div className="admin-card"><div className="admin-label">SEO Health</div><div className="admin-metric">{seoScore}/100</div><div className="admin-progress"><span style={{ width: `${seoScore}%` }} /></div></div>
-        <div className="admin-card"><div className="admin-label">Індексовані сторінки в CMS</div><div className="admin-metric">{seoPages.filter((p) => p.indexable).length}</div><div className="admin-kpi-note">Всього SEO records: {seoPages.length}</div></div>
+        <div className="admin-card"><div className="admin-label">SEO сторінки</div><div className="admin-metric">{seoPages.filter((p) => p.indexable).length}</div><div className="admin-kpi-note">Всього: {seoPages.length}</div></div>
         <div className="admin-card"><div className="admin-label">Блог</div><div className="admin-metric">{publishedPosts}</div><div className="admin-kpi-note">Чернеток: {posts.filter((p) => p.status === "draft").length}</div></div>
       </section>
 
       <section className="admin-grid admin-section">
-        <div className="admin-card"><div className="admin-label">GSC покази · 28 днів</div><div className="admin-metric">{gscConnected ? number(impressions) : "—"}</div><div className="admin-kpi-note">{gscConnected ? `Clicks ${number(clicks)} · CTR ${number(ctr)}%` : "Search Console ще не синхронізовано"}</div></div>
-        <div className="admin-card"><div className="admin-label">GA4 sessions · 28 днів</div><div className="admin-metric">{gaConnected ? number(sessions) : "—"}</div><div className="admin-kpi-note">{gaConnected ? `Conversions ${number(conversions)}` : "GA4 ще не синхронізовано"}</div></div>
-        <div className="admin-card"><div className="admin-label">CRM</div><div className="admin-metric">{leads.filter((l) => l.crm_status === "sent").length}</div><div className="admin-kpi-note">Передано успішно з видимих заявок</div></div>
+        <div className="admin-card"><div className="admin-label">GSC покази · 28 днів</div><div className="admin-metric">{gsc.length ? number(impressions) : "—"}</div><div className="admin-kpi-note">{gsc.length ? `Clicks ${number(clicks)} · CTR ${number(ctr)}%` : "Search Console ще не синхронізовано"}</div></div>
+        <div className="admin-card"><div className="admin-label">GA4 sessions · 28 днів</div><div className="admin-metric">{ga4.length ? number(sessions) : "—"}</div><div className="admin-kpi-note">{ga4.length ? `Conversions ${number(conversions)}` : "GA4 ще не синхронізовано"}</div></div>
+        <div className="admin-card"><div className="admin-label">CRM</div><div className="admin-metric">{leads.filter((l) => l.crm_status === "sent").length}</div><div className="admin-kpi-note">Успішно передано</div></div>
         <div className="admin-card"><div className="admin-label">Нові ліди</div><div className="admin-metric">{leads.filter((l) => l.status === "new").length}</div><div className="admin-kpi-note"><Link href="/admin/leads/">Відкрити заявки →</Link></div></div>
       </section>
 

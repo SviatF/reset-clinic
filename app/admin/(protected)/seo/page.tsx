@@ -4,9 +4,9 @@ import { averageSeoScore, getGscRows, getSeoPages } from "../../../../lib/admin-
 type Props = { searchParams: Promise<{ audited?: string }> };
 
 export default async function AdminSeoPage({ searchParams }: Props) {
-  const { accessToken } = await requireAdmin();
+  await requireAdmin();
   const params = await searchParams;
-  const [pages, gsc] = await Promise.all([getSeoPages(accessToken), getGscRows(accessToken, 1000)]);
+  const [pages, gsc] = await Promise.all([getSeoPages(), getGscRows(1000)]);
   const score = averageSeoScore(pages);
   const impressions = gsc.reduce((sum, row) => sum + Number(row.impressions || 0), 0);
   const clicks = gsc.reduce((sum, row) => sum + Number(row.clicks || 0), 0);
@@ -32,7 +32,7 @@ export default async function AdminSeoPage({ searchParams }: Props) {
         <div className="admin-card"><div className="admin-label">Середня позиція</div><div className="admin-metric">{gsc.length ? weightedPosition.toFixed(1) : "—"}</div><div className="admin-kpi-note">Зважено по impressions</div></div>
       </section>
 
-      {!gsc.length ? <div className="admin-alert admin-section">Search Console інтеграція ще не має даних. Після підключення service account/API цей екран автоматично покаже impressions, clicks, CTR, position, top queries та top pages.</div> : null}
+      {!gsc.length ? <div className="admin-alert admin-section">Search Console ще не має синхронізованих даних. Після підключення Google service account тут з’являться impressions, clicks, CTR, position, top queries та indexing.</div> : null}
 
       <section className="admin-section">
         <div className="admin-section-header"><h2>SEO сторінки</h2><span>{pages.filter((p) => p.seo_score < 85 && p.indexable).length} потребують уваги</span></div>

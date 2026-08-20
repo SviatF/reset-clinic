@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "../../../lib/admin-auth";
 
 const errors: Record<string, string> = {
-  missing_credentials: "Введіть email і пароль.",
-  invalid_credentials: "Невірний email або пароль.",
-  not_authorized: "Цей акаунт не має доступу до RESET Admin.",
+  missing_credentials: "Введіть логін і пароль.",
+  invalid_credentials: "Невірний логін або пароль.",
+  not_configured: "RESET Admin ще не має ADMIN_USERNAME / ADMIN_PASSWORD у Vercel.",
 };
 
 type Props = { searchParams: Promise<{ error?: string }> };
@@ -25,8 +25,8 @@ export default async function AdminLoginPage({ searchParams }: Props) {
         {error ? <div className="admin-alert bad">{error}</div> : null}
         <form className="admin-form" action="/api/admin/login" method="post">
           <label>
-            Email
-            <input type="email" name="email" autoComplete="email" required />
+            Логін
+            <input name="username" autoComplete="username" required />
           </label>
           <label>
             Пароль

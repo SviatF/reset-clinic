@@ -1,25 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "../../../../../lib/admin-auth";
-import { supabaseRest } from "../../../../../lib/supabase";
-
-type Post = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  body: string;
-  target_keyword: string | null;
-  author_name: string | null;
-  reviewer_name: string | null;
-  reviewer_title: string | null;
-  reviewed_at: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  status: string;
-  indexable: boolean;
-  updated_at: string;
-};
+import { getBlogPost } from "../../../../../lib/admin-data";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -27,14 +9,9 @@ type Props = {
 };
 
 export default async function AdminBlogEditorPage({ params, searchParams }: Props) {
-  const { accessToken } = await requireAdmin();
+  await requireAdmin();
   const { id } = await params;
-  const query = await supabaseRest<Post[]>(
-    `blog_posts?select=*&id=eq.${encodeURIComponent(id)}&limit=1`,
-    { method: "GET" },
-    { accessToken },
-  );
-  const post = query.data?.[0];
+  const post = await getBlogPost(id);
   if (!post) notFound();
   const state = await searchParams;
 

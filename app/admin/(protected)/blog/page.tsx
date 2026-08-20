@@ -5,8 +5,8 @@ import { getBlogPosts } from "../../../../lib/admin-data";
 type Props = { searchParams: Promise<{ error?: string }> };
 
 export default async function AdminBlogPage({ searchParams }: Props) {
-  const { accessToken } = await requireAdmin();
-  const posts = await getBlogPosts(accessToken);
+  await requireAdmin();
+  const posts = await getBlogPosts();
   const params = await searchParams;
 
   return (
@@ -16,7 +16,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-label">{posts.length} матеріалів</div>
       </header>
 
-      {params.error ? <div className="admin-alert bad">Не вдалося зберегти матеріал. Перевірте slug і обов’язкові поля.</div> : null}
+      {params.error ? <div className="admin-alert bad">Не вдалося зберегти матеріал. Перевірте slug, обов’язкові поля та storage.</div> : null}
 
       <section className="admin-two-col">
         <div className="admin-card">
@@ -28,14 +28,8 @@ export default async function AdminBlogPage({ searchParams }: Props) {
             </div>
             <label>Короткий опис<textarea name="excerpt" rows={3} /></label>
             <label>Основний текст<textarea name="body" rows={10} placeholder="Пишемо доказово, структуровано, без медичних обіцянок..." /></label>
-            <div className="admin-form-row">
-              <label>Primary keyword<input name="target_keyword" /></label>
-              <label>Автор<input name="author_name" /></label>
-            </div>
-            <div className="admin-form-row">
-              <label>Лікар-рецензент<input name="reviewer_name" /></label>
-              <label>Посада reviewer<input name="reviewer_title" /></label>
-            </div>
+            <div className="admin-form-row"><label>Primary keyword<input name="target_keyword" /></label><label>Автор<input name="author_name" /></label></div>
+            <div className="admin-form-row"><label>Лікар-рецензент<input name="reviewer_name" /></label><label>Посада reviewer<input name="reviewer_title" /></label></div>
             <label>SEO Title<input name="seo_title" /></label>
             <label>Meta Description<textarea name="seo_description" rows={3} /></label>
             <div className="admin-form-row">
@@ -49,7 +43,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-card">
           <h2>YMYL checklist</h2>
           <p>Для медичного контенту перед публікацією фіксуємо автора, лікаря-рецензента, дату перевірки, джерела та конкретний SEO intent.</p>
-          <div className="admin-alert">FAQ і sources вже передбачені в схемі БД; наступні SEO-лендінги використовуватимуть той самий контентний стандарт.</div>
+          <div className="admin-alert">CMS зберігає матеріали як приватні JSON-об’єкти у Vercel Blob; публічно віддаються тільки published + indexable записи.</div>
         </div>
       </section>
 
