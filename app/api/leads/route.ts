@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
           lead,
         }),
         cache: "no-store",
+        signal: AbortSignal.timeout(7000),
       });
       if (!crmResponse.ok) throw new Error(`CRM HTTP ${crmResponse.status}`);
 
@@ -164,9 +165,14 @@ export async function POST(request: NextRequest) {
       }
       await updateLead(lead.id, { crm_status: "sent", crm_error: null, crm_external_id: externalId });
     } catch (error) {
+      const message = error instanceof Error
+        ? error.name === "TimeoutError"
+          ? "CRM timeout after 7s"
+          : error.message.slice(0, 1000)
+        : "CRM dispatch failed";
       await updateLead(lead.id, {
         crm_status: "failed",
-        crm_error: error instanceof Error ? error.message.slice(0, 1000) : "CRM dispatch failed",
+        crm_error: message,
       });
     }
   }
