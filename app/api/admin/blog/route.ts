@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../lib/admin-auth";
-import { createBlogPost } from "../../../../lib/admin-data";
+import { createBlogPost, getBlogPosts } from "../../../../lib/admin-data";
 
 function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[’'`]/g, "").replace(/[^a-z0-9а-яіїєґ\s-]/giu, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
   const title = String(form.get("title") ?? "").trim();
   const slug = slugify(String(form.get("slug") ?? "").trim() || title);
   if (!title || !slug) return NextResponse.redirect(new URL("/admin/blog/?error=missing", request.url), 303);
+
+  const existing = await getBlogPosts(1000);
+  if (existing.some((post) => post.slug === slug)) {
+    return NextResponse.redirect(new URL("/admin/blog/?error=slug", request.url), 303);
+  }
 
   const status = String(form.get("status") ?? "draft") === "published" ? "published" : "draft";
   try {
