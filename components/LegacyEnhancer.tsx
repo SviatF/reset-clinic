@@ -47,7 +47,9 @@ function isElementorPopupTrigger(element: HTMLElement) {
     href = rawHref;
   }
 
-  return href.includes("elementor-action:action=popup:open");
+  const isPopup = href.includes("elementor-action:action=popup:open");
+  const looksLikeMenu = (element.textContent || "").toLowerCase().includes("меню");
+  return isPopup && looksLikeMenu;
 }
 
 export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
