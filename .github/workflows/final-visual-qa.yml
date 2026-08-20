@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 0
 
       - name: Install and build
+        id: build
+        continue-on-error: true
         run: |
           set -euo pipefail
           npm ci
@@ -29,17 +31,22 @@ jobs:
           python3 -m pip install --disable-pip-version-check -q pillow
 
       - name: Start Next.js
+        id: start
+        continue-on-error: true
         run: |
           set -euo pipefail
           nohup npm start -- -p 3000 > /tmp/reset-next.log 2>&1 &
+          ok=0
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true)
-            [ "$code" = 200 ] && break
+            if [ "$code" = 200 ]; then ok=1; break; fi
             sleep 1
           done
-          curl -I http://127.0.0.1:3000/
+          [ "$ok" = 1 ] || { cat /tmp/reset-next.log; exit 1; }
 
       - name: Download exact pixel references
+        id: reference
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -47,26 +54,30 @@ jobs:
           mkdir -p /tmp/ref /tmp/ref-screens /tmp/next-screens /tmp/diff
           gh run download 32348391441 --repo "$GITHUB_REPOSITORY" --name reference-screens-v3 --dir /tmp/ref
           tar -xzf /tmp/ref/reference-screens-v3.tar.gz -C /tmp/ref-screens
+          test $(find /tmp/ref-screens -name '*.png' | wc -l) -ge 16
 
       - name: Capture all Next.js routes
+        id: capture
+        continue-on-error: true
         run: |
           set -euo pipefail
           CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          test -n "$CHROME"
           cat > /tmp/capture.mjs <<'JS'
           import {chromium} from 'playwright-core';
           const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
           const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
-          for (const cfg of [{d:'desktop',w:1440,h:1000,m:false},{d:'mobile',w:390,h:844,m:true}]) {
+          for(const cfg of [{d:'desktop',w:1440,h:1000,m:false},{d:'mobile',w:390,h:844,m:true}]){
             const ctx=await browser.newContext({viewport:{width:cfg.w,height:cfg.h},isMobile:cfg.m,hasTouch:cfg.m});
             const page=await ctx.newPage();
             for(let i=0;i<routes.length;i++){
-              const res=await page.goto('http://127.0.0.1:3000'+routes[i],{waitUntil:'networkidle',timeout:60000});
-              if(!res || res.status()!==200) throw new Error(`${routes[i]} returned ${res?.status()}`);
-              await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,80));}window.scrollTo(0,0)});
-              await page.waitForTimeout(700);
-              const text=(await page.locator('body').innerText()).trim();
-              if(text.length<20) throw new Error(`${routes[i]} looks blank`);
+              const res=await page.goto('http://127.0.0.1:3000'+routes[i],{waitUntil:'domcontentloaded',timeout:45000});
+              if(!res||res.status()!==200) throw new Error(`${routes[i]} returned ${res?.status()}`);
+              await page.waitForTimeout(1200);
+              await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,70));}window.scrollTo(0,0)});
+              await page.waitForTimeout(500);
+              if((await page.locator('body').innerText()).trim().length<20) throw new Error(`${routes[i]} blank`);
               await page.screenshot({path:`/tmp/next-screens/${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`,fullPage:true});
             }
             await ctx.close();
@@ -74,62 +85,55 @@ jobs:
           await browser.close();
           JS
           CHROME="$CHROME" node /tmp/capture.mjs
+          test $(find /tmp/next-screens -name '*.png' | wc -l) -eq 16
 
       - name: Compare against exact reference
         id: compare
         continue-on-error: true
         run: |
           python3 - <<'PY'
-          from PIL import Image, ImageChops, ImageStat
+          from PIL import Image,ImageChops,ImageStat
           from pathlib import Path
-          import json, math
+          import json,math
           ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff'); out.mkdir(exist_ok=True)
           rows=[]; bad=[]
           for nf in sorted(nxt.glob('*.png')):
               rf=ref/nf.name
-              if not rf.exists():
-                  row={'file':nf.name,'error':'reference missing'}; rows.append(row); bad.append(row); continue
-              a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB')
-              W=max(a.width,b.width); H=max(a.height,b.height)
-              ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0))
-              diff=ImageChops.difference(ac,bc); stat=ImageStat.Stat(diff)
-              mae=sum(stat.mean)/3/255; rms=math.sqrt(sum(x*x for x in stat.rms)/3)/255
-              changed=sum(1 for px in diff.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18)
-              total=max(1,(W//4)*(H//4)); changed_ratio=changed/total
-              diff.save(out/nf.name)
-              row={'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'mae':round(mae,5),'rms':round(rms,5),'changed_ratio':round(changed_ratio,5)}
-              rows.append(row)
-              if a.width!=b.width or abs(a.height-b.height)>max(800,a.height*0.22): bad.append(row)
-          result={'passed':not bad,'screens_compared':len(rows),'hard_failures':bad,'screens':rows}
-          Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2))
-          print(json.dumps(result,indent=2))
-          raise SystemExit(0 if not bad else 1)
+              if not rf.exists(): rows.append({'file':nf.name,'error':'reference missing'}); bad.append(rows[-1]); continue
+              a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB'); W=max(a.width,b.width); H=max(a.height,b.height)
+              ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0)); d=ImageChops.difference(ac,bc); s=ImageStat.Stat(d)
+              changed=sum(1 for px in d.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18); total=max(1,(W//4)*(H//4))
+              row={'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'mae':round(sum(s.mean)/3/255,5),'rms':round(math.sqrt(sum(x*x for x in s.rms)/3)/255,5),'changed_ratio':round(changed/total,5)}
+              rows.append(row); d.save(out/nf.name)
+              if a.width!=b.width or abs(a.height-b.height)>max(800,a.height*.22): bad.append(row)
+          result={'passed':len(rows)==16 and not bad,'screens_compared':len(rows),'hard_failures':bad,'screens':rows}
+          Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2)); print(json.dumps(result,indent=2)); raise SystemExit(0 if result['passed'] else 1)
           PY
 
-      - name: Persist QA report on migration branch
+      - name: Persist diagnostic report
         if: always()
+        env:
+          BUILD: ${{ steps.build.outcome }}
+          START: ${{ steps.start.outcome }}
+          REFERENCE: ${{ steps.reference.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          COMPARE: ${{ steps.compare.outcome }}
         run: |
-          set -euo pipefail
-          cp /tmp/visual-report.json visual-qa-report.json || echo '{"passed":false,"error":"report was not generated"}' > visual-qa-report.json
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d={'stages':{k.lower():os.environ[k] for k in ['BUILD','START','REFERENCE','CAPTURE','COMPARE']}}
+          p=Path('/tmp/visual-report.json')
+          if p.exists(): d['visual']=json.loads(p.read_text())
+          else: d['visual']={'passed':False,'error':'visual report was not generated'}
+          Path('visual-qa-report.json').write_text(json.dumps(d,indent=2))
+          PY
           git config user.name 'RESET QA Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -- visual-qa-report.json
           git commit -m 'test: record final visual QA' || true
           git push origin HEAD:migration-next-ssr
 
-      - name: Enforce QA gate
-        if: steps.compare.outcome != 'success'
+      - name: Enforce final QA
+        if: steps.build.outcome != 'success' || steps.start.outcome != 'success' || steps.reference.outcome != 'success' || steps.capture.outcome != 'success' || steps.compare.outcome != 'success'
         run: exit 1
-
-      - name: Upload QA evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: final-visual-qa
-          path: |
-            /tmp/visual-report.json
-            /tmp/next-screens
-            /tmp/diff
-            /tmp/reset-next.log
-          compression-level: 0
-          retention-days: 2
