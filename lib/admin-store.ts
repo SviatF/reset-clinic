@@ -1,16 +1,16 @@
 import { get, list, put } from "@vercel/blob";
 
 function token() {
-  return process.env.BLOB_READ_WRITE_TOKEN || "";
+  return process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_OIDC_TOKEN || "";
 }
 
 export function isAdminStoreConfigured() {
-  return Boolean(token());
+  return Boolean(process.env.BLOB_STORE_ID || token());
 }
 
 function requireToken() {
   const value = token();
-  if (!value) throw new Error("BLOB_READ_WRITE_TOKEN is not configured");
+  if (!value) throw new Error("Vercel Blob authentication is not configured");
   return value;
 }
 
