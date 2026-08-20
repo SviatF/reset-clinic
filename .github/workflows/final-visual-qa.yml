@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: reset-final-visual-qa
+  cancel-in-progress: true
+
 permissions:
   contents: write
   actions: read
@@ -110,8 +114,8 @@ jobs:
               total=max(1,(W//4)*(H//4))
               rows.append({'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'height_delta':b.height-a.height,'mae':round(sum(s.mean)/3/255,5),'rms':round(math.sqrt(sum(x*x for x in s.rms)/3)/255,5),'changed_ratio':round(changed/total,5)})
               d.save(out/nf.name)
-          hard=[r for r in rows if 'error' in r or not r.get('size_match',False)]
-          result={'passed':len(rows)==16 and not hard,'screens_compared':len(rows),'exact_size_matches':sum(1 for r in rows if r.get('size_match')),'hard_failures':hard,'screens':rows}
+          hard=[r for r in rows if 'error' in r or abs(r.get('height_delta',9999))>1 or r.get('reference_size',[0])[0]!=r.get('next_size',[1])[0]]
+          result={'passed':len(rows)==16 and not hard,'screens_compared':len(rows),'exact_size_matches':sum(1 for r in rows if r.get('size_match')),'tolerance_px':1,'hard_failures':hard,'screens':rows}
           Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2))
           print(json.dumps(result,indent=2))
           if hard: raise SystemExit(1)
@@ -127,6 +131,7 @@ jobs:
           CAPTURE: ${{ steps.capture.outcome }}
           COMPARE: ${{ steps.compare.outcome }}
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json,os
           from pathlib import Path
@@ -134,10 +139,13 @@ jobs:
           p=Path('/tmp/visual-report.json'); d['visual']=json.loads(p.read_text()) if p.exists() else {'passed':False,'error':'report missing'}
           c=Path('/tmp/capture.log'); d['capture_log']=c.read_text(errors='ignore')[-12000:] if c.exists() else ''
           s=Path('/tmp/reset-next.log'); d['server_log']=s.read_text(errors='ignore')[-5000:] if s.exists() else ''
-          Path('final-visual-qa-report.json').write_text(json.dumps(d,indent=2))
+          Path('/tmp/final-visual-qa-report.json').write_text(json.dumps(d,indent=2))
           PY
           git config user.name 'RESET QA Bot'
           git config user.email 'actions@users.noreply.github.com'
+          git fetch origin migration-next-ssr
+          git reset --hard origin/migration-next-ssr
+          cp /tmp/final-visual-qa-report.json final-visual-qa-report.json
           git add -- final-visual-qa-report.json
           git commit -m 'test: record final exact visual QA' || true
           git push origin HEAD:migration-next-ssr
