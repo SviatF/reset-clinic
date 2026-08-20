@@ -8,7 +8,19 @@ export type LegacyPageData = {
   html: string;
 };
 
-export default function LegacyPage({ data }: { data: LegacyPageData }) {
+export type MobilePageData = {
+  bodyClass: string;
+  html: string;
+  referenceHeight: number;
+};
+
+export default function LegacyPage({
+  data,
+  mobile,
+}: {
+  data: LegacyPageData;
+  mobile?: MobilePageData;
+}) {
   return (
     <>
       {data.stylesheets.map((href, index) => (
@@ -17,10 +29,19 @@ export default function LegacyPage({ data }: { data: LegacyPageData }) {
       {data.inlineStyles.map((css, index) => (
         <style key={index} dangerouslySetInnerHTML={{ __html: css }} />
       ))}
+
       <div
-        className={`legacy-page ${data.bodyClass}`}
+        className={`legacy-page legacy-desktop ${data.bodyClass}`}
         dangerouslySetInnerHTML={{ __html: data.html }}
       />
+
+      {mobile ? (
+        <div
+          className={`legacy-page legacy-mobile ${mobile.bodyClass}`}
+          dangerouslySetInnerHTML={{ __html: mobile.html }}
+        />
+      ) : null}
+
       <div id="reset-menu-overlay" className="reset-menu-overlay">
         <button id="reset-menu-close" className="reset-menu-close" aria-label="Закрити">
           ×
@@ -37,6 +58,7 @@ export default function LegacyPage({ data }: { data: LegacyPageData }) {
           </a>
         </nav>
       </div>
+
       <LegacyEnhancer bodyClass={data.bodyClass} />
     </>
   );
