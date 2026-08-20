@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "../components/SeoLandingPage.css";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,

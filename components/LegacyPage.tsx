@@ -57,8 +57,13 @@ export default function LegacyPage({
           <a href="/">Головна</a>
           <a href="/about/">Про клініку</a>
           <a href="/services/">Послуги</a>
+          <a href="/dermatology/">Дерматологія</a>
+          <a href="/cosmetology/">Косметологія</a>
+          <a href="/skin-problems/">Проблеми шкіри</a>
+          <a href="/nutrition/">Нутриціологія</a>
           <a href="/doctors/">Лікарі</a>
           <a href="/price/">Прайс</a>
+          <a href="/blog/">Блог</a>
           <a href="/contacts/">Контакти</a>
           <a className="reset-menu-book" href="/booking/">
             Записатись на прийом
