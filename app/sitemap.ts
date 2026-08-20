@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPublishedPosts } from "../lib/blog";
+import { DOCTORS, doctorPath } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 
@@ -24,6 +25,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: landing.priority,
   }));
 
+  const doctors: MetadataRoute.Sitemap = DOCTORS.map((doctor) => ({
+    url: `${SITE_URL}${doctorPath(doctor)}`,
+    lastModified,
+    changeFrequency: "monthly",
+    priority: 0.78,
+  }));
+
   const posts = await getPublishedPosts(1000);
   const blog: MetadataRoute.Sitemap = posts
     .filter((post) => post.indexable)
@@ -34,5 +42,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...base, ...seo, ...blog];
+  return [...base, ...seo, ...doctors, ...blog];
 }
