@@ -42,17 +42,23 @@ export async function POST(request: NextRequest) {
   const pages = (await getSeoPages()).filter((page) => page.status === "published");
   const base = process.env.SEO_AUDIT_BASE_URL || request.nextUrl.origin;
   let audited = 0;
+  let failed = 0;
 
   for (const page of pages) {
     try {
-      const response = await fetch(new URL(page.path, base), { cache: "no-store", headers: { "User-Agent": "RESET-SEO-Auditor/1.0" } });
+      const response = await fetch(new URL(page.path, base), {
+        cache: "no-store",
+        headers: { "User-Agent": "RESET-SEO-Auditor/1.0" },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const result = audit(await response.text(), page.indexable);
       await saveSeoAudit(page.path, result);
       audited += 1;
     } catch {
-      // Keep auditing remaining pages.
+      failed += 1;
     }
   }
 
-  return NextResponse.redirect(new URL(`/admin/seo/?audited=${audited}`, request.url), 303);
+  return NextResponse.redirect(new URL(`/admin/seo/?audited=${audited}&failed=${failed}`, request.url), 303);
 }
