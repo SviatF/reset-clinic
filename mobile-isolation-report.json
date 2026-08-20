@@ -3,48 +3,48 @@
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   },
   "/price/": {
-    "style": 1,
+    "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 2529
+    "bytes_removed": 0
   },
   "/doctors/": {
-    "style": 1,
+    "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 2338
+    "bytes_removed": 0
   },
   "/contacts/": {
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   },
   "/about/": {
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   },
   "/services/": {
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   },
   "/thank-you/": {
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   },
   "/booking/": {
     "style": 0,
     "link": 0,
     "script": 0,
-    "bytes_removed": 161
+    "bytes_removed": 0
   }
 }
