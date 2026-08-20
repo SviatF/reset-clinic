@@ -1,4 +1,4 @@
-name: RESET import exact mobile render
+name: RESET final visual QA
 
 on:
   push:
@@ -10,143 +10,165 @@ permissions:
   actions: read
 
 jobs:
-  import-mobile:
+  visual-qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Download captured mobile render
+      - name: Build production Next.js
+        id: build
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          npm install --no-save playwright-core@1.55.0
+          python3 -m pip install --disable-pip-version-check -q pillow
+
+      - name: Start production server
+        id: start
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          nohup npm start -- -p 3000 > /tmp/reset-next.log 2>&1 &
+          ok=0
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true)
+            if [ "$code" = 200 ]; then ok=1; break; fi
+            sleep 1
+          done
+          [ "$ok" = 1 ] || { cat /tmp/reset-next.log; exit 1; }
+
+      - name: Restore exact reference screenshots
+        id: reference
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p /tmp/mobile-artifact /tmp/mobile-source /tmp/reset-source
-          gh run download 32355217431 --repo "$GITHUB_REPOSITORY" --name mobile-render-source --dir /tmp/mobile-artifact
-          tar -xzf /tmp/mobile-artifact/mobile-render-source.tar.gz -C /tmp/mobile-source
-          test -f /tmp/mobile-source/manifest.json
-          test $(find /tmp/mobile-source/pages -name '*.json' | wc -l) -eq 8
+          mkdir -p /tmp/ref /tmp/ref-screens /tmp/next-screens /tmp/diff
+          gh run download 32348391441 --repo "$GITHUB_REPOSITORY" --name reference-screens-v3 --dir /tmp/ref
+          tar -xzf /tmp/ref/reference-screens-v3.tar.gz -C /tmp/ref-screens
+          test $(find /tmp/ref-screens -name '*.png' | wc -l) -eq 16
 
-      - name: Download original media source
+      - name: Capture production routes
+        id: capture
+        continue-on-error: true
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check -q gdown
-          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-source/source.zip
-          unzip -q /tmp/reset-source/source.zip -d /tmp/reset-source/site
-          WP_CONTENT=$(find /tmp/reset-source/site -type d -name wp-content | head -1)
-          test -n "$WP_CONTENT"
-          echo "WP_ROOT=$(dirname "$WP_CONTENT")" >> "$GITHUB_ENV"
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          cat > qa-capture.mjs <<'JS'
+          import {chromium} from 'playwright-core';
+          const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
+          const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+          for(const cfg of [{d:'desktop',w:1440,h:1000,m:false},{d:'mobile',w:390,h:844,m:true}]){
+            const ctx=await browser.newContext({viewport:{width:cfg.w,height:cfg.h},isMobile:cfg.m,hasTouch:cfg.m});
+            const page=await ctx.newPage();
+            for(let i=0;i<routes.length;i++){
+              const res=await page.goto('http://127.0.0.1:3000'+routes[i],{waitUntil:'domcontentloaded',timeout:60000});
+              if(!res||res.status()!==200) throw new Error(`${routes[i]} returned ${res?.status()}`);
+              await page.waitForTimeout(900);
+              await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,70));}window.scrollTo(0,0)});
+              await page.waitForTimeout(700);
+              const text=(await page.locator('body').innerText()).trim();
+              const height=await page.evaluate(()=>document.documentElement.scrollHeight);
+              console.log(cfg.d,routes[i],text.length,height);
+              if(text.length<20) throw new Error(`${routes[i]} blank`);
+              await page.screenshot({path:`/tmp/next-screens/${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`,fullPage:true});
+            }
+            await ctx.close();
+          }
+          await browser.close();
+          JS
+          CHROME="$CHROME" node ./qa-capture.mjs | tee /tmp/capture.log
+          test $(find /tmp/next-screens -name '*.png' | wc -l) -eq 16
 
-      - name: Build fully localized mobile snapshot
-        env:
-          WP_ROOT: ${{ env.WP_ROOT }}
+      - name: Compare exact visual output
+        id: compare
+        continue-on-error: true
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib,html as htmlmod,json,os,re,shutil
+          from PIL import Image,ImageChops,ImageStat
           from pathlib import Path
-          from urllib.parse import urlparse,unquote
-
-          src=Path('/tmp/mobile-source')
-          wp_root=Path(os.environ['WP_ROOT'])
-          manifest=json.loads((src/'manifest.json').read_text())
-          resources=manifest.get('resources',{})
-          out_assets=Path('public/assets'); out_assets.mkdir(parents=True,exist_ok=True)
-
-          copied_capture=0
-          replacements=[]
-          for url,meta in resources.items():
-              f=meta.get('file')
-              if not f: continue
-              source=src/'resources'/f
-              if source.exists():
-                  shutil.copy2(source,out_assets/f)
-                  copied_capture+=1
-              local=f'/assets/{f}'
-              parsed=urlparse(url)
-              decoded_path=unquote(parsed.path)
-              decoded_path_query=decoded_path + (('?' + parsed.query) if parsed.query else '')
-              decoded_url=unquote(url)
-              for old in {
-                  url,decoded_url,parsed.path,decoded_path,decoded_path_query,
-                  htmlmod.escape(url,quote=True),htmlmod.escape(decoded_url,quote=True),
-                  htmlmod.escape(decoded_path,quote=True),htmlmod.escape(decoded_path_query,quote=True)
-              }:
-                  if old:
-                      replacements.append((old,local))
-          replacements.sort(key=lambda x:len(x[0]),reverse=True)
-
-          copied_source={}
-          def localize_wp_ref(ref:str):
-              parsed=urlparse(htmlmod.unescape(ref))
-              path=unquote(parsed.path)
-              if not path.startswith('/wp-content/'):
-                  return None
-              source=wp_root/path.lstrip('/')
-              if not source.is_file():
-                  return None
-              key=path
-              if key in copied_source:
-                  return copied_source[key]
-              suffix=source.suffix.lower() or '.bin'
-              name='mobile-'+hashlib.sha1(path.encode('utf-8')).hexdigest()+suffix
-              shutil.copy2(source,out_assets/name)
-              local='/assets/'+name
-              copied_source[key]=local
-              return local
-
-          mobile={}; unresolved={}
-          for page_file in sorted((src/'pages').glob('*.json')):
-              data=json.loads(page_file.read_text())
-              page_html=data['html']
-              # Never ship WordPress/Elementor runtime scripts or runtime stylesheet nodes.
-              page_html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',page_html,flags=re.I|re.S)
-              page_html=re.sub(r'<link\b[^>]*>','',page_html,flags=re.I|re.S)
-              for old,new in replacements:
-                  page_html=page_html.replace(old,new)
-              page_html=page_html.replace('http://127.0.0.1:8080','')
-              page_html=page_html.replace('https://resetclinic.org','')
-              page_html=page_html.replace('http://resetclinic.org','')
-              # Preserve the exact candidate rendered by the capture and avoid stale WP srcsets.
-              page_html=re.sub(r'\s+srcset=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
-              page_html=re.sub(r'\s+sizes=("[^"]*"|\'[^\']*\')','',page_html,flags=re.I)
-
-              refs=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',page_html,flags=re.I)))
-              for ref in refs:
-                  local=localize_wp_ref(ref)
-                  if local:
-                      page_html=page_html.replace(ref,local)
-
-              route=data['route']
-              leftovers=sorted(set(re.findall(r'(?:src|href|poster)=["\']([^"\']*wp-content[^"\']*)',page_html,flags=re.I)))
-              unresolved[route]=leftovers
-              mobile[route]={
-                  'bodyClass':data.get('bodyClass',''),
-                  'html':page_html,
-                  'referenceHeight':data.get('height')
+          import json,math
+          ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff'); out.mkdir(exist_ok=True)
+          rows=[]
+          for nf in sorted(nxt.glob('*.png')):
+              rf=ref/nf.name
+              if not rf.exists():
+                  rows.append({'file':nf.name,'error':'reference missing'}); continue
+              a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB')
+              W=max(a.width,b.width); H=max(a.height,b.height)
+              ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0))
+              d=ImageChops.difference(ac,bc); s=ImageStat.Stat(d)
+              changed=sum(1 for px in d.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18)
+              total=max(1,(W//4)*(H//4))
+              row={
+                  'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,
+                  'height_delta':b.height-a.height,
+                  'mae':round(sum(s.mean)/3/255,5),
+                  'rms':round(math.sqrt(sum(x*x for x in s.rms)/3)/255,5),
+                  'changed_ratio':round(changed/total,5)
               }
-
-          Path('lib/mobile-pages.json').write_text(json.dumps(mobile,ensure_ascii=False,separators=(',',':')))
-          report={
-              'routes':len(mobile),
-              'captured_assets_copied':copied_capture,
-              'source_assets_copied':len(copied_source),
-              'reference_heights':{k:v['referenceHeight'] for k,v in mobile.items()},
-              'unresolved_wp_asset_refs':unresolved,
-              'unresolved_count':sum(len(v) for v in unresolved.values())
+              rows.append(row); d.save(out/nf.name)
+          hard=[r for r in rows if 'error' in r or not r.get('size_match',False)]
+          result={
+              'passed':len(rows)==16 and not hard,
+              'screens_compared':len(rows),
+              'exact_size_matches':sum(1 for r in rows if r.get('size_match')),
+              'hard_failures':hard,
+              'screens':rows
           }
-          Path('mobile-import-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
-          print(json.dumps(report,indent=2,ensure_ascii=False))
+          Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2))
+          print(json.dumps(result,indent=2))
+          if hard: raise SystemExit(1)
           PY
 
-      - name: Commit localized mobile snapshot
+      - name: Persist final QA report
+        if: always()
+        env:
+          RUN_ID: ${{ github.run_id }}
+          BUILD: ${{ steps.build.outcome }}
+          START: ${{ steps.start.outcome }}
+          REFERENCE: ${{ steps.reference.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          COMPARE: ${{ steps.compare.outcome }}
         run: |
-          set -euo pipefail
-          git config user.name 'RESET Migration Bot'
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['BUILD','START','REFERENCE','CAPTURE','COMPARE']}}
+          p=Path('/tmp/visual-report.json'); d['visual']=json.loads(p.read_text()) if p.exists() else {'passed':False,'error':'report missing'}
+          c=Path('/tmp/capture.log'); d['capture_log']=c.read_text(errors='ignore')[-12000:] if c.exists() else ''
+          s=Path('/tmp/reset-next.log'); d['server_log']=s.read_text(errors='ignore')[-5000:] if s.exists() else ''
+          Path('final-visual-qa-report.json').write_text(json.dumps(d,indent=2))
+          PY
+          git config user.name 'RESET QA Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- lib/mobile-pages.json public/assets mobile-import-report.json
-          git commit -m 'fix: fully localize exact mobile snapshots' || true
+          git add -- final-visual-qa-report.json
+          git commit -m 'test: record final 16-screen visual QA' || true
           git push origin HEAD:migration-next-ssr
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-production-visual-qa
+          path: |
+            /tmp/visual-report.json
+            /tmp/next-screens
+            /tmp/diff
+            /tmp/capture.log
+            /tmp/reset-next.log
+          compression-level: 0
+          retention-days: 2
+
+      - name: Enforce final QA gate
+        if: steps.build.outcome != 'success' || steps.start.outcome != 'success' || steps.reference.outcome != 'success' || steps.capture.outcome != 'success' || steps.compare.outcome != 'success'
+        run: exit 1
