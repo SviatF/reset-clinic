@@ -1,14 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getCrmConfig,
-  saveLead,
-  updateLead,
-  type CrmConfig,
-  type Lead,
-} from "../../../lib/admin-data";
+import { saveLead, updateLead, type Lead } from "../../../lib/admin-data";
 import { isAdminStoreConfigured } from "../../../lib/admin-store";
-import { decryptSecret } from "../../../lib/secret-box";
+import { crmErrorMessage, dispatchLeadToCrm, isCrmEnabled } from "../../../lib/crm-dispatch";
 
 type LeadPayload = {
   name?: string;
@@ -33,13 +27,6 @@ type LeadPayload = {
   fields?: Record<string, unknown>;
 };
 
-type RuntimeCrm = {
-  endpoint: string;
-  token?: string;
-  provider?: string;
-  name?: string;
-};
-
 function text(value: unknown, max = 500) {
   if (typeof value !== "string") return null;
   const clean = value.trim();
@@ -52,26 +39,6 @@ function ipHash(request: NextRequest) {
   const raw = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   if (!raw) return null;
   return createHash("sha256").update(`${salt}:${raw}`).digest("hex");
-}
-
-function runtimeCrm(row: CrmConfig | null): RuntimeCrm | null {
-  if (row?.enabled && row.endpoint) {
-    let token = "";
-    try {
-      token = row.token_enc ? decryptSecret(row.token_enc) : "";
-    } catch {
-      token = "";
-    }
-    return { endpoint: row.endpoint, token: token || undefined, provider: row.provider, name: row.name };
-  }
-  return process.env.CRM_WEBHOOK_URL
-    ? {
-        endpoint: process.env.CRM_WEBHOOK_URL,
-        token: process.env.CRM_WEBHOOK_TOKEN || undefined,
-        provider: "webhook",
-        name: "Environment CRM",
-      }
-    : null;
 }
 
 export async function POST(request: NextRequest) {
@@ -98,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
   }
 
-  const crm = runtimeCrm(await getCrmConfig());
+  const crmEnabled = await isCrmEnabled();
   const now = new Date().toISOString();
   const lead: Lead = {
     id: randomUUID(),
@@ -125,7 +92,7 @@ export async function POST(request: NextRequest) {
     ip_hash: ipHash(request),
     user_agent: text(request.headers.get("user-agent"), 1000),
     payload: payload.fields ?? {},
-    crm_status: crm ? "pending" : "disabled",
+    crm_status: crmEnabled ? "pending" : "disabled",
     crm_error: null,
     crm_external_id: null,
   };
@@ -136,43 +103,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "lead_save_failed" }, { status: 502 });
   }
 
-  if (crm) {
+  if (crmEnabled) {
     try {
-      const crmResponse = await fetch(crm.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(crm.token ? { Authorization: `Bearer ${crm.token}` } : {}),
-        },
-        body: JSON.stringify({
-          event: "lead.created",
-          leadId: lead.id,
-          source: "resetclinic.org",
-          provider: crm.provider,
-          lead,
-        }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(7000),
+      const result = await dispatchLeadToCrm(lead);
+      await updateLead(lead.id, {
+        crm_status: result.status,
+        crm_error: null,
+        crm_external_id: result.externalId,
       });
-      if (!crmResponse.ok) throw new Error(`CRM HTTP ${crmResponse.status}`);
-
-      let externalId: string | null = null;
-      try {
-        const body = (await crmResponse.json()) as { id?: string | number; leadId?: string | number };
-        externalId = String(body.id ?? body.leadId ?? "") || null;
-      } catch {
-        externalId = null;
-      }
-      await updateLead(lead.id, { crm_status: "sent", crm_error: null, crm_external_id: externalId });
     } catch (error) {
-      const message = error instanceof Error
-        ? error.name === "TimeoutError"
-          ? "CRM timeout after 7s"
-          : error.message.slice(0, 1000)
-        : "CRM dispatch failed";
       await updateLead(lead.id, {
         crm_status: "failed",
-        crm_error: message,
+        crm_error: crmErrorMessage(error),
       });
     }
   }
