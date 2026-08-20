@@ -1,0 +1,57 @@
+{
+  "routes": 8,
+  "new_assets": 183,
+  "pages": {
+    "/": {
+      "referenceHeight": 5179,
+      "localizedAssets": 41,
+      "unresolved": 0
+    },
+    "/price/": {
+      "referenceHeight": 3154,
+      "localizedAssets": 41,
+      "unresolved": 0
+    },
+    "/doctors/": {
+      "referenceHeight": 8574,
+      "localizedAssets": 115,
+      "unresolved": 0
+    },
+    "/contacts/": {
+      "referenceHeight": 1992,
+      "localizedAssets": 115,
+      "unresolved": 0
+    },
+    "/about/": {
+      "referenceHeight": 7486,
+      "localizedAssets": 163,
+      "unresolved": 0
+    },
+    "/services/": {
+      "referenceHeight": 3346,
+      "localizedAssets": 183,
+      "unresolved": 0
+    },
+    "/thank-you/": {
+      "referenceHeight": 1000,
+      "localizedAssets": 183,
+      "unresolved": 0
+    },
+    "/booking/": {
+      "referenceHeight": 1022,
+      "localizedAssets": 183,
+      "unresolved": 0
+    }
+  },
+  "unresolved_count": 0,
+  "unresolved": {
+    "/": [],
+    "/price/": [],
+    "/doctors/": [],
+    "/contacts/": [],
+    "/about/": [],
+    "/services/": [],
+    "/thank-you/": [],
+    "/booking/": []
+  }
+}
