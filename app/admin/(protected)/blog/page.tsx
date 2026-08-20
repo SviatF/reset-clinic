@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { getBlogPosts } from "../../../../lib/admin-data";
+import { BLOG_CATEGORIES, getBlogCategory } from "../../../../lib/blog-categories";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
@@ -18,7 +19,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
   return (
     <>
       <header className="admin-topbar">
-        <div><h1>Блог / CMS</h1><div className="admin-subtitle">Медичний контент, SEO metadata, автор і reviewer для E-E-A-T.</div></div>
+        <div><h1>Блог / CMS</h1><div className="admin-subtitle">Медичний контент, SEO metadata, категорії, автор і reviewer для E-E-A-T.</div></div>
         <div className="admin-label">{posts.length} матеріалів</div>
       </header>
 
@@ -32,10 +33,14 @@ export default async function AdminBlogPage({ searchParams }: Props) {
               <label>Заголовок<input name="title" required /></label>
               <label>Slug<input name="slug" placeholder="botoks-lviv" /></label>
             </div>
+            <div className="admin-form-row">
+              <label>SEO категорія<select name="category" defaultValue=""><option value="">Без категорії</option>{BLOG_CATEGORIES.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></label>
+              <label>Primary keyword<input name="target_keyword" /></label>
+            </div>
             <label>Короткий опис<textarea name="excerpt" rows={3} /></label>
             <label>Основний текст<textarea name="body" rows={10} placeholder="Пишемо доказово, структуровано, без медичних обіцянок..." /></label>
-            <div className="admin-form-row"><label>Primary keyword<input name="target_keyword" /></label><label>Автор<input name="author_name" /></label></div>
-            <div className="admin-form-row"><label>Лікар-рецензент<input name="reviewer_name" /></label><label>Посада reviewer<input name="reviewer_title" /></label></div>
+            <div className="admin-form-row"><label>Автор<input name="author_name" /></label><label>Лікар-рецензент<input name="reviewer_name" /></label></div>
+            <label>Посада reviewer<input name="reviewer_title" /></label>
             <label>SEO Title<input name="seo_title" /></label>
             <label>Meta Description<textarea name="seo_description" rows={3} /></label>
             <div className="admin-form-row">
@@ -49,14 +54,14 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-card">
           <h2>YMYL checklist</h2>
           <p>Для медичного контенту перед публікацією фіксуємо автора, лікаря-рецензента, дату перевірки, джерела та конкретний SEO intent.</p>
-          <div className="admin-alert">CMS зберігає матеріали як приватні JSON-об’єкти у Vercel Blob. Статус Published робить матеріал публічним; Indexable окремо керує індексацією Google.</div>
+          <div className="admin-alert">Категорія блогу автоматично залишається noindex, доки не матиме щонайменше 4 published + indexable матеріали. Це захищає сайт від thin taxonomy pages.</div>
         </div>
       </section>
 
       <section className="admin-section">
         <div className="admin-section-header"><h2>Матеріали</h2><span>{posts.filter((p) => p.status === "published").length} published</span></div>
         <div className="admin-table-wrap">
-          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">/blog/{post.slug}/</span></td><td>{post.target_keyword || "—"}<br /><span className="admin-kpi-note">{post.seo_title || "SEO title не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span>{!post.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає.</div>}
+          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>Категорія / SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">/blog/{post.slug}/</span></td><td>{getBlogCategory(post.category)?.name || "Без категорії"}<br /><span className="admin-kpi-note">{post.target_keyword || "Keyword не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span>{!post.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає.</div>}
         </div>
       </section>
     </>
