@@ -4,6 +4,12 @@ import { getBlogPosts } from "../../../../lib/admin-data";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
+const errorMessages: Record<string, string> = {
+  missing: "Заповніть заголовок і коректний slug.",
+  slug: "Такий slug уже використовується іншим матеріалом.",
+  save: "Не вдалося зберегти матеріал. Перевірте storage та спробуйте ще раз.",
+};
+
 export default async function AdminBlogPage({ searchParams }: Props) {
   await requireAdmin();
   const posts = await getBlogPosts();
@@ -16,7 +22,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-label">{posts.length} матеріалів</div>
       </header>
 
-      {params.error ? <div className="admin-alert bad">Не вдалося зберегти матеріал. Перевірте slug, обов’язкові поля та storage.</div> : null}
+      {params.error ? <div className="admin-alert bad">{errorMessages[params.error] || "Не вдалося зберегти матеріал."}</div> : null}
 
       <section className="admin-two-col">
         <div className="admin-card">
@@ -43,7 +49,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-card">
           <h2>YMYL checklist</h2>
           <p>Для медичного контенту перед публікацією фіксуємо автора, лікаря-рецензента, дату перевірки, джерела та конкретний SEO intent.</p>
-          <div className="admin-alert">CMS зберігає матеріали як приватні JSON-об’єкти у Vercel Blob; публічно віддаються тільки published + indexable записи.</div>
+          <div className="admin-alert">CMS зберігає матеріали як приватні JSON-об’єкти у Vercel Blob. Статус Published робить матеріал публічним; Indexable окремо керує індексацією Google.</div>
         </div>
       </section>
 
