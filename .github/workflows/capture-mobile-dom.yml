@@ -1,4 +1,4 @@
-name: RESET restore mobile assets
+name: RESET restore desktop assets
 
 on:
   push:
@@ -17,32 +17,36 @@ jobs:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Restore only missing assets referenced by mobile SSR
+      - name: Restore known-good desktop assets without removing mobile-only files
         run: |
           set -euo pipefail
-          python3 - <<'PY' > /tmp/mobile-assets.txt
+          GOOD=bbf82b15b16efc65adcce6cdca4c49ed6b7fc59b
+          git cat-file -e "$GOOD^{commit}"
+          git ls-tree -r --name-only "$GOOD" -- public/assets > /tmp/good-assets.txt
+          test -s /tmp/good-assets.txt
+          restored=0
+          while IFS= read -r path; do
+            [ -n "$path" ] || continue
+            git checkout "$GOOD" -- "$path"
+            restored=$((restored+1))
+          done < /tmp/good-assets.txt
+          echo "Restored $restored desktop assets from $GOOD"
+
+          python3 - <<'PY'
           from pathlib import Path
           import re
-          text=Path('lib/mobile-pages.json').read_text(encoding='utf-8',errors='ignore')
-          for name in sorted(set(re.findall(r'/assets/([A-Za-z0-9._-]+)',text))):
-              print(name)
+          missing=[]
+          for source in [Path('lib/pages.json'),Path('lib/mobile-pages.json')]:
+              text=source.read_text(encoding='utf-8',errors='ignore')
+              for name in sorted(set(re.findall(r'/assets/([A-Za-z0-9._-]+)',text))):
+                  if not (Path('public/assets')/name).is_file():
+                      missing.append((source.as_posix(),name))
+          if missing:
+              print('Missing referenced assets:')
+              for src,name in missing: print(src,name)
+              raise SystemExit(1)
+          print('All desktop and mobile referenced assets exist')
           PY
-          restored=0
-          while IFS= read -r name; do
-            [ -n "$name" ] || continue
-            if [ ! -f "public/assets/$name" ]; then
-              git cat-file -e "1c7313f87e9d42c49267b20a183558e960fd53e0:public/assets/$name" 2>/dev/null || { echo "Missing in source commit: $name"; exit 1; }
-              git checkout 1c7313f87e9d42c49267b20a183558e960fd53e0 -- "public/assets/$name"
-              restored=$((restored+1))
-            fi
-          done < /tmp/mobile-assets.txt
-          echo "Restored $restored referenced mobile assets"
-
-          missing=0
-          while IFS= read -r name; do
-            [ -f "public/assets/$name" ] || { echo "STILL MISSING $name"; missing=1; }
-          done < /tmp/mobile-assets.txt
-          [ "$missing" = 0 ]
 
           if find public/assets -maxdepth 1 -type f -name '*.js' | grep -q .; then
             echo 'Unexpected legacy JS assets found:'
@@ -50,12 +54,12 @@ jobs:
             exit 1
           fi
 
-      - name: Commit restored assets
+      - name: Commit restored desktop assets
         run: |
           set -euo pipefail
-          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then echo 'Nothing to restore'; exit 0; fi
+          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then echo 'Already restored'; exit 0; fi
           git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -- public/assets
-          git commit -m 'fix: restore referenced mobile assets'
+          git commit -m 'fix: restore known-good desktop assets'
           git push origin HEAD:migration-next-ssr
