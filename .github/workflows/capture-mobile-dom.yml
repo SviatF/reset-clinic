@@ -19,6 +19,8 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare
+        id: prepare
+        continue-on-error: true
         run: |
           set -euo pipefail
           python3 -m pip install --disable-pip-version-check -q gdown
@@ -26,12 +28,16 @@ jobs:
           mkdir -p /tmp/reset-wp/site /tmp/mobile/pages /tmp/mobile/resources /tmp/mobile/out
 
       - name: Restore source locally
+        id: restore
+        continue-on-error: true
         run: |
           set -euo pipefail
+          exec > >(tee /tmp/mobile-restore.log) 2>&1
           gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-wp/source.zip
           unzip -q /tmp/reset-wp/source.zip -d /tmp/reset-wp/site
           SQL=$(find /tmp/reset-wp/site/dup-installer -name 'dup-database*.sql' | head -1)
-          docker network create reset-mobile
+          test -n "$SQL"
+          docker network create reset-mobile || true
           docker run -d --name reset-mobile-db --network reset-mobile -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
           for i in $(seq 1 90); do docker exec reset-mobile-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
           docker exec -i reset-mobile-db mariadb -uroot -proot wordpress < "$SQL"
@@ -45,10 +51,14 @@ jobs:
           chmod -R a+rX /tmp/reset-wp/site
           docker run -d --name reset-mobile-wp --network reset-mobile -p 8080:80 -v /tmp/reset-wp/site:/var/www/html wordpress:php8.2-apache
           for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true); [ "$code" = 200 ] && break; sleep 2; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/)" = 200
 
       - name: Configure exact source renderer
+        id: configure
+        continue-on-error: true
         run: |
           set -euo pipefail
+          exec > >(tee /tmp/mobile-configure.log) 2>&1
           CLI="docker run --rm --network reset-mobile -v /tmp/reset-wp/site:/var/www/html -w /var/www/html wordpress:cli-php8.2 wp --allow-root"
           $CLI search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
           $CLI search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
@@ -69,12 +79,14 @@ jobs:
           docker exec reset-mobile-wp a2enmod rewrite || true
           docker exec reset-mobile-wp sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf; apachectl graceful" || true
           sleep 3
-          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do printf '%s ' "$r"; curl -s -o /dev/null -w '%{http_code}\n' "http://127.0.0.1:8080$r"; done
+          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r"); echo "$r $code"; [ "$code" = 200 ]; done
 
       - name: Capture mobile post-JS DOM and resources
         id: render
+        continue-on-error: true
         run: |
           set -euo pipefail
+          exec > >(tee /tmp/mobile-render.log) 2>&1
           CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
           cat > mobile-capture.mjs <<'JS'
           import fs from 'fs'; import crypto from 'crypto'; import {chromium} from 'playwright-core';
@@ -94,6 +106,7 @@ jobs:
           for(let i=0;i<routes.length;i++){
             const route=routes[i], id=`${String(i+1).padStart(2,'0')}-${names[i]}`;
             const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});
+            console.log(route,res?.status());
             if(!res||res.status()!==200)throw new Error(`${route} ${res?.status()}`);
             await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0)});
             await page.waitForTimeout(1000);
@@ -108,19 +121,24 @@ jobs:
           JS
           CHROME="$CHROME" node ./mobile-capture.mjs
           tar -czf /tmp/mobile/out/mobile-render-source.tar.gz -C /tmp/mobile pages resources manifest.json
-          cat /tmp/mobile/manifest.json | head -120
 
-      - name: Persist capture run id
+      - name: Persist capture diagnostics
         if: always()
         env:
           RUN_ID: ${{ github.run_id }}
+          PREPARE: ${{ steps.prepare.outcome }}
+          RESTORE: ${{ steps.restore.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          RENDER: ${{ steps.render.outcome }}
         run: |
           python3 - <<'PY'
           import json,os
           from pathlib import Path
-          d={'run_id':int(os.environ['RUN_ID'])}
+          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['PREPARE','RESTORE','CONFIGURE','RENDER']}}
           p=Path('/tmp/mobile/manifest.json')
           if p.exists(): d['pages']=json.loads(p.read_text()).get('pages',[])
+          for n in ['restore','configure','render']:
+              q=Path('/tmp/mobile-'+n+'.log'); d[n+'_log']=q.read_text(errors='ignore')[-12000:] if q.exists() else ''
           Path('mobile-capture-report.json').write_text(json.dumps(d,indent=2))
           PY
           git config user.name 'RESET Capture Bot'; git config user.email 'actions@users.noreply.github.com'
@@ -136,3 +154,7 @@ jobs:
           path: /tmp/mobile/out/mobile-render-source.tar.gz
           compression-level: 0
           retention-days: 2
+
+      - name: Enforce capture
+        if: steps.prepare.outcome != 'success' || steps.restore.outcome != 'success' || steps.configure.outcome != 'success' || steps.render.outcome != 'success'
+        run: exit 1
