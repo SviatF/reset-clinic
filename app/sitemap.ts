@@ -17,12 +17,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const posts = await getPublishedPosts(1000);
-  const blog: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${SITE_URL}/blog/${post.slug}/`,
-    lastModified: new Date(post.updated_at),
-    changeFrequency: "monthly",
-    priority: 0.7,
-  }));
+  const blog: MetadataRoute.Sitemap = posts
+    .filter((post) => post.indexable)
+    .map((post) => ({
+      url: `${SITE_URL}/blog/${post.slug}/`,
+      lastModified: new Date(post.updated_at),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    }));
 
   return [...base, ...blog];
 }
