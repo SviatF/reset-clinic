@@ -1,0 +1,269 @@
+/* Page-specific visual polish for the first dermatology pass.
+   SEO content, headings, schema and link graph stay untouched. */
+
+/* Exact hub selector: /dermatology/ owns dermatologist-lviv as a direct child. */
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero{
+  padding-top:24px;
+  padding-bottom:54px;
+  background:#f6f6ee;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-breadcrumbs{
+  margin-bottom:24px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-grid{
+  grid-template-columns:minmax(0,1.08fr) minmax(390px,.92fr);
+  gap:46px;
+  align-items:stretch;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:38px 0 30px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero h1{
+  max-width:700px;
+  font-size:clamp(54px,5.6vw,80px);
+  line-height:.92;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-lead{
+  max-width:650px;
+  margin-top:26px;
+  font-size:15px;
+  line-height:1.72;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual,
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual>img{
+  height:500px;
+  min-height:500px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual{
+  border-radius:24px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-process-strip{
+  background:#fbfaf6;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-process-grid>div{
+  padding-top:26px;
+  padding-bottom:28px;
+}
+
+/* Turn dermatology from article+sidebar into a proper service hub. */
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-content-grid{
+  grid-template-columns:1fr;
+  gap:46px;
+  padding-top:72px;
+  padding-bottom:76px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-article{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section{
+  display:block;
+  min-height:300px;
+  margin:0;
+  padding:26px 26px 30px;
+  border:1px solid rgba(41,32,27,.10);
+  border-radius:22px;
+  background:#fbfaf6;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section-kicker{
+  margin-bottom:42px;
+  padding:0;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section h2{
+  margin-bottom:18px;
+  font-size:clamp(32px,3vw,43px);
+  line-height:1;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section p,
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section li{
+  font-size:13px;
+  line-height:1.72;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section ul{
+  grid-template-columns:1fr;
+  margin-top:18px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section li{
+  padding-top:10px;
+  padding-bottom:10px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section li:before{
+  top:20px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-side{
+  display:grid;
+  grid-template-columns:1.35fr 1fr 1fr 1fr;
+  gap:12px;
+  align-items:stretch;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-related-card{
+  border-radius:20px;
+  padding:22px;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-related-primary{
+  position:static;
+  background:#e7dfd1;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-related-card>div a{
+  padding:12px 0;
+}
+.seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-contact-card{
+  min-height:100%;
+}
+
+/* Exact treatment selector: the acne landing links to the dedicated post-acne entity. */
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero{
+  padding-top:22px;
+  padding-bottom:58px;
+  background:linear-gradient(180deg,#f6f6ee 0%,#f1eee4 100%);
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-breadcrumbs{
+  margin-bottom:22px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-grid{
+  grid-template-columns:minmax(0,1.03fr) minmax(400px,.97fr);
+  gap:44px;
+  align-items:stretch;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-copy{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:34px 0 26px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero h1{
+  max-width:720px;
+  font-size:clamp(52px,5.4vw,78px);
+  line-height:.93;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-lead{
+  max-width:660px;
+  font-size:15px;
+  line-height:1.72;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual{
+  height:510px;
+  min-height:510px;
+  border-radius:24px;
+  background:url('/assets/desktop-d861343ce904ae1965e8494dfe69c5f1abaa95ab.jpg') center 16%/cover no-repeat;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual>img{
+  width:100%;
+  height:510px;
+  opacity:0;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-caption{
+  left:24px;
+  right:24px;
+  bottom:24px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-process-grid>div{
+  padding-top:25px;
+  padding-bottom:27px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-content-grid{
+  grid-template-columns:minmax(0,1fr) 292px;
+  gap:58px;
+  padding-top:70px;
+  padding-bottom:74px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-section{
+  grid-template-columns:58px minmax(0,1fr);
+  gap:22px;
+  margin-bottom:44px;
+  padding-bottom:44px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-section h2{
+  font-size:clamp(35px,3.25vw,46px);
+  line-height:1.02;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-related-card{
+  border-radius:18px;
+  padding:19px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-related-primary{
+  top:96px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-doctors-band{
+  padding-top:68px;
+  padding-bottom:74px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-doctor-card{
+  border-radius:18px;
+}
+.seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-faq{
+  padding-top:70px;
+  padding-bottom:70px;
+}
+
+@media(max-width:1100px){
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-article{
+    grid-template-columns:1fr 1fr;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-side{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:900px){
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-grid,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-grid{
+    grid-template-columns:1fr;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual,
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual>img,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual>img{
+    height:430px;
+    min-height:430px;
+  }
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-content-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:767px){
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero{
+    padding-top:14px;
+    padding-bottom:38px;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-copy,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-copy{
+    padding:10px 0 0;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero h1,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero h1{
+    font-size:clamp(39px,12vw,54px);
+    line-height:.96;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual,
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-hero-visual>img,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual,
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-hero-visual>img{
+    height:345px;
+    min-height:345px;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-article{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section{
+    min-height:0;
+    padding:22px 20px 24px;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-section-kicker{
+    margin-bottom:24px;
+  }
+  .seo-site:has(.seo-related-primary a[href="/dermatology/dermatologist-lviv/"]) .seo-side{
+    grid-template-columns:1fr;
+  }
+  .seo-site:has(.seo-related-card a[href="/skin-problems/post-acne/"]) .seo-section{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+}
