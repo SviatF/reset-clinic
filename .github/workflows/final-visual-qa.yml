@@ -1,0 +1,130 @@
+name: RESET final visual QA
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  visual-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration-next-ssr
+
+      - name: Install and build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+          npm install --no-save playwright-core@1.55.0
+          python3 -m pip install --disable-pip-version-check -q pillow
+
+      - name: Start Next.js
+        run: |
+          set -euo pipefail
+          nohup npm start -- -p 3000 > /tmp/reset-next.log 2>&1 &
+          echo $! > /tmp/reset-next.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true)
+            [ "$code" = 200 ] && break
+            sleep 1
+          done
+          curl -I http://127.0.0.1:3000/
+
+      - name: Download WordPress pixel references
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ref /tmp/ref-screens /tmp/next-screens /tmp/diff
+          gh run download 32348391441 --repo "$GITHUB_REPOSITORY" --name reference-screens-v3 --dir /tmp/ref
+          tar -xzf /tmp/ref/reference-screens-v3.tar.gz -C /tmp/ref-screens
+          ls -lh /tmp/ref-screens | head
+
+      - name: Capture Next.js pages
+        run: |
+          set -euo pipefail
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          cat > /tmp/capture.mjs <<'JS'
+          import {chromium} from 'playwright-core';
+          const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
+          const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
+          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
+          for (const cfg of [{d:'desktop',w:1440,h:1000,m:false},{d:'mobile',w:390,h:844,m:true}]) {
+            const ctx=await browser.newContext({viewport:{width:cfg.w,height:cfg.h},isMobile:cfg.m,hasTouch:cfg.m});
+            const page=await ctx.newPage();
+            for(let i=0;i<routes.length;i++){
+              const res=await page.goto('http://127.0.0.1:3000'+routes[i],{waitUntil:'networkidle',timeout:60000});
+              if(!res || res.status()!==200) throw new Error(`${routes[i]} returned ${res?.status()}`);
+              await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,80));}window.scrollTo(0,0)});
+              await page.waitForTimeout(700);
+              const text=(await page.locator('body').innerText()).trim();
+              if(text.length<20) throw new Error(`${routes[i]} looks blank`);
+              const id=`${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`;
+              await page.screenshot({path:'/tmp/next-screens/'+id,fullPage:true});
+            }
+            await ctx.close();
+          }
+          await browser.close();
+          JS
+          CHROME="$CHROME" node /tmp/capture.mjs
+
+      - name: Compare visual output
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from PIL import Image, ImageChops, ImageStat, ImageDraw
+          from pathlib import Path
+          import json, math
+          ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff')
+          out.mkdir(exist_ok=True)
+          rows=[]
+          for nf in sorted(nxt.glob('*.png')):
+              rf=ref/nf.name
+              if not rf.exists():
+                  rows.append({'file':nf.name,'error':'reference missing'}); continue
+              a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB')
+              size_match=a.size==b.size
+              W=max(a.width,b.width); H=max(a.height,b.height)
+              ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0))
+              diff=ImageChops.difference(ac,bc)
+              stat=ImageStat.Stat(diff)
+              mae=sum(stat.mean)/3/255
+              rms=math.sqrt(sum(x*x for x in stat.rms)/3)/255
+              changed=sum(1 for px in diff.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18)
+              total=max(1,(W//4)*(H//4)); changed_ratio=changed/total
+              diff.save(out/nf.name)
+              rows.append({'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':size_match,'mae':round(mae,5),'rms':round(rms,5),'changed_ratio':round(changed_ratio,5)})
+          Path('/tmp/visual-report.json').write_text(json.dumps(rows,indent=2))
+          print(json.dumps(rows,indent=2))
+          # Hard safety gates only: routes must not collapse or diverge massively in document height.
+          bad=[]
+          for r in rows:
+              if 'error' in r: bad.append(r)
+              elif r['reference_size'][0] != r['next_size'][0]: bad.append(r)
+              elif abs(r['reference_size'][1]-r['next_size'][1]) > max(800, r['reference_size'][1]*0.22): bad.append(r)
+          if bad:
+              print('VISUAL QA HARD FAIL:',json.dumps(bad,indent=2)); raise SystemExit(1)
+          PY
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-visual-qa
+          path: |
+            /tmp/visual-report.json
+            /tmp/next-screens
+            /tmp/diff
+            /tmp/reset-next.log
+          compression-level: 0
+          retention-days: 2
