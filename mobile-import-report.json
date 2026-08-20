@@ -1,0 +1,14 @@
+{
+  "routes": 8,
+  "assets_copied": 132,
+  "reference_heights": {
+    "/": 5564,
+    "/price/": 3240,
+    "/doctors/": 18695,
+    "/contacts/": 2170,
+    "/about/": 10923,
+    "/services/": 3859,
+    "/thank-you/": 844,
+    "/booking/": 1270
+  }
+}
