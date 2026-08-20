@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PublicSiteFooter, PublicSiteHeader } from "../../../components/PublicSiteChrome";
 import { getPublishedPost } from "../../../lib/blog";
 import { blogCategoryPath, getBlogCategory } from "../../../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, jsonLd } from "../../../lib/seo";
@@ -78,22 +79,26 @@ export default async function BlogArticlePage({ params }: Props) {
   const paragraphs = post.body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
 
   return (
-    <main className="reset-blog-article">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(articleSchema) }} />
-      <div className="reset-blog-eyebrow">
-        <Link href="/blog/">Блог</Link>
-        {category && categoryPath ? <><span> · </span><Link href={categoryPath}>{category.name}</Link></> : null}
-      </div>
-      <h1>{post.title}</h1>
-      {post.excerpt ? <p className="intro">{post.excerpt}</p> : null}
-      <div className="reset-blog-author">
-        <strong>{post.author_name || SITE_NAME}</strong>
-        {post.reviewer_name ? <><br /><span>Медичний рецензент: {post.reviewer_name}{post.reviewer_title ? ` · ${post.reviewer_title}` : ""}</span></> : null}
-        <br /><span className="reset-blog-meta">Оновлено: {new Date(post.updated_at).toLocaleDateString("uk-UA")}</span>
-      </div>
-      <article className="reset-blog-copy">
-        {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-      </article>
-    </main>
+    <div className="seo-site">
+      <PublicSiteHeader />
+      <main className="reset-blog-article">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(articleSchema) }} />
+        <div className="reset-blog-eyebrow">
+          <Link href="/blog/">Блог</Link>
+          {category && categoryPath ? <><span> · </span><Link href={categoryPath}>{category.name}</Link></> : null}
+        </div>
+        <h1>{post.title}</h1>
+        {post.excerpt ? <p className="intro">{post.excerpt}</p> : null}
+        <div className="reset-blog-author">
+          <strong>{post.author_name || SITE_NAME}</strong>
+          {post.reviewer_name ? <><br /><span>Медичний рецензент: {post.reviewer_name}{post.reviewer_title ? ` · ${post.reviewer_title}` : ""}</span></> : null}
+          <br /><span className="reset-blog-meta">Оновлено: {new Date(post.updated_at).toLocaleDateString("uk-UA")}</span>
+        </div>
+        <article className="reset-blog-copy">
+          {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+        </article>
+      </main>
+      <PublicSiteFooter />
+    </div>
   );
 }
