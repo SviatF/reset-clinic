@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPublishedPosts } from "../lib/blog";
+import { BLOG_CATEGORIES, BLOG_CATEGORY_MIN_INDEXABLE_POSTS, blogCategoryPath } from "../lib/blog-categories";
 import { DOCTORS, doctorPath } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
@@ -33,6 +34,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const posts = await getPublishedPosts(1000);
+
+  const categories: MetadataRoute.Sitemap = BLOG_CATEGORIES.flatMap((category) => {
+    const categoryPosts = posts.filter(
+      (post) => post.indexable && post.category === category.slug,
+    );
+    if (categoryPosts.length < BLOG_CATEGORY_MIN_INDEXABLE_POSTS) return [];
+    const newestUpdate = categoryPosts.reduce(
+      (latest, post) => Math.max(latest, new Date(post.updated_at).getTime()),
+      lastModified.getTime(),
+    );
+    return [{
+      url: `${SITE_URL}${blogCategoryPath(category.slug)}`,
+      lastModified: new Date(newestUpdate),
+      changeFrequency: "weekly" as const,
+      priority: 0.72,
+    }];
+  });
+
   const blog: MetadataRoute.Sitemap = posts
     .filter((post) => post.indexable)
     .map((post) => ({
@@ -42,5 +61,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-  return [...base, ...seo, ...doctors, ...blog];
+  return [...base, ...seo, ...doctors, ...categories, ...blog];
 }
