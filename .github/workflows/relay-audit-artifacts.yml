@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gdown --fuzzy 'https://drive.google.com/file/d/1zBdstg-rz6ntemz5RML2OPgraHquJV3L/view?usp=sharing' -O work/source.zip
+          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O work/source.zip
           ls -lh work/source.zip
           python3 - <<'PY'
           import zipfile
