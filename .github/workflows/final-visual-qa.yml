@@ -1,4 +1,4 @@
-name: RESET final visual QA
+name: RESET mobile source capture
 
 on:
   push:
@@ -7,136 +7,147 @@ on:
 
 permissions:
   contents: write
-  actions: read
 
 jobs:
-  visual-qa:
+  capture:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Install and build
-        id: build
+      - name: Prepare tools
+        id: prepare
         continue-on-error: true
         run: |
-          npm ci && npm run build && npm install --no-save playwright-core@1.55.0 && python3 -m pip install --disable-pip-version-check -q pillow
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check -q gdown
+          npm install --no-save playwright-core@1.55.0
+          mkdir -p /tmp/reset-wp/site /tmp/mobile/pages /tmp/mobile/out
 
-      - name: Start Next.js
-        id: start
+      - name: Restore WordPress reference locally
+        id: restore
         continue-on-error: true
         run: |
-          nohup npm start -- -p 3000 > /tmp/reset-next.log 2>&1 &
-          ok=0
-          for i in $(seq 1 60); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true); [ "$code" = 200 ] && { ok=1; break; }; sleep 1; done
-          [ "$ok" = 1 ] || { cat /tmp/reset-next.log; exit 1; }
+          set -euo pipefail
+          exec > >(tee /tmp/restore.log) 2>&1
+          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-wp/source.zip
+          unzip -q /tmp/reset-wp/source.zip -d /tmp/reset-wp/site
+          SQL=$(find /tmp/reset-wp/site/dup-installer -name 'dup-database*.sql' | head -1)
+          test -n "$SQL"
+          docker network create reset-mobile || true
+          docker run -d --name reset-mobile-db --network reset-mobile -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
+          for i in $(seq 1 90); do docker exec reset-mobile-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
+          docker exec -i reset-mobile-db mariadb -uroot -proot wordpress < "$SQL"
+          cat > /tmp/reset-wp/site/wp-config.php <<'PHP'
+          <?php
+          define('DB_NAME','wordpress'); define('DB_USER','root'); define('DB_PASSWORD','root'); define('DB_HOST','reset-mobile-db:3306');
+          define('DB_CHARSET','utf8mb4'); define('DB_COLLATE',''); define('WP_HOME','http://127.0.0.1:8080'); define('WP_SITEURL','http://127.0.0.1:8080'); define('WP_DEBUG',false);
+          define('AUTH_KEY','x');define('SECURE_AUTH_KEY','x');define('LOGGED_IN_KEY','x');define('NONCE_KEY','x');define('AUTH_SALT','x');define('SECURE_AUTH_SALT','x');define('LOGGED_IN_SALT','x');define('NONCE_SALT','x');
+          $table_prefix='wp_'; if(!defined('ABSPATH')) define('ABSPATH',__DIR__.'/'); require_once ABSPATH.'wp-settings.php';
+          PHP
+          chmod -R a+rX /tmp/reset-wp/site
+          docker run -d --name reset-mobile-wp --network reset-mobile -p 8080:80 -v /tmp/reset-wp/site:/var/www/html wordpress:php8.2-apache
+          for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true); [ "$code" = 200 ] && break; sleep 2; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/)" = 200
 
-      - name: Download exact references
-        id: reference
+      - name: Configure reference
+        id: configure
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p /tmp/ref /tmp/ref-screens /tmp/next-screens /tmp/diff
-          gh run download 32348391441 --repo "$GITHUB_REPOSITORY" --name reference-screens-v3 --dir /tmp/ref
-          tar -xzf /tmp/ref/reference-screens-v3.tar.gz -C /tmp/ref-screens
-          test $(find /tmp/ref-screens -name '*.png' | wc -l) -ge 16
+          set -euo pipefail
+          exec > >(tee /tmp/configure.log) 2>&1
+          CLI="docker run --rm --network reset-mobile -v /tmp/reset-wp/site:/var/www/html -w /var/www/html wordpress:cli-php8.2 wp --allow-root"
+          $CLI search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
+          $CLI search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
+          $CLI plugin deactivate litespeed-cache hostinger hostinger-ai-assistant hostinger-easy-onboarding hostinger-reach wp-smush-pro || true
+          $CLI rewrite structure '/%postname%/' --hard
+          $CLI rewrite flush --hard
+          $CLI elementor flush-css || true
+          cat > /tmp/reset-wp/site/.htaccess <<'HT'
+          <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.php$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . /index.php [L]
+          </IfModule>
+          HT
+          docker exec reset-mobile-wp a2enmod rewrite || true
+          docker exec reset-mobile-wp sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf; apachectl graceful" || true
+          sleep 3
+          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r"); echo "$r $code"; [ "$code" = 200 ]; done
 
-      - name: Capture all Next.js routes
-        id: capture
+      - name: Capture post-JS mobile HTML
+        id: render
         continue-on-error: true
         run: |
-          CHROME=$(which google-chrome-stable || which google-chrome || which chromium || true)
-          echo "chrome=$CHROME" > /tmp/capture.log
-          cat > qa-capture.mjs <<'JS'
-          import {chromium} from 'playwright-core';
+          set -euo pipefail
+          exec > >(tee /tmp/render.log) 2>&1
+          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
+          cat > mobile-capture.mjs <<'JS'
+          import fs from 'fs'; import { chromium } from 'playwright-core';
+          const base='http://127.0.0.1:8080';
           const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
           const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
           const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
-          for(const cfg of [{d:'desktop',w:1440,h:1000,m:false},{d:'mobile',w:390,h:844,m:true}]){
-            const ctx=await browser.newContext({viewport:{width:cfg.w,height:cfg.h},isMobile:cfg.m,hasTouch:cfg.m}); const page=await ctx.newPage();
-            for(let i=0;i<routes.length;i++){
-              console.log('capture',cfg.d,routes[i]);
-              const res=await page.goto('http://127.0.0.1:3000'+routes[i],{waitUntil:'domcontentloaded',timeout:45000});
-              console.log('status',res?.status());
-              if(!res||res.status()!==200) throw new Error(`${routes[i]} returned ${res?.status()}`);
-              await page.waitForTimeout(1000);
-              await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,60));}window.scrollTo(0,0)}); await page.waitForTimeout(400);
-              const text=(await page.locator('body').innerText()).trim(); console.log('text',text.length,'height',await page.evaluate(()=>document.documentElement.scrollHeight));
-              if(text.length<20) throw new Error(`${routes[i]} blank`);
-              await page.screenshot({path:`/tmp/next-screens/${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`,fullPage:true});
-            }
-            await ctx.close();
+          const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+          const page=await ctx.newPage(); const pages=[];
+          for(let i=0;i<routes.length;i++){
+            const route=routes[i], id=`${String(i+1).padStart(2,'0')}-${names[i]}`;
+            const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});
+            if(!res||res.status()!==200) throw new Error(`${route} ${res?.status()}`);
+            await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0)});
+            await page.waitForTimeout(1200);
+            await page.evaluate(()=>document.querySelectorAll('.elementor-invisible').forEach(el=>el.classList.remove('elementor-invisible')));
+            const info=await page.evaluate(()=>({title:document.title,bodyClass:document.body.className,height:document.documentElement.scrollHeight,html:document.body.innerHTML}));
+            fs.writeFileSync(`/tmp/mobile/pages/${id}.json`,JSON.stringify({route,...info}));
+            pages.push({id,route,status:res.status(),title:info.title,bodyClass:info.bodyClass,height:info.height});
           }
-          await browser.close();
+          fs.writeFileSync('/tmp/mobile/manifest.json',JSON.stringify({pages},null,2));
+          await ctx.close(); await browser.close();
           JS
-          if [ -z "$CHROME" ]; then echo 'No chrome binary' >> /tmp/capture.log; exit 1; fi
-          CHROME="$CHROME" node ./qa-capture.mjs >> /tmp/capture.log 2>&1
-          code=$?
-          cat /tmp/capture.log
-          [ "$code" = 0 ] || exit "$code"
-          test $(find /tmp/next-screens -name '*.png' | wc -l) -eq 16
+          CHROME="$CHROME" node ./mobile-capture.mjs
+          tar -czf /tmp/mobile/out/mobile-render-source.tar.gz -C /tmp/mobile pages manifest.json
+          cat /tmp/mobile/manifest.json
 
-      - name: Compare against exact reference
-        id: compare
-        continue-on-error: true
-        run: |
-          python3 - <<'PY'
-          from PIL import Image,ImageChops,ImageStat
-          from pathlib import Path
-          import json,math
-          ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff'); out.mkdir(exist_ok=True)
-          rows=[]; bad=[]
-          for nf in sorted(nxt.glob('*.png')):
-              rf=ref/nf.name
-              if not rf.exists(): rows.append({'file':nf.name,'error':'reference missing'}); bad.append(rows[-1]); continue
-              a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB'); W=max(a.width,b.width); H=max(a.height,b.height)
-              ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0)); d=ImageChops.difference(ac,bc); s=ImageStat.Stat(d)
-              changed=sum(1 for px in d.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18); total=max(1,(W//4)*(H//4))
-              row={'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'mae':round(sum(s.mean)/3/255,5),'rms':round(math.sqrt(sum(x*x for x in s.rms)/3)/255,5),'changed_ratio':round(changed/total,5)}
-              rows.append(row); d.save(out/nf.name)
-              if a.width!=b.width or abs(a.height-b.height)>max(800,a.height*.22): bad.append(row)
-          result={'passed':len(rows)==16 and not bad,'screens_compared':len(rows),'hard_failures':bad,'screens':rows}; Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2)); print(json.dumps(result,indent=2)); raise SystemExit(0 if result['passed'] else 1)
-          PY
-
-      - name: Persist diagnostic report
+      - name: Persist capture report
         if: always()
         env:
-          BUILD: ${{ steps.build.outcome }}
-          START: ${{ steps.start.outcome }}
-          REFERENCE: ${{ steps.reference.outcome }}
-          CAPTURE: ${{ steps.capture.outcome }}
-          COMPARE: ${{ steps.compare.outcome }}
           RUN_ID: ${{ github.run_id }}
+          PREPARE: ${{ steps.prepare.outcome }}
+          RESTORE: ${{ steps.restore.outcome }}
+          CONFIGURE: ${{ steps.configure.outcome }}
+          RENDER: ${{ steps.render.outcome }}
         run: |
           python3 - <<'PY'
           import json,os
           from pathlib import Path
-          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['BUILD','START','REFERENCE','CAPTURE','COMPARE']}}
-          p=Path('/tmp/visual-report.json'); d['visual']=json.loads(p.read_text()) if p.exists() else {'passed':False,'error':'visual report was not generated'}
-          c=Path('/tmp/capture.log'); d['capture_log']=c.read_text(errors='ignore')[-12000:] if c.exists() else ''
-          s=Path('/tmp/reset-next.log'); d['server_log']=s.read_text(errors='ignore')[-4000:] if s.exists() else ''
-          Path('visual-qa-report.json').write_text(json.dumps(d,indent=2))
+          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['PREPARE','RESTORE','CONFIGURE','RENDER']}}
+          p=Path('/tmp/mobile/manifest.json')
+          if p.exists(): d['pages']=json.loads(p.read_text()).get('pages',[])
+          for name in ['restore','configure','render']:
+              q=Path('/tmp/'+name+'.log'); d[name+'_log']=q.read_text(errors='ignore')[-10000:] if q.exists() else ''
+          Path('mobile-capture-report.json').write_text(json.dumps(d,indent=2))
           PY
-          git config user.name 'RESET QA Bot'; git config user.email 'actions@users.noreply.github.com'
-          git add -- visual-qa-report.json; git commit -m 'test: record final visual QA' || true; git push origin HEAD:migration-next-ssr
+          git config user.name 'RESET Capture Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- mobile-capture-report.json
+          git commit -m 'test: record mobile source capture' || true
+          git push origin HEAD:migration-next-ssr
 
-      - name: Upload QA screenshots
+      - name: Upload mobile source
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: final-visual-qa
-          path: |
-            /tmp/next-screens
-            /tmp/diff
-            /tmp/visual-report.json
-            /tmp/capture.log
+          name: mobile-render-source
+          path: /tmp/mobile/out/mobile-render-source.tar.gz
           compression-level: 0
           retention-days: 2
 
-      - name: Enforce final QA
-        if: steps.build.outcome != 'success' || steps.start.outcome != 'success' || steps.reference.outcome != 'success' || steps.capture.outcome != 'success' || steps.compare.outcome != 'success'
+      - name: Enforce capture
+        if: steps.prepare.outcome != 'success' || steps.restore.outcome != 'success' || steps.configure.outcome != 'success' || steps.render.outcome != 'success'
         run: exit 1
