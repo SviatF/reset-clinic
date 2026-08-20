@@ -6,6 +6,7 @@ import LegacyPage, {
 } from "../../components/LegacyPage";
 import pages from "../../lib/pages.json";
 import mobilePages from "../../lib/mobile-pages.json";
+import { buildMetadata, buildPageJsonLd, jsonLd } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const key = route(slug);
   const data = (pages as Record<string, LegacyPageData>)[key];
-  return data ? { title: data.title } : { title: "Reset Clinic" };
+  return data ? buildMetadata(key, data.title) : { title: "RESET Clinic" };
 }
 
 export default async function Page({ params }: Props) {
@@ -30,5 +31,18 @@ export default async function Page({ params }: Props) {
 
   if (!data) notFound();
 
-  return <LegacyPage data={data} mobile={mobile} />;
+  const schemas = buildPageJsonLd(key);
+
+  return (
+    <>
+      {schemas.map((schema, index) => (
+        <script
+          key={`jsonld-${index}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(schema) }}
+        />
+      ))}
+      <LegacyPage data={data} mobile={mobile} />
+    </>
+  );
 }
