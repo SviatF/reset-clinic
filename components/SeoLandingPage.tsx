@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { jsonLd } from "../lib/seo";
+import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 import { buildSeoLandingJsonLd, type SeoLanding } from "../lib/seo-pages";
 
 const MAIN_NAV = [
@@ -12,8 +13,18 @@ const MAIN_NAV = [
   ["Ціни", "/price/"],
 ] as const;
 
+function directChildren(landing: SeoLanding) {
+  if (landing.type !== "category") return [];
+  return ALL_SEO_LANDINGS.filter((candidate) => {
+    if (candidate.path === landing.path || !candidate.path.startsWith(landing.path)) return false;
+    const remainder = candidate.path.slice(landing.path.length).replace(/\/$/, "");
+    return remainder.length > 0 && !remainder.includes("/");
+  });
+}
+
 export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
   const schema = buildSeoLandingJsonLd(landing);
+  const children = directChildren(landing);
 
   return (
     <main className="seo-site">
@@ -83,6 +94,16 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
         </article>
 
         <aside className="seo-side">
+          {children.length ? (
+            <section className="seo-related-card">
+              <p>У цьому розділі</p>
+              <div>
+                {children.map((child) => (
+                  <Link href={child.path} key={child.path}>{child.breadcrumbs.at(-1)?.name ?? child.h1}<span>↗</span></Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
           {landing.related.map((group) => (
             <section className="seo-related-card" key={group.title}>
               <p>{group.title}</p>
