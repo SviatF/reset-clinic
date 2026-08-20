@@ -34,6 +34,22 @@ function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
   return params.get(key) ?? sessionStorage.getItem(`reset_${key}`) ?? undefined;
 }
 
+function isElementorPopupTrigger(element: HTMLElement) {
+  if (element.classList.contains("reset-menu-trigger")) return true;
+  if (element.classList.contains("elementor-menu-toggle")) return true;
+  if (!(element instanceof HTMLAnchorElement)) return false;
+
+  const rawHref = element.getAttribute("href") || "";
+  let href = rawHref;
+  try {
+    href = decodeURIComponent(rawHref);
+  } catch {
+    href = rawHref;
+  }
+
+  return href.includes("elementor-action:action=popup:open");
+}
+
 export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
   useLayoutEffect(() => {
     const clean: Array<() => void> = [];
@@ -117,6 +133,7 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
           fbclid: trackingValue("fbclid"),
           ttclid: trackingValue("ttclid"),
           startedAt,
+          website: typeof fields.website === "string" ? fields.website : undefined,
           fields,
         };
 
@@ -163,20 +180,59 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
     });
 
     const overlay = document.getElementById("reset-menu-overlay");
-    const open = (event: Event) => {
-      event.preventDefault();
-      overlay?.classList.add("is-open");
-    };
-    const close = () => overlay?.classList.remove("is-open");
+    const closeButton = document.getElementById("reset-menu-close");
+    const triggers = active
+      ? [...active.querySelectorAll<HTMLElement>(".reset-menu-trigger, .elementor-menu-toggle, a[href*='elementor-action']")]
+          .filter(isElementorPopupTrigger)
+      : [];
+    const previousOverflow = document.body.style.overflow;
 
-    active?.querySelectorAll<HTMLElement>(".reset-menu-trigger").forEach((item) => {
-      item.addEventListener("click", open);
-      clean.push(() => item.removeEventListener("click", open));
+    const setExpanded = (expanded: boolean) => {
+      triggers.forEach((trigger) => trigger.setAttribute("aria-expanded", expanded ? "true" : "false"));
+    };
+
+    const open = (event?: Event) => {
+      event?.preventDefault();
+      if (!overlay) return;
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      setExpanded(true);
+      closeButton?.focus({ preventScroll: true });
+    };
+
+    const close = () => {
+      overlay?.classList.remove("is-open");
+      overlay?.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = previousOverflow;
+      setExpanded(false);
+    };
+
+    triggers.forEach((item) => {
+      const click = (event: Event) => open(event);
+      const keydown = (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") open(event);
+      };
+      item.addEventListener("click", click);
+      item.addEventListener("keydown", keydown);
+      clean.push(() => item.removeEventListener("click", click));
+      clean.push(() => item.removeEventListener("keydown", keydown));
     });
 
-    const button = document.getElementById("reset-menu-close");
-    button?.addEventListener("click", close);
-    clean.push(() => button?.removeEventListener("click", close));
+    const closeClick = () => close();
+    closeButton?.addEventListener("click", closeClick);
+    clean.push(() => closeButton?.removeEventListener("click", closeClick));
+
+    const overlayClick = (event: MouseEvent) => {
+      if (event.target === overlay) close();
+    };
+    overlay?.addEventListener("click", overlayClick);
+    clean.push(() => overlay?.removeEventListener("click", overlayClick));
+
+    overlay?.querySelectorAll<HTMLAnchorElement>("a[href]").forEach((link) => {
+      link.addEventListener("click", close);
+      clean.push(() => link.removeEventListener("click", close));
+    });
 
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
@@ -186,6 +242,7 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
 
     return () => {
       clean.forEach((fn) => fn());
+      document.body.style.overflow = previousOverflow;
       document.body.className = previousBodyClass;
     };
   }, [bodyClass]);
