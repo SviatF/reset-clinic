@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../lib/admin-auth";
 import { getGoogleAccessToken } from "../../../../lib/google-service-account";
+import { SITE_URL } from "../../../../lib/seo";
 import { supabaseRest } from "../../../../lib/supabase";
 
 const scopes = [
@@ -81,6 +82,67 @@ async function syncSearchConsole(googleToken: string, adminToken: string) {
   return rows.length;
 }
 
+async function syncIndexing(googleToken: string, adminToken: string) {
+  const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL;
+  if (!siteUrl) return 0;
+
+  const pagesResult = await supabaseRest<Array<{ id: string; path: string; indexable: boolean }>>(
+    "seo_pages?select=id,path,indexable&status=eq.published&indexable=eq.true&order=path.asc&limit=100",
+    { method: "GET" },
+    { accessToken: adminToken },
+  );
+  const pages = pagesResult.data ?? [];
+  let processed = 0;
+
+  for (const page of pages) {
+    const inspectionUrl = new URL(page.path, SITE_URL).toString();
+    const response = await fetch("https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${googleToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ inspectionUrl, siteUrl, languageCode: "uk-UA" }),
+      cache: "no-store",
+    });
+    if (!response.ok) continue;
+
+    const data = (await response.json()) as {
+      inspectionResult?: {
+        indexStatusResult?: {
+          verdict?: string;
+          coverageState?: string;
+          indexingState?: string;
+          pageFetchState?: string;
+          robotsTxtState?: string;
+          lastCrawlTime?: string;
+        };
+      };
+    };
+    const status = data.inspectionResult?.indexStatusResult;
+    if (!status) continue;
+
+    const label = [status.verdict, status.coverageState, status.indexingState]
+      .filter(Boolean)
+      .join(" · ")
+      .slice(0, 500);
+
+    await supabaseRest(
+      `seo_pages?id=eq.${encodeURIComponent(page.id)}`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          indexed_status: label || "UNKNOWN",
+          last_crawled_at: status.lastCrawlTime || null,
+        }),
+      },
+      { accessToken: adminToken },
+    );
+    processed += 1;
+  }
+
+  await log(adminToken, "url_inspection", "success", processed);
+  return processed;
+}
+
 async function syncGa4(googleToken: string, adminToken: string) {
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) {
@@ -145,7 +207,8 @@ export async function POST(request: NextRequest) {
       syncSearchConsole(googleToken, session.accessToken),
       syncGa4(googleToken, session.accessToken),
     ]);
-    return NextResponse.redirect(new URL(`/admin/integrations/?synced=1&gsc=${gsc}&ga4=${ga4}`, request.url), 303);
+    const indexed = await syncIndexing(googleToken, session.accessToken);
+    return NextResponse.redirect(new URL(`/admin/integrations/?synced=1&gsc=${gsc}&ga4=${ga4}&indexed=${indexed}`, request.url), 303);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Google sync failed";
     await log(session.accessToken, "google", "failed", 0, message).catch(() => undefined);
