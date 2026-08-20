@@ -1,0 +1,309 @@
+{
+  "run_id": 32356189611,
+  "stages": {
+    "build": "success",
+    "start": "success",
+    "reference": "success",
+    "capture": "success",
+    "compare": "failure"
+  },
+  "visual": {
+    "passed": false,
+    "screens_compared": 16,
+    "exact_size_matches": 14,
+    "hard_failures": [
+      {
+        "file": "02-price-mobile.png",
+        "reference_size": [
+          390,
+          3240
+        ],
+        "next_size": [
+          390,
+          3239
+        ],
+        "size_match": false,
+        "height_delta": -1,
+        "mae": 0.01916,
+        "rms": 0.06921,
+        "changed_ratio": 0.123
+      },
+      {
+        "file": "03-doctors-mobile.png",
+        "reference_size": [
+          390,
+          18695
+        ],
+        "next_size": [
+          390,
+          18694
+        ],
+        "size_match": false,
+        "height_delta": -1,
+        "mae": 0.01519,
+        "rms": 0.07454,
+        "changed_ratio": 0.05403
+      }
+    ],
+    "screens": [
+      {
+        "file": "01-home-desktop.png",
+        "reference_size": [
+          1440,
+          5179
+        ],
+        "next_size": [
+          1440,
+          5179
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.05674,
+        "rms": 0.13288,
+        "changed_ratio": 0.22311
+      },
+      {
+        "file": "01-home-mobile.png",
+        "reference_size": [
+          390,
+          5564
+        ],
+        "next_size": [
+          390,
+          5564
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.03936,
+        "rms": 0.1278,
+        "changed_ratio": 0.15591
+      },
+      {
+        "file": "02-price-desktop.png",
+        "reference_size": [
+          1440,
+          3154
+        ],
+        "next_size": [
+          1440,
+          3154
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.0322,
+        "rms": 0.09724,
+        "changed_ratio": 0.1389
+      },
+      {
+        "file": "02-price-mobile.png",
+        "reference_size": [
+          390,
+          3240
+        ],
+        "next_size": [
+          390,
+          3239
+        ],
+        "size_match": false,
+        "height_delta": -1,
+        "mae": 0.01916,
+        "rms": 0.06921,
+        "changed_ratio": 0.123
+      },
+      {
+        "file": "03-doctors-desktop.png",
+        "reference_size": [
+          1440,
+          8574
+        ],
+        "next_size": [
+          1440,
+          8574
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.0714,
+        "rms": 0.19852,
+        "changed_ratio": 0.17391
+      },
+      {
+        "file": "03-doctors-mobile.png",
+        "reference_size": [
+          390,
+          18695
+        ],
+        "next_size": [
+          390,
+          18694
+        ],
+        "size_match": false,
+        "height_delta": -1,
+        "mae": 0.01519,
+        "rms": 0.07454,
+        "changed_ratio": 0.05403
+      },
+      {
+        "file": "04-contacts-desktop.png",
+        "reference_size": [
+          1440,
+          1992
+        ],
+        "next_size": [
+          1440,
+          1992
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.23934,
+        "rms": 0.39679,
+        "changed_ratio": 0.49492
+      },
+      {
+        "file": "04-contacts-mobile.png",
+        "reference_size": [
+          390,
+          2170
+        ],
+        "next_size": [
+          390,
+          2170
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.02972,
+        "rms": 0.08849,
+        "changed_ratio": 0.13862
+      },
+      {
+        "file": "05-about-desktop.png",
+        "reference_size": [
+          1440,
+          7486
+        ],
+        "next_size": [
+          1440,
+          7486
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.06968,
+        "rms": 0.20983,
+        "changed_ratio": 0.15502
+      },
+      {
+        "file": "05-about-mobile.png",
+        "reference_size": [
+          390,
+          10923
+        ],
+        "next_size": [
+          390,
+          10923
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.02652,
+        "rms": 0.12059,
+        "changed_ratio": 0.07333
+      },
+      {
+        "file": "06-services-desktop.png",
+        "reference_size": [
+          1440,
+          3346
+        ],
+        "next_size": [
+          1440,
+          3346
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.07266,
+        "rms": 0.18874,
+        "changed_ratio": 0.2266
+      },
+      {
+        "file": "06-services-mobile.png",
+        "reference_size": [
+          390,
+          3859
+        ],
+        "next_size": [
+          390,
+          3859
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.03986,
+        "rms": 0.14318,
+        "changed_ratio": 0.12691
+      },
+      {
+        "file": "07-thank-you-desktop.png",
+        "reference_size": [
+          1440,
+          1000
+        ],
+        "next_size": [
+          1440,
+          1000
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.20253,
+        "rms": 0.24257,
+        "changed_ratio": 0.85291
+      },
+      {
+        "file": "07-thank-you-mobile.png",
+        "reference_size": [
+          390,
+          844
+        ],
+        "next_size": [
+          390,
+          844
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.0876,
+        "rms": 0.12766,
+        "changed_ratio": 0.5782
+      },
+      {
+        "file": "08-booking-desktop.png",
+        "reference_size": [
+          1440,
+          1022
+        ],
+        "next_size": [
+          1440,
+          1022
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.10534,
+        "rms": 0.29349,
+        "changed_ratio": 0.14627
+      },
+      {
+        "file": "08-booking-mobile.png",
+        "reference_size": [
+          390,
+          1270
+        ],
+        "next_size": [
+          390,
+          1270
+        ],
+        "size_match": true,
+        "height_delta": 0,
+        "mae": 0.00195,
+        "rms": 0.03471,
+        "changed_ratio": 0.00807
+      }
+    ]
+  },
+  "capture_log": "desktop / 2228 5179\ndesktop /price/ 1354 3154\ndesktop /doctors/ 2014 8574\ndesktop /contacts/ 563 1992\ndesktop /about/ 4822 7486\ndesktop /services/ 1873 3346\ndesktop /thank-you/ 137 1000\ndesktop /booking/ 403 1022\nmobile / 2139 5564\nmobile /price/ 1265 3239\nmobile /doctors/ 1925 18694\nmobile /contacts/ 474 2170\nmobile /about/ 4733 10923\nmobile /services/ 1784 3859\nmobile /thank-you/ 109 844\nmobile /booking/ 342 1270\n",
+  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.82:3000\n\n \u2713 Starting...\n \u2713 Ready in 598ms\n"
+}
