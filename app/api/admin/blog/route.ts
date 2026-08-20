@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../lib/admin-auth";
 import { createBlogPost, getBlogPosts } from "../../../../lib/admin-data";
+import { normalizeBlogCategory } from "../../../../lib/blog-categories";
 
 function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[’'`]/g, "").replace(/[^a-z0-9а-яіїєґ\s-]/giu, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
     const post = await createBlogPost({
       title,
       slug,
+      category: normalizeBlogCategory(String(form.get("category") ?? "")),
       excerpt: String(form.get("excerpt") ?? "").trim() || null,
       body: String(form.get("body") ?? ""),
       target_keyword: String(form.get("target_keyword") ?? "").trim() || null,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../../lib/admin-auth";
 import { getBlogPost, getBlogPosts, updateBlogPost } from "../../../../../lib/admin-data";
+import { normalizeBlogCategory } from "../../../../../lib/blog-categories";
 
 type Context = { params: Promise<{ id: string }> };
 function slugify(value: string) {
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest, { params }: Context) {
     await updateBlogPost(id, {
       title,
       slug,
+      category: normalizeBlogCategory(String(form.get("category") ?? "")),
       excerpt: String(form.get("excerpt") ?? "").trim() || null,
       body: String(form.get("body") ?? ""),
       target_keyword: String(form.get("target_keyword") ?? "").trim() || null,

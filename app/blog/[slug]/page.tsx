@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedPost } from "../../../lib/blog";
+import { blogCategoryPath, getBlogCategory } from "../../../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, jsonLd } from "../../../lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -29,21 +31,48 @@ export default async function BlogArticlePage({ params }: Props) {
   if (!post) notFound();
 
   const url = post.canonical_url || `${SITE_URL}/blog/${post.slug}/`;
+  const category = getBlogCategory(post.category);
+  const categoryPath = category ? blogCategoryPath(category.slug) : null;
+  const breadcrumbItems = [
+    { "@type": "ListItem", position: 1, name: "Головна", item: `${SITE_URL}/` },
+    { "@type": "ListItem", position: 2, name: "Блог", item: `${SITE_URL}/blog/` },
+    ...(category && categoryPath
+      ? [{ "@type": "ListItem", position: 3, name: category.name, item: `${SITE_URL}${categoryPath}` }]
+      : []),
+    {
+      "@type": "ListItem",
+      position: category ? 4 : 3,
+      name: post.title,
+      item: url,
+    },
+  ];
+
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": post.schema_type || "MedicalWebPage",
-    "@id": `${url}#article`,
-    url,
-    headline: post.title,
-    description: post.seo_description || post.excerpt || undefined,
-    datePublished: post.published_at || undefined,
-    dateModified: post.updated_at,
-    inLanguage: "uk-UA",
-    author: post.author_name ? { "@type": "Person", name: post.author_name } : { "@type": "Organization", name: SITE_NAME },
-    reviewedBy: post.reviewer_name ? { "@type": "Person", name: post.reviewer_name, jobTitle: post.reviewer_title || undefined } : undefined,
-    publisher: { "@id": `${SITE_URL}/#clinic` },
-    image: post.og_image ? `${post.og_image}` : `${SITE_URL}${DEFAULT_OG_IMAGE}`,
-    about: post.target_keyword || undefined,
+    "@graph": [
+      {
+        "@type": post.schema_type || "MedicalWebPage",
+        "@id": `${url}#article`,
+        url,
+        headline: post.title,
+        description: post.seo_description || post.excerpt || undefined,
+        datePublished: post.published_at || undefined,
+        dateModified: post.updated_at,
+        inLanguage: "uk-UA",
+        author: post.author_name ? { "@type": "Person", name: post.author_name } : { "@type": "Organization", name: SITE_NAME },
+        reviewedBy: post.reviewer_name ? { "@type": "Person", name: post.reviewer_name, jobTitle: post.reviewer_title || undefined } : undefined,
+        publisher: { "@id": `${SITE_URL}/#clinic` },
+        image: post.og_image ? `${post.og_image}` : `${SITE_URL}${DEFAULT_OG_IMAGE}`,
+        about: post.target_keyword || undefined,
+        articleSection: category?.name,
+        breadcrumb: { "@id": `${url}#breadcrumb` },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: breadcrumbItems,
+      },
+    ],
   };
 
   const paragraphs = post.body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
@@ -51,7 +80,10 @@ export default async function BlogArticlePage({ params }: Props) {
   return (
     <main className="reset-blog-article">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(articleSchema) }} />
-      <div className="reset-blog-eyebrow">{post.target_keyword || "RESET Clinic Blog"}</div>
+      <div className="reset-blog-eyebrow">
+        <Link href="/blog/">Блог</Link>
+        {category && categoryPath ? <><span> · </span><Link href={categoryPath}>{category.name}</Link></> : null}
+      </div>
       <h1>{post.title}</h1>
       {post.excerpt ? <p className="intro">{post.excerpt}</p> : null}
       <div className="reset-blog-author">

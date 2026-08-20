@@ -1,4 +1,5 @@
 import { getBlogPosts, type BlogPost } from "./admin-data";
+import type { BlogCategorySlug } from "./blog-categories";
 
 export type PublicBlogPost = BlogPost;
 
@@ -12,6 +13,11 @@ export async function getPublishedPosts(limit = 100) {
         new Date(a.published_at || a.updated_at).getTime(),
     )
     .slice(0, limit);
+}
+
+export async function getPublishedPostsByCategory(category: BlogCategorySlug, limit = 100) {
+  const posts = await getPublishedPosts(Math.max(limit, 1000));
+  return posts.filter((post) => post.category === category).slice(0, limit);
 }
 
 export async function getPublishedPost(slug: string) {

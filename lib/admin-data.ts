@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { SEO_BY_ROUTE } from "./seo";
 import { listJson, putJson, readJson } from "./admin-store";
+import { BLOG_CATEGORIES, BLOG_CATEGORY_MIN_INDEXABLE_POSTS, blogCategoryPath } from "./blog-categories";
 
 export type Lead = {
   id: string;
@@ -41,6 +42,7 @@ export type BlogPost = {
   status: string;
   slug: string;
   title: string;
+  category: string | null;
   excerpt: string | null;
   body: string;
   target_keyword: string | null;
@@ -159,12 +161,14 @@ export async function updateLead(id: string, patch: Partial<Lead>) {
 export async function getBlogPosts(limit = 200) {
   const rows = await listJson<BlogPost>("reset/blog/", limit);
   return rows
+    .map((post) => ({ ...post, category: post.category ?? null }))
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     .slice(0, limit);
 }
 
-export function getBlogPost(id: string) {
-  return readJson<BlogPost | null>(`reset/blog/${id}.json`, null);
+export async function getBlogPost(id: string) {
+  const post = await readJson<BlogPost | null>(`reset/blog/${id}.json`, null);
+  return post ? { ...post, category: post.category ?? null } : null;
 }
 
 export async function createBlogPost(
@@ -292,7 +296,31 @@ export async function getSeoPages() {
     last_audited_at: audit[blogPath]?.auditedAt ?? null,
   });
 
-  posts.filter((post) => post.status === "published").forEach((post) => {
+  const publishedPosts = posts.filter((post) => post.status === "published");
+
+  BLOG_CATEGORIES.forEach((category) => {
+    const path = blogCategoryPath(category.slug);
+    const eligiblePosts = publishedPosts.filter(
+      (post) => post.indexable && post.category === category.slug,
+    );
+    const indexable = eligiblePosts.length >= BLOG_CATEGORY_MIN_INDEXABLE_POSTS;
+    pages.push({
+      id: `blog-category:${category.slug}`,
+      path,
+      page_type: "CollectionPage",
+      status: "published",
+      primary_keyword: `блог ${category.name.toLowerCase()}`,
+      title: category.title,
+      description: category.description,
+      h1: audit[path]?.h1 ?? category.name,
+      indexable,
+      seo_score: audit[path]?.score ?? 0,
+      indexed_status: indexing[path]?.status ?? null,
+      last_audited_at: audit[path]?.auditedAt ?? null,
+    });
+  });
+
+  publishedPosts.forEach((post) => {
     const path = `/blog/${post.slug}/`;
     pages.push({
       id: post.id,
