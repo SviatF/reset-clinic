@@ -1,4 +1,4 @@
-name: RESET mobile source capture
+name: RESET import exact mobile render
 
 on:
   push:
@@ -7,147 +7,86 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
-  capture:
+  import-mobile:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Prepare tools
-        id: prepare
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          python3 -m pip install --disable-pip-version-check -q gdown
-          npm install --no-save playwright-core@1.55.0
-          mkdir -p /tmp/reset-wp/site /tmp/mobile/pages /tmp/mobile/out
-
-      - name: Restore WordPress reference locally
-        id: restore
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/restore.log) 2>&1
-          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-wp/source.zip
-          unzip -q /tmp/reset-wp/source.zip -d /tmp/reset-wp/site
-          SQL=$(find /tmp/reset-wp/site/dup-installer -name 'dup-database*.sql' | head -1)
-          test -n "$SQL"
-          docker network create reset-mobile || true
-          docker run -d --name reset-mobile-db --network reset-mobile -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
-          for i in $(seq 1 90); do docker exec reset-mobile-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
-          docker exec -i reset-mobile-db mariadb -uroot -proot wordpress < "$SQL"
-          cat > /tmp/reset-wp/site/wp-config.php <<'PHP'
-          <?php
-          define('DB_NAME','wordpress'); define('DB_USER','root'); define('DB_PASSWORD','root'); define('DB_HOST','reset-mobile-db:3306');
-          define('DB_CHARSET','utf8mb4'); define('DB_COLLATE',''); define('WP_HOME','http://127.0.0.1:8080'); define('WP_SITEURL','http://127.0.0.1:8080'); define('WP_DEBUG',false);
-          define('AUTH_KEY','x');define('SECURE_AUTH_KEY','x');define('LOGGED_IN_KEY','x');define('NONCE_KEY','x');define('AUTH_SALT','x');define('SECURE_AUTH_SALT','x');define('LOGGED_IN_SALT','x');define('NONCE_SALT','x');
-          $table_prefix='wp_'; if(!defined('ABSPATH')) define('ABSPATH',__DIR__.'/'); require_once ABSPATH.'wp-settings.php';
-          PHP
-          chmod -R a+rX /tmp/reset-wp/site
-          docker run -d --name reset-mobile-wp --network reset-mobile -p 8080:80 -v /tmp/reset-wp/site:/var/www/html wordpress:php8.2-apache
-          for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true); [ "$code" = 200 ] && break; sleep 2; done
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/)" = 200
-
-      - name: Configure reference
-        id: configure
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/configure.log) 2>&1
-          CLI="docker run --rm --network reset-mobile -v /tmp/reset-wp/site:/var/www/html -w /var/www/html wordpress:cli-php8.2 wp --allow-root"
-          $CLI search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
-          $CLI search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
-          $CLI plugin deactivate litespeed-cache hostinger hostinger-ai-assistant hostinger-easy-onboarding hostinger-reach wp-smush-pro || true
-          $CLI rewrite structure '/%postname%/' --hard
-          $CLI rewrite flush --hard
-          $CLI elementor flush-css || true
-          cat > /tmp/reset-wp/site/.htaccess <<'HT'
-          <IfModule mod_rewrite.c>
-          RewriteEngine On
-          RewriteBase /
-          RewriteRule ^index\.php$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . /index.php [L]
-          </IfModule>
-          HT
-          docker exec reset-mobile-wp a2enmod rewrite || true
-          docker exec reset-mobile-wp sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf; apachectl graceful" || true
-          sleep 3
-          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r"); echo "$r $code"; [ "$code" = 200 ]; done
-
-      - name: Capture post-JS mobile HTML
-        id: render
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/render.log) 2>&1
-          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
-          cat > mobile-capture.mjs <<'JS'
-          import fs from 'fs'; import { chromium } from 'playwright-core';
-          const base='http://127.0.0.1:8080';
-          const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
-          const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
-          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
-          const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-          const page=await ctx.newPage(); const pages=[];
-          for(let i=0;i<routes.length;i++){
-            const route=routes[i], id=`${String(i+1).padStart(2,'0')}-${names[i]}`;
-            const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});
-            if(!res||res.status()!==200) throw new Error(`${route} ${res?.status()}`);
-            await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0)});
-            await page.waitForTimeout(1200);
-            await page.evaluate(()=>document.querySelectorAll('.elementor-invisible').forEach(el=>el.classList.remove('elementor-invisible')));
-            const info=await page.evaluate(()=>({title:document.title,bodyClass:document.body.className,height:document.documentElement.scrollHeight,html:document.body.innerHTML}));
-            fs.writeFileSync(`/tmp/mobile/pages/${id}.json`,JSON.stringify({route,...info}));
-            pages.push({id,route,status:res.status(),title:info.title,bodyClass:info.bodyClass,height:info.height});
-          }
-          fs.writeFileSync('/tmp/mobile/manifest.json',JSON.stringify({pages},null,2));
-          await ctx.close(); await browser.close();
-          JS
-          CHROME="$CHROME" node ./mobile-capture.mjs
-          tar -czf /tmp/mobile/out/mobile-render-source.tar.gz -C /tmp/mobile pages manifest.json
-          cat /tmp/mobile/manifest.json
-
-      - name: Persist capture report
-        if: always()
+      - name: Download captured mobile render
         env:
-          RUN_ID: ${{ github.run_id }}
-          PREPARE: ${{ steps.prepare.outcome }}
-          RESTORE: ${{ steps.restore.outcome }}
-          CONFIGURE: ${{ steps.configure.outcome }}
-          RENDER: ${{ steps.render.outcome }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          mkdir -p /tmp/mobile-artifact /tmp/mobile-source
+          gh run download 32355217431 --repo "$GITHUB_REPOSITORY" --name mobile-render-source --dir /tmp/mobile-artifact
+          tar -xzf /tmp/mobile-artifact/mobile-render-source.tar.gz -C /tmp/mobile-source
+          test -f /tmp/mobile-source/manifest.json
+          test $(find /tmp/mobile-source/pages -name '*.json' | wc -l) -eq 8
+
+      - name: Build production mobile snapshot data
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
-          import json,os
+          import json,re,shutil
           from pathlib import Path
-          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['PREPARE','RESTORE','CONFIGURE','RENDER']}}
-          p=Path('/tmp/mobile/manifest.json')
-          if p.exists(): d['pages']=json.loads(p.read_text()).get('pages',[])
-          for name in ['restore','configure','render']:
-              q=Path('/tmp/'+name+'.log'); d[name+'_log']=q.read_text(errors='ignore')[-10000:] if q.exists() else ''
-          Path('mobile-capture-report.json').write_text(json.dumps(d,indent=2))
+
+          src=Path('/tmp/mobile-source')
+          manifest=json.loads((src/'manifest.json').read_text())
+          resources=manifest.get('resources',{})
+          out_assets=Path('public/assets'); out_assets.mkdir(parents=True,exist_ok=True)
+
+          copied=0
+          for _,meta in resources.items():
+              f=meta.get('file')
+              if not f: continue
+              source=src/'resources'/f
+              if source.exists():
+                  shutil.copy2(source,out_assets/f)
+                  copied+=1
+
+          mobile={}
+          for page_file in sorted((src/'pages').glob('*.json')):
+              data=json.loads(page_file.read_text())
+              html=data['html']
+              # Post-JS DOM is kept, but WordPress runtime scripts are removed.
+              html=re.sub(r'<script\b[^>]*>.*?</script\s*>','',html,flags=re.I|re.S)
+              # Rewrite every captured WP asset to a local immutable asset.
+              for url,meta in resources.items():
+                  f=meta.get('file')
+                  if f:
+                      html=html.replace(url,f'/assets/{f}')
+                      html=html.replace(url.replace('&','&amp;'),f'/assets/{f}')
+              # All internal links/forms remain local to the Next app.
+              html=html.replace('http://127.0.0.1:8080','')
+              html=html.replace('https://resetclinic.org','')
+              html=html.replace('http://resetclinic.org','')
+              # Remove leftover WP preload/module hints that have no runtime role.
+              html=re.sub(r'<link\b[^>]*(?:wp-|elementor|jquery)[^>]*>','',html,flags=re.I)
+              route=data['route']
+              mobile[route]={
+                  'bodyClass':data.get('bodyClass',''),
+                  'html':html,
+                  'referenceHeight':data.get('height')
+              }
+
+          Path('lib/mobile-pages.json').write_text(json.dumps(mobile,ensure_ascii=False,separators=(',',':')))
+          report={'routes':len(mobile),'assets_copied':copied,'reference_heights':{k:v['referenceHeight'] for k,v in mobile.items()}}
+          Path('mobile-import-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False))
+          print(json.dumps(report,indent=2,ensure_ascii=False))
           PY
-          git config user.name 'RESET Capture Bot'
+
+      - name: Commit mobile production snapshot
+        run: |
+          set -euo pipefail
+          git config user.name 'RESET Migration Bot'
           git config user.email 'actions@users.noreply.github.com'
-          git add -- mobile-capture-report.json
-          git commit -m 'test: record mobile source capture' || true
+          git add -- lib/mobile-pages.json public/assets mobile-import-report.json
+          git commit -m 'feat: add exact mobile rendered snapshots' || true
           git push origin HEAD:migration-next-ssr
-
-      - name: Upload mobile source
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-render-source
-          path: /tmp/mobile/out/mobile-render-source.tar.gz
-          compression-level: 0
-          retention-days: 2
-
-      - name: Enforce capture
-        if: steps.prepare.outcome != 'success' || steps.restore.outcome != 'success' || steps.configure.outcome != 'success' || steps.render.outcome != 'success'
-        run: exit 1
