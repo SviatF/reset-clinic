@@ -1,5 +1,5 @@
 {
-  "run_id": 32354713138,
+  "run_id": 32354935289,
   "stages": {
     "build": "success",
     "start": "success",
@@ -144,9 +144,9 @@
           1992
         ],
         "size_match": true,
-        "mae": 0.05789,
-        "rms": 0.13166,
-        "changed_ratio": 0.22007
+        "mae": 0.0696,
+        "rms": 0.14221,
+        "changed_ratio": 0.27024
       },
       {
         "file": "04-contacts-mobile.png",
@@ -174,9 +174,9 @@
           7486
         ],
         "size_match": true,
-        "mae": 0.05763,
-        "rms": 0.17684,
-        "changed_ratio": 0.14246
+        "mae": 0.01458,
+        "rms": 0.06632,
+        "changed_ratio": 0.05885
       },
       {
         "file": "05-about-mobile.png",
@@ -286,5 +286,5 @@
     ]
   },
   "capture_log": "chrome=/usr/bin/google-chrome-stable\ncapture desktop /\nstatus 200\ntext 2228 height 5179\ncapture desktop /price/\nstatus 200\ntext 1354 height 3154\ncapture desktop /doctors/\nstatus 200\ntext 2014 height 8574\ncapture desktop /contacts/\nstatus 200\ntext 563 height 1992\ncapture desktop /about/\nstatus 200\ntext 4822 height 7486\ncapture desktop /services/\nstatus 200\ntext 1873 height 3346\ncapture desktop /thank-you/\nstatus 200\ntext 137 height 1000\ncapture desktop /booking/\nstatus 200\ntext 403 height 1022\ncapture mobile /\nstatus 200\ntext 2139 height 4886\ncapture mobile /price/\nstatus 200\ntext 1265 height 3007\ncapture mobile /doctors/\nstatus 200\ntext 1925 height 8471\ncapture mobile /contacts/\nstatus 200\ntext 474 height 1889\ncapture mobile /about/\nstatus 200\ntext 4733 height 7339\ncapture mobile /services/\nstatus 200\ntext 1784 height 3199\ncapture mobile /thank-you/\nstatus 200\ntext 109 height 844\ncapture mobile /booking/\nstatus 200\ntext 342 height 1055\n",
-  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.6:3000\n\n \u2713 Starting...\n \u2713 Ready in 566ms\n"
+  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.1.104:3000\n\n \u2713 Starting...\n \u2713 Ready in 586ms\n"
 }
