@@ -51,7 +51,7 @@ jobs:
         run: |
           CHROME=$(which google-chrome-stable || which google-chrome || which chromium || true)
           echo "chrome=$CHROME" > /tmp/capture.log
-          cat > /tmp/capture.mjs <<'JS'
+          cat > qa-capture.mjs <<'JS'
           import {chromium} from 'playwright-core';
           const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
           const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
@@ -74,7 +74,7 @@ jobs:
           await browser.close();
           JS
           if [ -z "$CHROME" ]; then echo 'No chrome binary' >> /tmp/capture.log; exit 1; fi
-          CHROME="$CHROME" node /tmp/capture.mjs >> /tmp/capture.log 2>&1
+          CHROME="$CHROME" node ./qa-capture.mjs >> /tmp/capture.log 2>&1
           code=$?
           cat /tmp/capture.log
           [ "$code" = 0 ] || exit "$code"
