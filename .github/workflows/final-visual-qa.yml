@@ -110,11 +110,12 @@ jobs:
           REFERENCE: ${{ steps.reference.outcome }}
           CAPTURE: ${{ steps.capture.outcome }}
           COMPARE: ${{ steps.compare.outcome }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           python3 - <<'PY'
           import json,os
           from pathlib import Path
-          d={'stages':{k.lower():os.environ[k] for k in ['BUILD','START','REFERENCE','CAPTURE','COMPARE']}}
+          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['BUILD','START','REFERENCE','CAPTURE','COMPARE']}}
           p=Path('/tmp/visual-report.json'); d['visual']=json.loads(p.read_text()) if p.exists() else {'passed':False,'error':'visual report was not generated'}
           c=Path('/tmp/capture.log'); d['capture_log']=c.read_text(errors='ignore')[-12000:] if c.exists() else ''
           s=Path('/tmp/reset-next.log'); d['server_log']=s.read_text(errors='ignore')[-4000:] if s.exists() else ''
@@ -122,6 +123,19 @@ jobs:
           PY
           git config user.name 'RESET QA Bot'; git config user.email 'actions@users.noreply.github.com'
           git add -- visual-qa-report.json; git commit -m 'test: record final visual QA' || true; git push origin HEAD:migration-next-ssr
+
+      - name: Upload QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-visual-qa
+          path: |
+            /tmp/next-screens
+            /tmp/diff
+            /tmp/visual-report.json
+            /tmp/capture.log
+          compression-level: 0
+          retention-days: 2
 
       - name: Enforce final QA
         if: steps.build.outcome != 'success' || steps.start.outcome != 'success' || steps.reference.outcome != 'success' || steps.capture.outcome != 'success' || steps.compare.outcome != 'success'
