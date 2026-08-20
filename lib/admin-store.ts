@@ -27,6 +27,29 @@ export function isAdminStoreConfigured() {
   return Boolean(staticToken() || (oidcToken() && storeId()));
 }
 
+export async function getAdminStoreHealth() {
+  if (!isAdminStoreConfigured()) {
+    return { configured: false, ok: false, mode: "none" as const, error: "Blob authentication is not configured" };
+  }
+
+  try {
+    await list({ prefix: "reset/", limit: 1, ...authOptions() });
+    return {
+      configured: true,
+      ok: true,
+      mode: staticToken() ? ("token" as const) : ("oidc" as const),
+      error: null,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      ok: false,
+      mode: staticToken() ? ("token" as const) : ("oidc" as const),
+      error: error instanceof Error ? error.message.slice(0, 300) : "Blob health check failed",
+    };
+  }
+}
+
 async function findExactBlob(pathname: string) {
   const auth = authOptions();
   let cursor: string | undefined;
