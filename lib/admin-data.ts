@@ -41,6 +41,7 @@ export type BlogPost = {
   status: string;
   slug: string;
   title: string;
+  category: string | null;
   excerpt: string | null;
   body: string;
   target_keyword: string | null;
@@ -159,12 +160,14 @@ export async function updateLead(id: string, patch: Partial<Lead>) {
 export async function getBlogPosts(limit = 200) {
   const rows = await listJson<BlogPost>("reset/blog/", limit);
   return rows
+    .map((post) => ({ ...post, category: post.category ?? null }))
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
     .slice(0, limit);
 }
 
-export function getBlogPost(id: string) {
-  return readJson<BlogPost | null>(`reset/blog/${id}.json`, null);
+export async function getBlogPost(id: string) {
+  const post = await readJson<BlogPost | null>(`reset/blog/${id}.json`, null);
+  return post ? { ...post, category: post.category ?? null } : null;
 }
 
 export async function createBlogPost(
@@ -219,104 +222,56 @@ export async function appendIntegrationLog(
     message: message ?? null,
   };
   await putJson(`reset/logs/${row.id}.json`, row);
+  return row;
 }
 
-export async function getGscRows(limit = 1000) {
-  const rows = await readJson<GscRow[]>(PATHS.gsc, []);
-  return rows.slice(0, limit);
+export function getGscRows() {
+  return readJson<GscRow[]>(PATHS.gsc, []);
 }
 
-export function saveGscRows(rows: GscRow[]) {
-  return putJson(PATHS.gsc, rows);
+export function getGa4Rows() {
+  return readJson<Ga4Row[]>(PATHS.ga4, []);
 }
 
-export async function getGa4Rows(limit = 1000) {
-  const rows = await readJson<Ga4Row[]>(PATHS.ga4, []);
-  return rows.slice(0, limit);
+export async function saveGscRows(rows: GscRow[]) {
+  await putJson(PATHS.gsc, rows);
 }
 
-export function saveGa4Rows(rows: Ga4Row[]) {
-  return putJson(PATHS.ga4, rows);
+export async function saveGa4Rows(rows: Ga4Row[]) {
+  await putJson(PATHS.ga4, rows);
 }
 
-export async function saveSeoAudit(path: string, audit: Omit<SeoAudit, "auditedAt">) {
-  const map = await readJson<Record<string, SeoAudit>>(PATHS.seoAudit, {});
-  map[path] = { ...audit, auditedAt: new Date().toISOString() };
-  await putJson(PATHS.seoAudit, map);
+export function getSeoAudit() {
+  return readJson<Record<string, SeoAudit>>(PATHS.seoAudit, {});
 }
 
-export async function saveIndexingStates(states: Record<string, Omit<IndexingState, "checkedAt">>) {
-  const map = await readJson<Record<string, IndexingState>>(PATHS.indexing, {});
-  const checkedAt = new Date().toISOString();
-  Object.entries(states).forEach(([path, state]) => {
-    map[path] = { ...state, checkedAt };
-  });
-  await putJson(PATHS.indexing, map);
+export async function saveSeoAudit(rows: Record<string, SeoAudit>) {
+  await putJson(PATHS.seoAudit, rows);
 }
 
-export async function getSeoPages() {
-  const [audit, indexing, posts] = await Promise.all([
-    readJson<Record<string, SeoAudit>>(PATHS.seoAudit, {}),
-    readJson<Record<string, IndexingState>>(PATHS.indexing, {}),
-    getBlogPosts(1000),
-  ]);
+export function getIndexingState() {
+  return readJson<Record<string, IndexingState>>(PATHS.indexing, {});
+}
 
-  const pages: SeoPage[] = Object.entries(SEO_BY_ROUTE).map(([path, entry]) => ({
-    id: path,
+export async function saveIndexingState(rows: Record<string, IndexingState>) {
+  await putJson(PATHS.indexing, rows);
+}
+
+export async function getSeoPages(): Promise<SeoPage[]> {
+  const audit = await getSeoAudit();
+  const indexing = await getIndexingState();
+  return Object.entries(SEO_BY_ROUTE).map(([path, seo], index) => ({
+    id: `route-${index}`,
     path,
-    page_type: entry.schemaType,
+    page_type: seo.schemaType,
     status: "published",
     primary_keyword: null,
-    title: entry.title,
-    description: entry.description,
-    h1: audit[path]?.h1 ?? null,
-    indexable: entry.index,
+    title: seo.title,
+    description: seo.description,
+    h1: null,
+    indexable: seo.index,
     seo_score: audit[path]?.score ?? 0,
     indexed_status: indexing[path]?.status ?? null,
     last_audited_at: audit[path]?.auditedAt ?? null,
   }));
-
-  const blogPath = "/blog/";
-  pages.push({
-    id: blogPath,
-    path: blogPath,
-    page_type: "CollectionPage",
-    status: "published",
-    primary_keyword: "блог косметологія львів",
-    title: "Блог RESET Clinic — косметологія, дерматологія та здоров’я шкіри",
-    description: "Доказові матеріали RESET Clinic про косметологію, дерматологію, трихологію та здоров’я шкіри.",
-    h1: audit[blogPath]?.h1 ?? null,
-    indexable: true,
-    seo_score: audit[blogPath]?.score ?? 0,
-    indexed_status: indexing[blogPath]?.status ?? null,
-    last_audited_at: audit[blogPath]?.auditedAt ?? null,
-  });
-
-  posts.filter((post) => post.status === "published").forEach((post) => {
-    const path = `/blog/${post.slug}/`;
-    pages.push({
-      id: post.id,
-      path,
-      page_type: post.schema_type || "MedicalWebPage",
-      status: post.status,
-      primary_keyword: post.target_keyword,
-      title: post.seo_title || post.title,
-      description: post.seo_description || post.excerpt,
-      h1: audit[path]?.h1 ?? post.title,
-      indexable: post.indexable,
-      seo_score: audit[path]?.score ?? 0,
-      indexed_status: indexing[path]?.status ?? null,
-      last_audited_at: audit[path]?.auditedAt ?? null,
-    });
-  });
-
-  return pages.sort((a, b) => a.seo_score - b.seo_score || a.path.localeCompare(b.path));
-}
-
-export function averageSeoScore(rows: SeoPage[]) {
-  const indexable = rows.filter((row) => row.indexable);
-  if (!indexable.length) return 0;
-  return Math.round(
-    indexable.reduce((sum, row) => sum + Number(row.seo_score || 0), 0) / indexable.length,
-  );
 }
