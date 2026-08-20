@@ -1,0 +1,100 @@
+name: RESET final branch cleanup
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: migration-next-ssr
+          fetch-depth: 0
+      - name: Remove migration tooling and unused assets
+        run: |
+          set -euo pipefail
+          rm -rf .github .migration-trigger migration-drive-link.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path('public/assets')
+          if not root.exists(): raise SystemExit('assets directory missing')
+          texts=[]
+          for p in [Path('lib/pages.json'),Path('app/globals.css')]:
+              if p.exists(): texts.append(p.read_text(encoding='utf-8',errors='ignore'))
+          for p in Path('app').rglob('*'):
+              if p.is_file() and p.suffix in {'.ts','.tsx','.css','.json'}: texts.append(p.read_text(encoding='utf-8',errors='ignore'))
+          for p in Path('components').rglob('*'):
+              if p.is_file(): texts.append(p.read_text(encoding='utf-8',errors='ignore'))
+          pat=re.compile(r'/assets/([A-Za-z0-9._-]+)')
+          keep=set()
+          for t in texts: keep.update(pat.findall(t))
+          changed=True
+          while changed:
+              changed=False
+              for name in list(keep):
+                  p=root/name
+                  if p.exists() and p.suffix.lower()=='.css':
+                      s=p.read_text(encoding='utf-8',errors='ignore')
+                      for x in pat.findall(s):
+                          if x not in keep: keep.add(x); changed=True
+          removed=[]
+          for p in root.iterdir():
+              if p.is_file() and p.name not in keep:
+                  removed.append((p.name,p.stat().st_size)); p.unlink()
+          print('kept assets',len(keep),'removed',len(removed),'bytes',sum(x[1] for x in removed))
+          print('removed JS',sum(1 for x,_ in removed if x.endswith('.js')))
+          missing=[x for x in keep if not (root/x).exists()]
+          if missing:
+              print('WARNING missing referenced assets:',missing)
+          PY
+          cat > README.md <<'EOF'
+          # RESET Clinic — Next.js SSR
+
+          Production website implemented with Next.js App Router and server-side rendering.
+
+          ## Run locally
+
+          ```bash
+          npm ci
+          npm run dev
+          ```
+
+          ## Production
+
+          ```bash
+          npm ci
+          npm run build
+          npm start
+          ```
+
+          Public routes: `/`, `/price/`, `/doctors/`, `/contacts/`, `/about/`, `/services/`, `/thank-you/`, `/booking/`.
+
+          Booking backend secrets are not committed. Configure server-side variables from `.env.example` when the booking integration is connected.
+          EOF
+      - name: Verify production-only repository
+        run: |
+          set -euo pipefail
+          test -f package.json
+          test -f app/[[...slug]]/page.tsx
+          ! find . -path './.git' -prune -o -type f \( -name '*.php' -o -name 'wp-config.php' \) -print | grep -q .
+          ! find . -path './.git' -prune -o -type d \( -name wp-admin -o -name wp-includes -o -name wp-content \) -print | grep -q .
+          npm ci
+          npm run build
+      - name: Commit cleanup
+        run: |
+          set -euo pipefail
+          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then echo 'Already clean'; exit 0; fi
+          git config user.name 'RESET Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- README.md public/assets
+          git add -u -- .github .migration-trigger migration-drive-link.txt || true
+          git commit -m 'chore: finalize clean Next.js production repository'
+          git push origin HEAD:migration-next-ssr
