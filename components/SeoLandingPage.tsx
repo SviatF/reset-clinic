@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DOCTORS, doctorPath } from "../lib/doctors";
 import { jsonLd } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 import { buildSeoLandingJsonLd, type SeoLanding } from "../lib/seo-pages";
@@ -25,6 +26,7 @@ function directChildren(landing: SeoLanding) {
 export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
   const schema = buildSeoLandingJsonLd(landing);
   const children = directChildren(landing);
+  const doctors = DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
 
   return (
     <main className="seo-site">
@@ -100,6 +102,16 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
               <div>
                 {children.map((child) => (
                   <Link href={child.path} key={child.path}>{child.breadcrumbs.at(-1)?.name ?? child.h1}<span>↗</span></Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {doctors.length ? (
+            <section className="seo-related-card">
+              <p>Лікарі напряму</p>
+              <div>
+                {doctors.map((doctor) => (
+                  <Link href={doctorPath(doctor)} key={doctor.slug}>{doctor.name}<span>↗</span></Link>
                 ))}
               </div>
             </section>
