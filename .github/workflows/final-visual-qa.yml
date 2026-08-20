@@ -3,13 +3,10 @@ name: RESET final visual QA
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-    types: [synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -21,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
+          fetch-depth: 0
 
       - name: Install and build
         run: |
@@ -34,7 +32,6 @@ jobs:
         run: |
           set -euo pipefail
           nohup npm start -- -p 3000 > /tmp/reset-next.log 2>&1 &
-          echo $! > /tmp/reset-next.pid
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true)
             [ "$code" = 200 ] && break
@@ -42,7 +39,7 @@ jobs:
           done
           curl -I http://127.0.0.1:3000/
 
-      - name: Download WordPress pixel references
+      - name: Download exact pixel references
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -51,7 +48,7 @@ jobs:
           gh run download 32348391441 --repo "$GITHUB_REPOSITORY" --name reference-screens-v3 --dir /tmp/ref
           tar -xzf /tmp/ref/reference-screens-v3.tar.gz -C /tmp/ref-screens
 
-      - name: Capture Next.js pages
+      - name: Capture all Next.js routes
         run: |
           set -euo pipefail
           CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
@@ -70,8 +67,7 @@ jobs:
               await page.waitForTimeout(700);
               const text=(await page.locator('body').innerText()).trim();
               if(text.length<20) throw new Error(`${routes[i]} looks blank`);
-              const id=`${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`;
-              await page.screenshot({path:'/tmp/next-screens/'+id,fullPage:true});
+              await page.screenshot({path:`/tmp/next-screens/${String(i+1).padStart(2,'0')}-${names[i]}-${cfg.d}.png`,fullPage:true});
             }
             await ctx.close();
           }
@@ -79,19 +75,20 @@ jobs:
           JS
           CHROME="$CHROME" node /tmp/capture.mjs
 
-      - name: Compare visual output
+      - name: Compare against exact reference
+        id: compare
+        continue-on-error: true
         run: |
-          set -euo pipefail
           python3 - <<'PY'
           from PIL import Image, ImageChops, ImageStat
           from pathlib import Path
           import json, math
-          ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff')
-          out.mkdir(exist_ok=True)
-          rows=[]
+          ref=Path('/tmp/ref-screens'); nxt=Path('/tmp/next-screens'); out=Path('/tmp/diff'); out.mkdir(exist_ok=True)
+          rows=[]; bad=[]
           for nf in sorted(nxt.glob('*.png')):
               rf=ref/nf.name
-              if not rf.exists(): rows.append({'file':nf.name,'error':'reference missing'}); continue
+              if not rf.exists():
+                  row={'file':nf.name,'error':'reference missing'}; rows.append(row); bad.append(row); continue
               a=Image.open(rf).convert('RGB'); b=Image.open(nf).convert('RGB')
               W=max(a.width,b.width); H=max(a.height,b.height)
               ac=Image.new('RGB',(W,H),'white'); bc=Image.new('RGB',(W,H),'white'); ac.paste(a,(0,0)); bc.paste(b,(0,0))
@@ -100,16 +97,29 @@ jobs:
               changed=sum(1 for px in diff.resize((max(1,W//4),max(1,H//4))).getdata() if max(px)>18)
               total=max(1,(W//4)*(H//4)); changed_ratio=changed/total
               diff.save(out/nf.name)
-              rows.append({'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'mae':round(mae,5),'rms':round(rms,5),'changed_ratio':round(changed_ratio,5)})
-          Path('/tmp/visual-report.json').write_text(json.dumps(rows,indent=2))
-          print(json.dumps(rows,indent=2))
-          bad=[]
-          for r in rows:
-              if 'error' in r: bad.append(r)
-              elif r['reference_size'][0] != r['next_size'][0]: bad.append(r)
-              elif abs(r['reference_size'][1]-r['next_size'][1]) > max(800, r['reference_size'][1]*0.22): bad.append(r)
-          if bad: raise SystemExit('Visual QA hard gate failed')
+              row={'file':nf.name,'reference_size':a.size,'next_size':b.size,'size_match':a.size==b.size,'mae':round(mae,5),'rms':round(rms,5),'changed_ratio':round(changed_ratio,5)}
+              rows.append(row)
+              if a.width!=b.width or abs(a.height-b.height)>max(800,a.height*0.22): bad.append(row)
+          result={'passed':not bad,'screens_compared':len(rows),'hard_failures':bad,'screens':rows}
+          Path('/tmp/visual-report.json').write_text(json.dumps(result,indent=2))
+          print(json.dumps(result,indent=2))
+          raise SystemExit(0 if not bad else 1)
           PY
+
+      - name: Persist QA report on migration branch
+        if: always()
+        run: |
+          set -euo pipefail
+          cp /tmp/visual-report.json visual-qa-report.json || echo '{"passed":false,"error":"report was not generated"}' > visual-qa-report.json
+          git config user.name 'RESET QA Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- visual-qa-report.json
+          git commit -m 'test: record final visual QA' || true
+          git push origin HEAD:migration-next-ssr
+
+      - name: Enforce QA gate
+        if: steps.compare.outcome != 'success'
+        run: exit 1
 
       - name: Upload QA evidence
         if: always()
