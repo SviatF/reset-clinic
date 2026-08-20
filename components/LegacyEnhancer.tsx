@@ -6,21 +6,32 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
   useLayoutEffect(() => {
     const clean: Array<() => void> = [];
     const previousBodyClass = document.body.className;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
-    const applyBodyClasses = () => {
-      const mobileTouchClass = window.matchMedia("(max-width: 767px)").matches
-        ? " e--ua-isTouchDevice"
-        : "";
-      document.body.className = `${bodyClass}${mobileTouchClass}`.trim();
-    };
+    // Keep only the viewport-specific snapshot in the live DOM. This avoids
+    // duplicate Elementor ids/targets from the hidden responsive snapshot.
+    const inactive = document.querySelector<HTMLElement>(
+      isMobile ? ".legacy-desktop" : ".legacy-mobile",
+    );
+    inactive?.remove();
 
-    applyBodyClasses();
-    const media = window.matchMedia("(max-width: 767px)");
-    const onMediaChange = () => applyBodyClasses();
-    media.addEventListener("change", onMediaChange);
-    clean.push(() => media.removeEventListener("change", onMediaChange));
+    document.body.className = `${bodyClass}${isMobile ? " e--ua-isTouchDevice" : ""}`.trim();
 
-    document.querySelectorAll<HTMLFormElement>(".legacy-page form").forEach((form) => {
+    const active = document.querySelector<HTMLElement>(
+      isMobile ? ".legacy-mobile" : ".legacy-desktop",
+    );
+
+    // Elementor normally performs these mutations in its frontend runtime.
+    // The migrated site keeps the resulting static visual state without
+    // loading Elementor/WordPress JavaScript.
+    active?.querySelectorAll<HTMLElement>(".elementor-invisible").forEach((element) => {
+      element.classList.remove("elementor-invisible");
+    });
+    active
+      ?.querySelectorAll<HTMLElement>(".e-con, [data-settings*='background_background']")
+      .forEach((element) => element.classList.add("e-lazyloaded"));
+
+    active?.querySelectorAll<HTMLFormElement>("form").forEach((form) => {
       const fn = (event: Event) => {
         event.preventDefault();
         window.location.href = "/thank-you/";
@@ -29,19 +40,19 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
       clean.push(() => form.removeEventListener("submit", fn));
     });
 
-    document.querySelectorAll<HTMLElement>(".e-n-tabs").forEach((root) => {
+    active?.querySelectorAll<HTMLElement>(".e-n-tabs").forEach((root) => {
       const tabs = [...root.querySelectorAll<HTMLElement>("[role=tab]")];
       tabs.forEach((tab) => {
         const fn = () => {
           tabs.forEach((item) => {
-            const active = item === tab;
-            item.setAttribute("aria-selected", active ? "true" : "false");
-            item.classList.toggle("e-active", active);
+            const selected = item === tab;
+            item.setAttribute("aria-selected", selected ? "true" : "false");
+            item.classList.toggle("e-active", selected);
             const id = item.getAttribute("aria-controls");
             if (id) {
               root
                 .querySelector<HTMLElement>(`#${CSS.escape(id)}`)
-                ?.classList.toggle("e-active", active);
+                ?.classList.toggle("e-active", selected);
             }
           });
         };
@@ -57,7 +68,7 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
     };
     const close = () => overlay?.classList.remove("is-open");
 
-    document.querySelectorAll<HTMLElement>(".reset-menu-trigger").forEach((item) => {
+    active?.querySelectorAll<HTMLElement>(".reset-menu-trigger").forEach((item) => {
       item.addEventListener("click", open);
       clean.push(() => item.removeEventListener("click", open));
     });
