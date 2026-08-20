@@ -23,7 +23,14 @@ function isPrivateRoute(pathname: string) {
 }
 
 function isProtectedAdmin(pathname: string) {
-  return (pathname === "/admin" || pathname.startsWith("/admin/")) && !pathname.startsWith("/admin/login");
+  const adminPage =
+    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+    !pathname.startsWith("/admin/login");
+  const adminApi =
+    pathname.startsWith("/api/admin/") &&
+    !pathname.startsWith("/api/admin/login") &&
+    !pathname.startsWith("/api/admin/logout");
+  return adminPage || adminApi;
 }
 
 function applyPrivateHeaders(response: NextResponse) {
@@ -37,7 +44,10 @@ function jwtExp(token?: string) {
   if (!token) return 0;
   try {
     const part = token.split(".")[1];
-    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/"))) as { exp?: number };
+    if (!part) return 0;
+    const normalized = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const json = JSON.parse(atob(padded)) as { exp?: number };
     return Number(json.exp || 0);
   } catch {
     return 0;
@@ -63,6 +73,14 @@ async function refreshSession(refreshToken: string) {
   };
 }
 
+function loginRedirect(request: NextRequest) {
+  const login = new URL("/admin/login/", request.url);
+  // Admin actions are form POSTs, so 303 safely turns a failed authenticated
+  // submission into a GET for the login page instead of replaying the POST.
+  const status = request.method === "GET" || request.method === "HEAD" ? 307 : 303;
+  return applyPrivateHeaders(NextResponse.redirect(login, status));
+}
+
 export async function middleware(request: NextRequest) {
   const legacyId =
     request.nextUrl.searchParams.get("page_id") ?? request.nextUrl.searchParams.get("p");
@@ -83,15 +101,13 @@ export async function middleware(request: NextRequest) {
     const now = Math.floor(Date.now() / 1000);
 
     if (!access && !refresh) {
-      const login = new URL("/admin/login/", request.url);
-      return applyPrivateHeaders(NextResponse.redirect(login, 307));
+      return loginRedirect(request);
     }
 
     if ((!access || exp < now + 90) && refresh) {
       const renewed = await refreshSession(refresh);
       if (!renewed?.access_token || !renewed.refresh_token) {
-        const login = new URL("/admin/login/", request.url);
-        const response = applyPrivateHeaders(NextResponse.redirect(login, 307));
+        const response = loginRedirect(request);
         response.cookies.set(ACCESS_COOKIE, "", { path: "/", maxAge: 0 });
         response.cookies.set(REFRESH_COOKIE, "", { path: "/", maxAge: 0 });
         return response;
