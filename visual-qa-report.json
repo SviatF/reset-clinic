@@ -1,5 +1,5 @@
 {
-  "run_id": 32354000290,
+  "run_id": 32354198267,
   "stages": {
     "build": "success",
     "start": "success",
@@ -22,9 +22,9 @@
           8471
         ],
         "size_match": false,
-        "mae": 0.19438,
-        "rms": 0.35708,
-        "changed_ratio": 0.32956
+        "mae": 0.18877,
+        "rms": 0.35364,
+        "changed_ratio": 0.32554
       },
       {
         "file": "05-about-mobile.png",
@@ -37,9 +37,9 @@
           7339
         ],
         "size_match": false,
-        "mae": 0.21179,
-        "rms": 0.38872,
-        "changed_ratio": 0.37805
+        "mae": 0.20014,
+        "rms": 0.3819,
+        "changed_ratio": 0.36793
       }
     ],
     "screens": [
@@ -54,9 +54,9 @@
           5179
         ],
         "size_match": true,
-        "mae": 0.07079,
-        "rms": 0.13547,
-        "changed_ratio": 0.21533
+        "mae": 0.05294,
+        "rms": 0.12586,
+        "changed_ratio": 0.21464
       },
       {
         "file": "01-home-mobile.png",
@@ -69,9 +69,9 @@
           4886
         ],
         "size_match": false,
-        "mae": 0.35474,
-        "rms": 0.51185,
-        "changed_ratio": 0.63299
+        "mae": 0.33734,
+        "rms": 0.50227,
+        "changed_ratio": 0.61684
       },
       {
         "file": "02-price-desktop.png",
@@ -84,9 +84,9 @@
           3154
         ],
         "size_match": true,
-        "mae": 0.04616,
-        "rms": 0.09797,
-        "changed_ratio": 0.1488
+        "mae": 0.02983,
+        "rms": 0.08727,
+        "changed_ratio": 0.14265
       },
       {
         "file": "02-price-mobile.png",
@@ -99,9 +99,9 @@
           3007
         ],
         "size_match": false,
-        "mae": 0.17588,
-        "rms": 0.34854,
-        "changed_ratio": 0.38174
+        "mae": 0.16493,
+        "rms": 0.34439,
+        "changed_ratio": 0.3547
       },
       {
         "file": "03-doctors-desktop.png",
@@ -114,9 +114,9 @@
           8574
         ],
         "size_match": true,
-        "mae": 0.06547,
-        "rms": 0.16515,
-        "changed_ratio": 0.13063
+        "mae": 0.05003,
+        "rms": 0.15903,
+        "changed_ratio": 0.13659
       },
       {
         "file": "03-doctors-mobile.png",
@@ -129,9 +129,9 @@
           8471
         ],
         "size_match": false,
-        "mae": 0.19438,
-        "rms": 0.35708,
-        "changed_ratio": 0.32956
+        "mae": 0.18877,
+        "rms": 0.35364,
+        "changed_ratio": 0.32554
       },
       {
         "file": "04-contacts-desktop.png",
@@ -144,9 +144,9 @@
           1992
         ],
         "size_match": true,
-        "mae": 0.07547,
-        "rms": 0.14357,
-        "changed_ratio": 0.224
+        "mae": 0.05801,
+        "rms": 0.13198,
+        "changed_ratio": 0.21947
       },
       {
         "file": "04-contacts-mobile.png",
@@ -159,9 +159,9 @@
           1889
         ],
         "size_match": false,
-        "mae": 0.35368,
-        "rms": 0.52428,
-        "changed_ratio": 0.57871
+        "mae": 0.33731,
+        "rms": 0.51349,
+        "changed_ratio": 0.57308
       },
       {
         "file": "05-about-desktop.png",
@@ -174,9 +174,9 @@
           7486
         ],
         "size_match": true,
-        "mae": 0.03314,
-        "rms": 0.07506,
-        "changed_ratio": 0.06085
+        "mae": 0.01458,
+        "rms": 0.06632,
+        "changed_ratio": 0.05885
       },
       {
         "file": "05-about-mobile.png",
@@ -189,9 +189,9 @@
           7339
         ],
         "size_match": false,
-        "mae": 0.21179,
-        "rms": 0.38872,
-        "changed_ratio": 0.37805
+        "mae": 0.20014,
+        "rms": 0.3819,
+        "changed_ratio": 0.36793
       },
       {
         "file": "06-services-desktop.png",
@@ -204,9 +204,9 @@
           3346
         ],
         "size_match": true,
-        "mae": 0.07719,
-        "rms": 0.19971,
-        "changed_ratio": 0.22308
+        "mae": 0.02648,
+        "rms": 0.08246,
+        "changed_ratio": 0.12121
       },
       {
         "file": "06-services-mobile.png",
@@ -219,9 +219,9 @@
           3199
         ],
         "size_match": false,
-        "mae": 0.29106,
-        "rms": 0.47582,
-        "changed_ratio": 0.50702
+        "mae": 0.29407,
+        "rms": 0.4715,
+        "changed_ratio": 0.5153
       },
       {
         "file": "07-thank-you-desktop.png",
@@ -234,9 +234,9 @@
           1000
         ],
         "size_match": true,
-        "mae": 0.22643,
-        "rms": 0.26155,
-        "changed_ratio": 0.85453
+        "mae": 0.20253,
+        "rms": 0.24257,
+        "changed_ratio": 0.85291
       },
       {
         "file": "07-thank-you-mobile.png",
@@ -249,9 +249,9 @@
           844
         ],
         "size_match": true,
-        "mae": 0.11091,
-        "rms": 0.13805,
-        "changed_ratio": 0.60126
+        "mae": 0.08648,
+        "rms": 0.12477,
+        "changed_ratio": 0.57776
       },
       {
         "file": "08-booking-desktop.png",
@@ -264,8 +264,8 @@
           1022
         ],
         "size_match": true,
-        "mae": 0.01197,
-        "rms": 0.02461,
+        "mae": 1e-05,
+        "rms": 0.00116,
         "changed_ratio": 7e-05
       },
       {
@@ -279,12 +279,12 @@
           1055
         ],
         "size_match": false,
-        "mae": 0.24949,
-        "rms": 0.45543,
-        "changed_ratio": 0.36034
+        "mae": 0.24323,
+        "rms": 0.45369,
+        "changed_ratio": 0.34606
       }
     ]
   },
   "capture_log": "chrome=/usr/bin/google-chrome-stable\ncapture desktop /\nstatus 200\ntext 2228 height 5179\ncapture desktop /price/\nstatus 200\ntext 1354 height 3154\ncapture desktop /doctors/\nstatus 200\ntext 2014 height 8574\ncapture desktop /contacts/\nstatus 200\ntext 563 height 1992\ncapture desktop /about/\nstatus 200\ntext 4822 height 7486\ncapture desktop /services/\nstatus 200\ntext 1873 height 3346\ncapture desktop /thank-you/\nstatus 200\ntext 137 height 1000\ncapture desktop /booking/\nstatus 200\ntext 403 height 1022\ncapture mobile /\nstatus 200\ntext 2139 height 4886\ncapture mobile /price/\nstatus 200\ntext 1265 height 3007\ncapture mobile /doctors/\nstatus 200\ntext 1925 height 8471\ncapture mobile /contacts/\nstatus 200\ntext 474 height 1889\ncapture mobile /about/\nstatus 200\ntext 4733 height 7339\ncapture mobile /services/\nstatus 200\ntext 1784 height 3199\ncapture mobile /thank-you/\nstatus 200\ntext 109 height 844\ncapture mobile /booking/\nstatus 200\ntext 342 height 1055\n",
-  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.121:3000\n\n \u2713 Starting...\n \u2713 Ready in 383ms\n"
+  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.136:3000\n\n \u2713 Starting...\n \u2713 Ready in 619ms\n"
 }
