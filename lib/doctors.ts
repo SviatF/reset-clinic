@@ -6,6 +6,7 @@ export type DoctorProfile = {
   role: string;
   subtitle?: string;
   bio: string;
+  image: string;
   relatedPaths: string[];
 };
 
@@ -15,6 +16,7 @@ export const DOCTORS: DoctorProfile[] = [
     name: "Грицута Тетяна",
     role: "Лікар-косметолог",
     subtitle: "Засновниця RESÉT clinic",
+    image: "/assets/desktop-d861343ce904ae1965e8494dfe69c5f1abaa95ab.jpg",
     bio: "Лікар-косметолог, який спеціалізується на ін’єкційних методиках омолодження та гармонізації обличчя. Працює за принципами доказової медицини, враховуючи анатомічні особливості та індивідуальні потреби кожного пацієнта. Спеціалізується на профілактиці вікових змін, лікуванні акне, розацеа, пігментації та підборі ефективних косметологічних процедур. Головна мета — природний результат, здоров’я та якість шкіри.",
     relatedPaths: [
       "/cosmetology/injection/",
@@ -36,6 +38,7 @@ export const DOCTORS: DoctorProfile[] = [
     slug: "khrystyna-milkovych",
     name: "Мількович Христина",
     role: "Лікар-косметолог",
+    image: "/assets/desktop-fe61304e70ad3ef400e93d146b5a73242ab43ced.jpg",
     bio: "Допомагає зберегти здоров’я та красу шкіри завдяки комплексному підходу до діагностики, лікування та естетичної корекції. Спеціалізується на ін’єкційних процедурах, складає індивідуальні плани догляду та працює з урахуванням анатомічних особливостей і побажань кожного пацієнта. Пріоритет у роботі — природний результат, безпека та довготривалий ефект.",
     relatedPaths: [
       "/cosmetology/injection/",
@@ -51,6 +54,7 @@ export const DOCTORS: DoctorProfile[] = [
     slug: "adriana-sokhan",
     name: "Сохан Адріана",
     role: "Лікар-косметолог",
+    image: "/assets/desktop-7a51274a2930bf3e2161010d9c7e813cb53f660c.jpg",
     bio: "Допомагає вирішувати як естетичні, так і дерматологічні проблеми шкіри. Основний принцип роботи — безпечні процедури, науково обґрунтовані рішення та довготривалий результат, що підкреслює природну красу пацієнта. Спеціалізується на інʼєкційних, апаратних та доглядових процедурах.",
     relatedPaths: [
       "/cosmetology/injection/",
@@ -89,9 +93,9 @@ export function doctorMetadata(doctor: DoctorProfile) {
       siteName: SITE_NAME,
       title,
       description,
-      images: [{ url: DEFAULT_OG_IMAGE, width: 2446, height: 1314, alt: `${doctor.name} — RESET Clinic` }],
+      images: [{ url: doctor.image || DEFAULT_OG_IMAGE, alt: `${doctor.name} — RESET Clinic` }],
     },
-    twitter: { card: "summary_large_image" as const, title, description, images: [DEFAULT_OG_IMAGE] },
+    twitter: { card: "summary_large_image" as const, title, description, images: [doctor.image || DEFAULT_OG_IMAGE] },
     robots: {
       index: true,
       follow: true,
@@ -122,6 +126,7 @@ export function doctorJsonLd(doctor: DoctorProfile) {
         name: doctor.name,
         jobTitle: doctor.role,
         description: doctor.bio,
+        image: `${SITE_URL}${doctor.image}`,
         worksFor: { "@id": `${SITE_URL}/#clinic` },
         url,
       },
