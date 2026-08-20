@@ -1,5 +1,5 @@
 {
-  "run_id": 32356429070,
+  "run_id": 32356948858,
   "stages": {
     "build": "success",
     "start": "success",
@@ -74,9 +74,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.0322,
-        "rms": 0.09724,
-        "changed_ratio": 0.1389
+        "mae": 0.03215,
+        "rms": 0.09647,
+        "changed_ratio": 0.13979
       },
       {
         "file": "02-price-mobile.png",
@@ -106,9 +106,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.07437,
-        "rms": 0.2011,
-        "changed_ratio": 0.18675
+        "mae": 0.0714,
+        "rms": 0.19852,
+        "changed_ratio": 0.17391
       },
       {
         "file": "03-doctors-mobile.png",
@@ -138,9 +138,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.24094,
-        "rms": 0.40009,
-        "changed_ratio": 0.49476
+        "mae": 0.23906,
+        "rms": 0.39651,
+        "changed_ratio": 0.49472
       },
       {
         "file": "04-contacts-mobile.png",
@@ -186,9 +186,9 @@
         ],
         "size_match": true,
         "height_delta": 0,
-        "mae": 0.01376,
-        "rms": 0.08313,
-        "changed_ratio": 0.04445
+        "mae": 0.02289,
+        "rms": 0.11219,
+        "changed_ratio": 0.06254
       },
       {
         "file": "06-services-desktop.png",
@@ -289,5 +289,5 @@
     ]
   },
   "capture_log": "desktop / 2228 5179\ndesktop /price/ 1354 3154\ndesktop /doctors/ 2014 8574\ndesktop /contacts/ 563 1992\ndesktop /about/ 4822 7486\ndesktop /services/ 1873 3346\ndesktop /thank-you/ 137 1000\ndesktop /booking/ 403 1022\nmobile / 2139 5564\nmobile /price/ 1265 3240\nmobile /doctors/ 1925 18694\nmobile /contacts/ 474 2170\nmobile /about/ 4733 10923\nmobile /services/ 1784 3859\nmobile /thank-you/ 109 844\nmobile /booking/ 342 1270\n",
-  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.69:3000\n\n \u2713 Starting...\n \u2713 Ready in 586ms\n"
+  "server_log": "\n> reset-clinic-next@1.0.0 start\n> next start -p 3000\n\n   \u25b2 Next.js 15.5.2\n   - Local:        http://localhost:3000\n   - Network:      http://10.1.0.82:3000\n\n \u2713 Starting...\n \u2713 Ready in 375ms\n"
 }
