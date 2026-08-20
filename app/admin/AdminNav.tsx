@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/admin/", label: "Dashboard", icon: "dashboard" },
@@ -29,23 +30,54 @@ function NavIcon({ name }: { name: (typeof navItems)[number]["icon"] }) {
 
 export default function AdminNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
-    <nav className="admin-nav" aria-label="Admin navigation">
-      <div className="admin-nav-label">Workspace</div>
-      {navItems.map((item) => {
-        const active = item.href === "/admin/"
-          ? pathname === "/admin" || pathname === "/admin/"
-          : pathname.startsWith(item.href);
+    <div className="admin-nav-shell">
+      <button
+        type="button"
+        className="admin-mobile-menu-toggle"
+        aria-expanded={open}
+        aria-controls="reset-admin-navigation"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span>Меню</span>
+        <span className={`admin-mobile-menu-icon${open ? " is-open" : ""}`} aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+      </button>
 
-        return (
-          <Link key={item.href} href={item.href} className={`admin-nav-link${active ? " active" : ""}`}>
-            <span className="admin-nav-icon"><NavIcon name={item.icon} /></span>
-            <span className="admin-nav-text">{item.label}</span>
-            <span className="admin-nav-indicator" aria-hidden="true" />
-          </Link>
-        );
-      })}
-    </nav>
+      <nav
+        id="reset-admin-navigation"
+        className={`admin-nav${open ? " is-open" : ""}`}
+        aria-label="Admin navigation"
+      >
+        <div className="admin-nav-label">Workspace</div>
+        {navItems.map((item) => {
+          const active = item.href === "/admin/"
+            ? pathname === "/admin" || pathname === "/admin/"
+            : pathname.startsWith(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`admin-nav-link${active ? " active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              <span className="admin-nav-icon"><NavIcon name={item.icon} /></span>
+              <span className="admin-nav-text">{item.label}</span>
+              <span className="admin-nav-indicator" aria-hidden="true" />
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
