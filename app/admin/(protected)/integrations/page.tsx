@@ -1,20 +1,20 @@
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { getCrmConfig, getIntegrationLogs } from "../../../../lib/admin-data";
-import { isAdminStoreConfigured } from "../../../../lib/admin-store";
+import { getAdminStoreHealth } from "../../../../lib/admin-store";
 import { isGoogleSeoConfigured } from "../../../../lib/google-service-account";
 import { canEncryptSecrets } from "../../../../lib/secret-box";
 
 type Props = { searchParams: Promise<{ synced?: string; gsc?: string; ga4?: string; indexed?: string; error?: string; crm_saved?: string; crm_error?: string }> };
 
-function status(ok: boolean) {
-  return <span className={`admin-badge ${ok ? "good" : "warn"}`}>{ok ? "connected" : "not connected"}</span>;
+function status(ok: boolean, warning = false) {
+  return <span className={`admin-badge ${ok ? "good" : warning ? "bad" : "warn"}`}>{ok ? "connected" : warning ? "error" : "not connected"}</span>;
 }
 
 export default async function AdminIntegrationsPage({ searchParams }: Props) {
   await requireAdmin();
   const params = await searchParams;
-  const [logs, crm] = await Promise.all([getIntegrationLogs(50), getCrmConfig()]);
-  const storage = isAdminStoreConfigured();
+  const [logs, crm, storageHealth] = await Promise.all([getIntegrationLogs(50), getCrmConfig(), getAdminStoreHealth()]);
+  const storage = storageHealth.ok;
   const google = isGoogleSeoConfigured();
   const crmConnected = Boolean(crm?.enabled && crm.endpoint) || Boolean(process.env.CRM_WEBHOOK_URL);
 
@@ -30,13 +30,13 @@ export default async function AdminIntegrationsPage({ searchParams }: Props) {
       {params.crm_error ? <div className="admin-alert bad">CRM: не вдалося зберегти налаштування ({params.crm_error}).</div> : null}
 
       <section className="admin-grid admin-section">
-        <div className="admin-card"><div className="admin-label">Private JSON storage</div><h3>Vercel Blob</h3>{status(storage)}<p className="admin-kpi-note">Ліди, CMS і SEO/analytics snapshots без окремої БД.</p></div>
+        <div className="admin-card"><div className="admin-label">Private JSON storage</div><h3>Vercel Blob</h3>{status(storage, storageHealth.configured && !storageHealth.ok)}<p className="admin-kpi-note">{storage ? `Private store · auth ${storageHealth.mode.toUpperCase()}` : storageHealth.error}</p></div>
         <div className="admin-card"><div className="admin-label">CRM</div><h3>{crm?.name || "Generic webhook"}</h3>{status(crmConnected)}<p className="admin-kpi-note">JSON POST · token: {crm?.token_enc ? "encrypted" : process.env.CRM_WEBHOOK_TOKEN ? "environment" : "none"}</p></div>
         <div className="admin-card"><div className="admin-label">Google Search Console</div><h3>Organic search</h3>{status(google && Boolean(process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL))}<p className="admin-kpi-note">Impressions, clicks, CTR, position, queries, pages, indexing.</p></div>
         <div className="admin-card"><div className="admin-label">Google Analytics 4</div><h3>Traffic + conversions</h3>{status(google && Boolean(process.env.GA4_PROPERTY_ID))}<p className="admin-kpi-note">Sessions, users, key events by landing page/source.</p></div>
       </section>
 
-      {!storage ? <div className="admin-alert admin-section">Підключіть один private Vercel Blob store до проєкту. Після цього Vercel автоматично додасть BLOB_READ_WRITE_TOKEN, і заявки/CMS почнуть працювати без Supabase.</div> : null}
+      {!storage ? <div className={`admin-alert admin-section ${storageHealth.configured ? "bad" : ""}`}>{storageHealth.configured ? `Vercel Blob підключений, але health-check не проходить: ${storageHealth.error}` : "Підключіть private Vercel Blob store до проєкту. Для Vercel deployment використовується системний OIDC + BLOB_STORE_ID; окремий Supabase або SQL не потрібен."}</div> : null}
 
       <section className="admin-two-col admin-section">
         <div className="admin-card">
