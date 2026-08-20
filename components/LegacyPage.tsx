@@ -42,11 +42,18 @@ export default function LegacyPage({
         />
       ) : null}
 
-      <div id="reset-menu-overlay" className="reset-menu-overlay">
-        <button id="reset-menu-close" className="reset-menu-close" aria-label="Закрити">
+      <div
+        id="reset-menu-overlay"
+        className="reset-menu-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Головне меню"
+        aria-hidden="true"
+      >
+        <button id="reset-menu-close" className="reset-menu-close" aria-label="Закрити меню">
           ×
         </button>
-        <nav className="reset-menu-card">
+        <nav className="reset-menu-card" aria-label="Навігація сайту">
           <a href="/">Головна</a>
           <a href="/about/">Про клініку</a>
           <a href="/services/">Послуги</a>
