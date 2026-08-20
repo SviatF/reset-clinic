@@ -1,0 +1,72 @@
+{
+  "run_id": 32357763167,
+  "stages": {
+    "restore": "failure",
+    "configure": "skipped",
+    "capture": "skipped",
+    "localize": "skipped",
+    "build": "skipped"
+  },
+  "import": {
+    "routes": 8,
+    "new_assets": 183,
+    "pages": {
+      "/": {
+        "referenceHeight": 5179,
+        "localizedAssets": 41,
+        "unresolved": 0
+      },
+      "/price/": {
+        "referenceHeight": 3154,
+        "localizedAssets": 41,
+        "unresolved": 0
+      },
+      "/doctors/": {
+        "referenceHeight": 8574,
+        "localizedAssets": 115,
+        "unresolved": 0
+      },
+      "/contacts/": {
+        "referenceHeight": 1992,
+        "localizedAssets": 115,
+        "unresolved": 0
+      },
+      "/about/": {
+        "referenceHeight": 7486,
+        "localizedAssets": 163,
+        "unresolved": 0
+      },
+      "/services/": {
+        "referenceHeight": 3346,
+        "localizedAssets": 183,
+        "unresolved": 0
+      },
+      "/thank-you/": {
+        "referenceHeight": 1000,
+        "localizedAssets": 183,
+        "unresolved": 0
+      },
+      "/booking/": {
+        "referenceHeight": 1022,
+        "localizedAssets": 183,
+        "unresolved": 0
+      }
+    },
+    "unresolved_count": 0,
+    "unresolved": {
+      "/": [],
+      "/price/": [],
+      "/doctors/": [],
+      "/contacts/": [],
+      "/about/": [],
+      "/services/": [],
+      "/thank-you/": [],
+      "/booking/": []
+    }
+  },
+  "restore_log": "npm warn deprecated next@15.5.2: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/CVE-2025-66478 for more details.\n\nadded 31 packages, and audited 32 packages in 11s\n\n8 packages are looking for funding\n  run `npm fund` for details\n\n3 vulnerabilities (2 high, 1 critical)\n\nTo address all issues, run:\n  npm audit fix --force\n\nRun `npm audit` for details.\nFailed to retrieve file url:\n\n\tToo many users have viewed or downloaded this file recently. Please\n\ttry accessing the file again later. If the file you are trying to\n\taccess is particularly large or is shared with many people, it may\n\ttake up to 24 hours to be able to view or download the file. If you\n\tstill can't access a file after 24 hours, contact your domain\n\tadministrator.\n\nYou may still be able to access the file from the browser:\n\n\thttps://drive.google.com/uc?id=1zBdstg-rz6ntemz5RML2OPgraHquJV3L\n\nbut Gdown can't. Please check connections and permissions.\n",
+  "configure_log": "",
+  "capture_log": "",
+  "localize_log": "",
+  "build_log": ""
+}
