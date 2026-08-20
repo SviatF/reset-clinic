@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getPublishedPosts } from "../../lib/blog";
 import { SITE_URL } from "../../lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Блог RESET Clinic — косметологія, дерматологія та здоров’я шкіри",
   description: "Доказові матеріали RESET Clinic про косметологію, дерматологію, трихологію та здоров’я шкіри. Автори й медичні рецензенти клініки у Львові.",
