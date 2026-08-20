@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { getPublishedPosts } from "../lib/blog";
 import { SITE_URL } from "../lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date("2026-08-20T00:00:00+03:00");
   const base: MetadataRoute.Sitemap = [
