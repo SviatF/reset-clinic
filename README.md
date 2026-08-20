@@ -1,11 +1,22 @@
 # RESET Clinic — Next.js SSR
 
-Clean Next.js App Router migration of RESET Clinic. Production contains no PHP runtime, WordPress server, WordPress database, or CMS dependency. All eight public routes are server-rendered and visual assets are local.
+Production website implemented with Next.js App Router and server-side rendering.
 
-## Development
+## Run locally
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-The historical booking backend credential is intentionally not committed. Reconnect it server-side through the variables in `.env.example`.
+## Production
+
+```bash
+npm ci
+npm run build
+npm start
+```
+
+Public routes: `/`, `/price/`, `/doctors/`, `/contacts/`, `/about/`, `/services/`, `/thank-you/`, `/booking/`.
+
+Booking backend secrets are not committed. Configure server-side variables from `.env.example` when the booking integration is connected.
