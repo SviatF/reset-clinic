@@ -1,4 +1,4 @@
-name: RESET exact mobile DOM capture
+name: RESET restore mobile assets
 
 on:
   push:
@@ -9,152 +9,53 @@ permissions:
   contents: write
 
 jobs:
-  capture:
+  restore-assets:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
           ref: migration-next-ssr
           fetch-depth: 0
 
-      - name: Prepare
-        id: prepare
-        continue-on-error: true
+      - name: Restore only missing assets referenced by mobile SSR
         run: |
           set -euo pipefail
-          python3 -m pip install --disable-pip-version-check -q gdown
-          npm install --no-save playwright-core@1.55.0
-          mkdir -p /tmp/reset-wp/site /tmp/mobile/pages /tmp/mobile/resources /tmp/mobile/out
-
-      - name: Restore source locally
-        id: restore
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/mobile-restore.log) 2>&1
-          gdown '1zBdstg-rz6ntemz5RML2OPgraHquJV3L' -O /tmp/reset-wp/source.zip
-          unzip -q /tmp/reset-wp/source.zip -d /tmp/reset-wp/site
-          SQL=$(find /tmp/reset-wp/site/dup-installer -name 'dup-database*.sql' | head -1)
-          test -n "$SQL"
-          docker network create reset-mobile || true
-          docker run -d --name reset-mobile-db --network reset-mobile -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=wordpress mariadb:11
-          for i in $(seq 1 90); do docker exec reset-mobile-db mariadb -uroot -proot -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
-          docker exec -i reset-mobile-db mariadb -uroot -proot wordpress < "$SQL"
-          cat > /tmp/reset-wp/site/wp-config.php <<'PHP'
-          <?php
-          define('DB_NAME','wordpress'); define('DB_USER','root'); define('DB_PASSWORD','root'); define('DB_HOST','reset-mobile-db:3306');
-          define('DB_CHARSET','utf8mb4'); define('DB_COLLATE',''); define('WP_HOME','http://127.0.0.1:8080'); define('WP_SITEURL','http://127.0.0.1:8080'); define('WP_DEBUG',false);
-          define('AUTH_KEY','x');define('SECURE_AUTH_KEY','x');define('LOGGED_IN_KEY','x');define('NONCE_KEY','x');define('AUTH_SALT','x');define('SECURE_AUTH_SALT','x');define('LOGGED_IN_SALT','x');define('NONCE_SALT','x');
-          $table_prefix='wp_'; if(!defined('ABSPATH')) define('ABSPATH',__DIR__.'/'); require_once ABSPATH.'wp-settings.php';
-          PHP
-          chmod -R a+rX /tmp/reset-wp/site
-          docker run -d --name reset-mobile-wp --network reset-mobile -p 8080:80 -v /tmp/reset-wp/site:/var/www/html wordpress:php8.2-apache
-          for i in $(seq 1 90); do code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || true); [ "$code" = 200 ] && break; sleep 2; done
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/)" = 200
-
-      - name: Configure exact source renderer
-        id: configure
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/mobile-configure.log) 2>&1
-          CLI="docker run --rm --network reset-mobile -v /tmp/reset-wp/site:/var/www/html -w /var/www/html wordpress:cli-php8.2 wp --allow-root"
-          $CLI search-replace 'https://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid
-          $CLI search-replace 'http://resetclinic.org' 'http://127.0.0.1:8080' --all-tables --skip-columns=guid || true
-          $CLI plugin deactivate litespeed-cache hostinger hostinger-ai-assistant hostinger-easy-onboarding hostinger-reach wp-smush-pro || true
-          $CLI rewrite structure '/%postname%/' --hard
-          $CLI rewrite flush --hard
-          $CLI elementor flush-css || true
-          cat > /tmp/reset-wp/site/.htaccess <<'HT'
-          <IfModule mod_rewrite.c>
-          RewriteEngine On
-          RewriteBase /
-          RewriteRule ^index\.php$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . /index.php [L]
-          </IfModule>
-          HT
-          docker exec reset-mobile-wp a2enmod rewrite || true
-          docker exec reset-mobile-wp sh -lc "sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf; apachectl graceful" || true
-          sleep 3
-          for r in / /price/ /doctors/ /contacts/ /about/ /services/ /thank-you/ /booking/; do code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080$r"); echo "$r $code"; [ "$code" = 200 ]; done
-
-      - name: Capture mobile post-JS DOM and resources
-        id: render
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          exec > >(tee /tmp/mobile-render.log) 2>&1
-          CHROME=$(which google-chrome-stable || which google-chrome || which chromium)
-          cat > mobile-capture.mjs <<'JS'
-          import fs from 'fs'; import crypto from 'crypto'; import {chromium} from 'playwright-core';
-          const base='http://127.0.0.1:8080';
-          const routes=['/','/price/','/doctors/','/contacts/','/about/','/services/','/thank-you/','/booking/'];
-          const names=['home','price','doctors','contacts','about','services','thank-you','booking'];
-          const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME,args:['--no-sandbox']});
-          const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-          const page=await ctx.newPage(); const resources={}; const pages=[];
-          page.on('response',async res=>{try{
-            const req=res.request(); if(!['stylesheet','image','font','media'].includes(req.resourceType()))return;
-            const url=res.url(); if(resources[url])return; const body=await res.body(); if(!body?.length)return;
-            const ct=(res.headers()['content-type']||'').split(';')[0]; let ext=(new URL(url).pathname.match(/\.([A-Za-z0-9]{1,8})$/)?.[1]||'').toLowerCase();
-            if(!ext){if(ct.includes('css'))ext='css';else if(ct.includes('woff2'))ext='woff2';else if(ct.includes('woff'))ext='woff';else if(ct.includes('svg'))ext='svg';else if(ct.includes('png'))ext='png';else if(ct.includes('jpeg'))ext='jpg';else if(ct.includes('webp'))ext='webp';else ext='bin';}
-            const hash=crypto.createHash('sha1').update(url).digest('hex'); const file=`${hash}.${ext}`; fs.writeFileSync(`/tmp/mobile/resources/${file}`,body); resources[url]={file,contentType:ct,type:req.resourceType(),bytes:body.length};
-          }catch{}});
-          for(let i=0;i<routes.length;i++){
-            const route=routes[i], id=`${String(i+1).padStart(2,'0')}-${names[i]}`;
-            const res=await page.goto(base+route,{waitUntil:'networkidle',timeout:60000});
-            console.log(route,res?.status());
-            if(!res||res.status()!==200)throw new Error(`${route} ${res?.status()}`);
-            await page.evaluate(async()=>{for(let y=0;y<document.documentElement.scrollHeight;y+=650){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0)});
-            await page.waitForTimeout(1000);
-            await page.evaluate(()=>document.querySelectorAll('.elementor-invisible').forEach(el=>el.classList.remove('elementor-invisible')));
-            const info=await page.evaluate(()=>({title:document.title,bodyClass:document.body.className,height:document.documentElement.scrollHeight,html:document.body.innerHTML}));
-            fs.writeFileSync(`/tmp/mobile/pages/${id}.html`,await page.content());
-            fs.writeFileSync(`/tmp/mobile/pages/${id}.json`,JSON.stringify({route,...info},null,2));
-            pages.push({id,route,status:res.status(),title:info.title,bodyClass:info.bodyClass,height:info.height});
-          }
-          fs.writeFileSync('/tmp/mobile/manifest.json',JSON.stringify({pages,resources},null,2));
-          await ctx.close(); await browser.close();
-          JS
-          CHROME="$CHROME" node ./mobile-capture.mjs
-          tar -czf /tmp/mobile/out/mobile-render-source.tar.gz -C /tmp/mobile pages resources manifest.json
-
-      - name: Persist capture diagnostics
-        if: always()
-        env:
-          RUN_ID: ${{ github.run_id }}
-          PREPARE: ${{ steps.prepare.outcome }}
-          RESTORE: ${{ steps.restore.outcome }}
-          CONFIGURE: ${{ steps.configure.outcome }}
-          RENDER: ${{ steps.render.outcome }}
-        run: |
-          python3 - <<'PY'
-          import json,os
+          python3 - <<'PY' > /tmp/mobile-assets.txt
           from pathlib import Path
-          d={'run_id':int(os.environ['RUN_ID']),'stages':{k.lower():os.environ[k] for k in ['PREPARE','RESTORE','CONFIGURE','RENDER']}}
-          p=Path('/tmp/mobile/manifest.json')
-          if p.exists(): d['pages']=json.loads(p.read_text()).get('pages',[])
-          for n in ['restore','configure','render']:
-              q=Path('/tmp/mobile-'+n+'.log'); d[n+'_log']=q.read_text(errors='ignore')[-12000:] if q.exists() else ''
-          Path('mobile-capture-report.json').write_text(json.dumps(d,indent=2))
+          import re
+          text=Path('lib/mobile-pages.json').read_text(encoding='utf-8',errors='ignore')
+          for name in sorted(set(re.findall(r'/assets/([A-Za-z0-9._-]+)',text))):
+              print(name)
           PY
-          git config user.name 'RESET Capture Bot'; git config user.email 'actions@users.noreply.github.com'
-          git add -- mobile-capture-report.json
-          git commit -m 'test: record exact mobile DOM capture' || true
+          restored=0
+          while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            if [ ! -f "public/assets/$name" ]; then
+              git cat-file -e "1c7313f87e9d42c49267b20a183558e960fd53e0:public/assets/$name" 2>/dev/null || { echo "Missing in source commit: $name"; exit 1; }
+              git checkout 1c7313f87e9d42c49267b20a183558e960fd53e0 -- "public/assets/$name"
+              restored=$((restored+1))
+            fi
+          done < /tmp/mobile-assets.txt
+          echo "Restored $restored referenced mobile assets"
+
+          missing=0
+          while IFS= read -r name; do
+            [ -f "public/assets/$name" ] || { echo "STILL MISSING $name"; missing=1; }
+          done < /tmp/mobile-assets.txt
+          [ "$missing" = 0 ]
+
+          if find public/assets -maxdepth 1 -type f -name '*.js' | grep -q .; then
+            echo 'Unexpected legacy JS assets found:'
+            find public/assets -maxdepth 1 -type f -name '*.js'
+            exit 1
+          fi
+
+      - name: Commit restored assets
+        run: |
+          set -euo pipefail
+          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then echo 'Nothing to restore'; exit 0; fi
+          git config user.name 'RESET Migration Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- public/assets
+          git commit -m 'fix: restore referenced mobile assets'
           git push origin HEAD:migration-next-ssr
-
-      - name: Upload mobile rendered source
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-render-source
-          path: /tmp/mobile/out/mobile-render-source.tar.gz
-          compression-level: 0
-          retention-days: 2
-
-      - name: Enforce capture
-        if: steps.prepare.outcome != 'success' || steps.restore.outcome != 'success' || steps.configure.outcome != 'success' || steps.render.outcome != 'success'
-        run: exit 1
