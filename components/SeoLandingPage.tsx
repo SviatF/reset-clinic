@@ -14,6 +14,77 @@ const MAIN_NAV = [
   ["Ціни", "/price/"],
 ] as const;
 
+const POLISH_CSS = `
+.seo-site-polished .seo-header{min-height:74px;padding-top:10px;padding-bottom:10px;background:rgba(246,246,238,.97);backdrop-filter:blur(10px)}
+.seo-site-polished .seo-brand span{font-size:30px}.seo-site-polished .seo-brand small{font-size:6.5px}
+.seo-site-polished .seo-hero{padding:30px 0 62px;background:#f6f6ee}
+.seo-site-polished .seo-breadcrumbs{margin-bottom:30px}
+.seo-site-polished .seo-hero-grid{grid-template-columns:minmax(0,1.16fr) minmax(350px,.84fr);gap:52px}
+.seo-site-polished .seo-hero-copy{padding:8px 0}
+.seo-site-polished .seo-hero h1{font-size:clamp(48px,5vw,74px);line-height:.96;max-width:780px}
+.seo-site-polished .seo-lead{margin-top:24px;font-size:15px;line-height:1.72;max-width:680px}
+.seo-site-polished .seo-hero-actions{margin-top:28px}
+.seo-site-polished .seo-button{min-height:46px;padding:0 21px}
+.seo-site-polished .seo-hero-visual{min-height:470px;height:470px;border-radius:28px;box-shadow:none}
+.seo-site-polished .seo-hero-visual>img{height:470px}
+.seo-site-polished .seo-hero-caption{left:22px;right:22px;bottom:22px}
+.seo-site-polished .seo-hero-caption strong{font-size:25px}
+.seo-site-polished .seo-process-grid>div{padding-top:24px;padding-bottom:26px}
+.seo-site-polished .seo-process-grid span{margin-bottom:18px}
+.seo-site-polished .seo-process-grid strong{font-size:24px}
+.seo-site-polished .seo-content-grid{grid-template-columns:minmax(0,1fr) 300px;gap:64px;padding-top:74px;padding-bottom:78px}
+.seo-site-polished .seo-section{grid-template-columns:64px minmax(0,1fr);gap:24px;padding-bottom:50px;margin-bottom:50px}
+.seo-site-polished .seo-section h2{font-size:clamp(34px,3.3vw,48px);line-height:1.02;margin-bottom:20px}
+.seo-site-polished .seo-section p,.seo-site-polished .seo-section li{font-size:14px;line-height:1.78}
+.seo-site-polished .seo-section ul{margin-top:20px}
+.seo-site-polished .seo-related-card{border-radius:18px;padding:20px}
+.seo-site-polished .seo-contact-card strong{font-size:23px}
+.seo-site-polished .seo-doctors-band{padding:72px 0 78px}
+.seo-site-polished .seo-band-heading{margin-bottom:32px}
+.seo-site-polished .seo-band-heading h2{font-size:clamp(42px,4.4vw,60px)}
+.seo-site-polished .seo-doctor-card{border-radius:20px;min-height:170px;grid-template-columns:128px minmax(0,1fr)}
+.seo-site-polished .seo-doctor-photo{min-height:170px}
+.seo-site-polished .seo-doctor-card strong{font-size:26px}
+.seo-site-polished .seo-faq{padding:76px 0}
+.seo-site-polished .seo-faq-layout{grid-template-columns:.68fr 1.32fr;gap:64px}
+.seo-site-polished .seo-faq h2{font-size:clamp(42px,4.4vw,60px)}
+.seo-site-polished .seo-faq summary{font-size:24px;padding:22px 0}
+.seo-site-polished .seo-final-cta{padding:76px 0}
+.seo-site-polished .seo-final-cta h2{font-size:clamp(46px,5.2vw,70px);line-height:.94}
+@media(max-width:1024px){
+  .seo-site-polished .seo-hero-grid{grid-template-columns:1fr 390px;gap:36px}
+  .seo-site-polished .seo-hero h1{font-size:clamp(46px,6vw,66px)}
+  .seo-site-polished .seo-content-grid{grid-template-columns:minmax(0,1fr) 270px;gap:38px}
+  .seo-site-polished .seo-section{grid-template-columns:50px minmax(0,1fr);gap:18px}
+}
+@media(max-width:767px){
+  .seo-site-polished .seo-header{min-height:66px;padding-left:18px;padding-right:18px}
+  .seo-site-polished .seo-brand span{font-size:27px}
+  .seo-site-polished .seo-hero{padding:20px 0 42px}
+  .seo-site-polished .seo-breadcrumbs{margin-bottom:22px}
+  .seo-site-polished .seo-hero-grid{grid-template-columns:1fr;gap:28px}
+  .seo-site-polished .seo-hero h1{font-size:clamp(40px,12vw,58px);line-height:.97}
+  .seo-site-polished .seo-lead{font-size:14px;line-height:1.68;margin-top:20px}
+  .seo-site-polished .seo-hero-visual,.seo-site-polished .seo-hero-visual>img{height:360px;min-height:360px}
+  .seo-site-polished .seo-hero-visual{border-radius:22px}
+  .seo-site-polished .seo-process-grid{grid-template-columns:1fr}
+  .seo-site-polished .seo-process-grid>div{padding:20px 0;border-right:0;border-bottom:1px solid var(--line)}
+  .seo-site-polished .seo-process-grid>div:last-child{border-bottom:0}
+  .seo-site-polished .seo-content-grid{grid-template-columns:1fr;gap:34px;padding-top:50px;padding-bottom:56px}
+  .seo-site-polished .seo-section{grid-template-columns:1fr;gap:12px;padding-bottom:38px;margin-bottom:38px}
+  .seo-site-polished .seo-section-kicker{padding-top:0}
+  .seo-site-polished .seo-section h2{font-size:36px}
+  .seo-site-polished .seo-section ul{grid-template-columns:1fr}
+  .seo-site-polished .seo-side{display:grid;gap:12px}
+  .seo-site-polished .seo-related-primary{position:static}
+  .seo-site-polished .seo-doctors-band,.seo-site-polished .seo-faq,.seo-site-polished .seo-final-cta{padding:58px 0}
+  .seo-site-polished .seo-doctor-grid{grid-template-columns:1fr}
+  .seo-site-polished .seo-faq-layout{grid-template-columns:1fr;gap:34px}
+  .seo-site-polished .seo-faq-heading{position:static}
+  .seo-site-polished .seo-final-grid{grid-template-columns:1fr;align-items:start}
+}
+`;
+
 function directChildren(landing: SeoLanding) {
   if (landing.type !== "category") return [];
   return ALL_SEO_LANDINGS.filter((candidate) => {
@@ -80,7 +151,8 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
   const doctors = DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
 
   return (
-    <main className="seo-site">
+    <main className="seo-site seo-site-polished">
+      <style dangerouslySetInnerHTML={{ __html: POLISH_CSS }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
       <SiteHeader />
 
