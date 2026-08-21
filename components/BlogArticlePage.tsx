@@ -85,8 +85,7 @@ function normalizeFaq(input: unknown[]): NormalizedFaq[] {
 
 export function buildBlogArticleJsonLd(post: PublicBlogPost) {
   const category = getBlogCategory(post.category);
-  const path = blogPostPath(post);
-  const url = post.canonical_url || `${SITE_URL}${path}`;
+  const url = `${SITE_URL}${blogPostPath(post)}`;
   const sources = normalizeSources(post.sources || []);
   const faq = normalizeFaq(post.faq || []);
   const articleType = post.schema_type === "Article" || post.schema_type === "BlogPosting"
@@ -106,7 +105,7 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
       "@type": articleType,
       "@id": `${url}#article`,
       url,
-      mainEntityOfPage: { "@id": `${url}#webpage` },
+      mainEntityOfPage: url,
       headline: post.title,
       description: post.seo_description || post.excerpt || undefined,
       datePublished: post.published_at || undefined,
@@ -118,7 +117,7 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
       image: post.og_image || `${SITE_URL}${DEFAULT_OG_IMAGE}`,
       about: post.target_keyword || undefined,
       articleSection: category?.name,
-      citation: sources.filter((source) => source.href).map((source) => source.href),
+      citation: sources.flatMap((source) => source.href ? [source.href] : []),
       breadcrumb: { "@id": `${url}#breadcrumb` },
     },
     {
@@ -145,8 +144,6 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
 
 export default async function BlogArticlePage({ post }: { post: PublicBlogPost }) {
   const category = getBlogCategory(post.category);
-  const path = blogPostPath(post);
-  const url = post.canonical_url || `${SITE_URL}${path}`;
   const schema = buildBlogArticleJsonLd(post);
   const paragraphs = post.body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
   const sources = normalizeSources(post.sources || []);
@@ -231,8 +228,6 @@ export default async function BlogArticlePage({ post }: { post: PublicBlogPost }
           <div><p className="reset-blog-eyebrow">RESET Clinic · Львів</p><h2>Потрібна персональна оцінка?</h2><p>Запишіться на консультацію, якщо потрібен діагноз, план лікування або підбір процедури.</p></div>
           <Link href="/booking/">Записатися →</Link>
         </section>
-
-        <link rel="canonical" href={url} />
       </main>
       <PublicSiteFooter />
     </div>
