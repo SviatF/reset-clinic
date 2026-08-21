@@ -1,0 +1,41 @@
+/* Small visual corrections layered after the shared SEO landing styles. */
+.seo-site-polished .seo-header .seo-brand-logo{
+  width:124px;
+}
+
+.seo-site-polished .seo-footer .seo-brand-logo{
+  width:136px;
+}
+
+/* Category pages use a light process strip, so keep all process copy dark. */
+.seo-template-category .seo-process-strip{
+  background:#ebe6da;
+  color:#29201b;
+  border-color:rgba(41,32,27,.12);
+}
+
+.seo-template-category .seo-process-grid>div{
+  border-color:rgba(41,32,27,.12);
+}
+
+.seo-template-category .seo-process-grid strong{
+  color:#29201b;
+}
+
+.seo-template-category .seo-process-grid p{
+  color:#6f655f;
+}
+
+.seo-template-category .seo-process-grid span{
+  color:#8a6d3b;
+}
+
+@media(max-width:767px){
+  .seo-site-polished .seo-header .seo-brand-logo{
+    width:108px;
+  }
+
+  .seo-template-category .seo-process-grid>div{
+    border-bottom-color:rgba(41,32,27,.12);
+  }
+}
