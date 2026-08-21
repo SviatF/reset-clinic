@@ -8,7 +8,7 @@ import {
   getBlogCategory,
   type BlogCategorySlug,
 } from "../lib/blog-categories";
-import { jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
+import { DEFAULT_OG_IMAGE, jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
 
 async function categoryState(slug: BlogCategorySlug) {
   const category = getBlogCategory(slug);
@@ -45,6 +45,13 @@ export async function buildBlogCategoryMetadata(slug: BlogCategorySlug): Promise
       siteName: SITE_NAME,
       title: state.category.title,
       description: state.category.description,
+      images: [{ url: DEFAULT_OG_IMAGE, width: 2446, height: 1314, alt: `${state.category.name} — ${SITE_NAME}` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: state.category.title,
+      description: state.category.description,
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }
