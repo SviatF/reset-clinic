@@ -2,6 +2,7 @@ import type { SeoLanding } from "./seo-pages";
 
 function sanitizeText(value: string) {
   return value
+    .replace(/Експертний інформаційний hub RESET Clinic\./gi, "Практичні рекомендації RESET Clinic.")
     .replace(/Problem-based SEO/gi, "Проблеми шкіри")
     .replace(/Skin care hub/gi, "Догляд за шкірою")
     .replace(/SEO[- ]intent/gi, "пошуковий запит")
