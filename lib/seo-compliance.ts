@@ -22,6 +22,13 @@ export function isSeoLandingIndexable(landing: SeoLanding) {
   return !UNVERIFIED_MEDICAL_PATHS.has(landing.path);
 }
 
+export function displayH1ForLanding(landing: SeoLanding) {
+  if (landing.path === "/skin-care/") {
+    return "Догляд за шкірою: рекомендації лікарів та косметологів";
+  }
+  return landing.h1;
+}
+
 export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
   const base = buildSeoLandingMetadata(landing);
   const index = isSeoLandingIndexable(landing);
@@ -84,6 +91,7 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
   const url = `${SITE_URL}${landing.path}`;
   const reviewer = reviewerForLanding(landing);
   const entityId = landing.type === "procedure" ? `${url}#procedure` : `${url}#service`;
+  const displayH1 = displayH1ForLanding(landing);
 
   const graph = base["@graph"].flatMap((node) => {
     const id = node["@id"];
@@ -92,7 +100,7 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
       return [{
         "@type": "MedicalProcedure",
         "@id": entityId,
-        name: landing.h1,
+        name: displayH1,
         description: landing.description,
         url,
       }];
@@ -101,6 +109,7 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
     if (id === `${url}#webpage`) {
       return [{
         ...node,
+        headline: displayH1,
         ...(landing.type === "service" || landing.type === "procedure" ? { mainEntity: { "@id": entityId } } : {}),
         ...(reviewer ? { reviewedBy: { "@id": `${SITE_URL}${doctorPath(reviewer)}#person` } } : {}),
       }];
