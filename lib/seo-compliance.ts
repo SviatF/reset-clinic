@@ -1,5 +1,5 @@
 import type { SeoLanding } from "./seo-pages";
-import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-base";
+import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-core";
 
 export {
   isSeoLandingIndexable,
@@ -9,7 +9,7 @@ export {
   priceHrefForLanding,
   blogCategoryForLanding,
   buildCompliantLandingJsonLd,
-} from "./seo-compliance-base";
+} from "./seo-compliance-core";
 
 function cleanPublicMedicalCopy(value: string) {
   return value
