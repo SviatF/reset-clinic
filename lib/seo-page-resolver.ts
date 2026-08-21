@@ -1,6 +1,8 @@
 import { SECONDARY_SEO_LANDINGS } from "./seo-secondary-pages";
 import { SEO_WAVE2_LANDINGS } from "./seo-wave2-pages";
 import { SEO_WAVE3_LANDINGS } from "./seo-wave3-pages";
+import { applyMarketingCopy } from "./seo-marketing-copy";
+import { applyExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { SEO_LANDINGS, normalizeSeoPath, type SeoLanding } from "./seo-pages";
 
 function normalizeWave2Landing(landing: SeoLanding): SeoLanding {
@@ -106,7 +108,10 @@ export const ALL_SEO_LANDINGS = [
   ...SECONDARY_SEO_LANDINGS,
   ...NORMALIZED_WAVE2_LANDINGS,
   ...SEO_WAVE3_LANDINGS,
-].map(enhanceStructuralLinks);
+]
+  .map(enhanceStructuralLinks)
+  .map(applyMarketingCopy)
+  .map(applyExtraMarketingCopy);
 
 export function resolveSeoLanding(path: string) {
   const normalized = normalizeSeoPath(path);

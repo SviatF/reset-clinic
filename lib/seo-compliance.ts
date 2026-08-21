@@ -1,4 +1,6 @@
 import type { SeoLanding } from "./seo-pages";
+import { hasMarketingCopy } from "./seo-marketing-copy";
+import { hasExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-core";
 
 export {
@@ -27,10 +29,22 @@ function cleanPublicMedicalCopy(value: string) {
 }
 
 export function supplementalLandingSections(landing: SeoLanding): SeoLanding["sections"] {
-  return baseSupplementalLandingSections(landing).map((section) => ({
+  const cleaned = baseSupplementalLandingSections(landing).map((section) => ({
     ...section,
     title: cleanPublicMedicalCopy(section.title),
     text: section.text?.map(cleanPublicMedicalCopy),
     bullets: section.bullets?.map(cleanPublicMedicalCopy),
   }));
+
+  const marketingFirst = hasMarketingCopy(landing.path) || hasExtraMarketingCopy(landing.path);
+  if (!marketingFirst) return cleaned;
+
+  // Conversion-focused landings already contain their own unique medical and
+  // decision-making sections. Do not append generic filler. The botulinum page
+  // keeps only the seven zone-specific H2 sections required by its search structure.
+  if (landing.path === "/cosmetology/injection/botulinum-therapy/") {
+    return cleaned.slice(0, 7);
+  }
+
+  return [];
 }
