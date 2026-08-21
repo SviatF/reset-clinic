@@ -1,3 +1,4 @@
+import LegacyBookingEnhancer from "./LegacyBookingEnhancer";
 import LegacyEnhancer from "./LegacyEnhancer";
 
 export type LegacyPageData = {
@@ -72,6 +73,7 @@ export default function LegacyPage({
       </div>
 
       <LegacyEnhancer bodyClass={data.bodyClass} />
+      <LegacyBookingEnhancer bodyClass={data.bodyClass} />
     </>
   );
 }
