@@ -1,5 +1,5 @@
 import { getBlogPosts, type BlogPost } from "./admin-data";
-import { getBlogCategory, type BlogCategorySlug } from "./blog-categories";
+import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "./blog-categories";
 
 export type PublicBlogPost = BlogPost;
 
@@ -31,5 +31,5 @@ export async function getPublishedPost(slug: string) {
 
 export function blogPostPath(post: Pick<BlogPost, "slug" | "category">) {
   const category = getBlogCategory(post.category);
-  return category ? `/blog/${category.slug}/${post.slug}/` : `/blog/${post.slug}/`;
+  return category ? `${blogCategoryPath(category.slug)}${post.slug}/` : `/blog/${post.slug}/`;
 }
