@@ -1,3 +1,4 @@
+export const BLOG_ROOT_MIN_INDEXABLE_POSTS = 4;
 export const BLOG_CATEGORY_MIN_INDEXABLE_POSTS = 4;
 
 export const BLOG_CATEGORIES = [

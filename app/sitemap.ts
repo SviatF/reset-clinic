@@ -1,6 +1,11 @@
 import type { MetadataRoute } from "next";
 import { blogPostPath, getPublishedPosts } from "../lib/blog";
-import { BLOG_CATEGORIES, BLOG_CATEGORY_MIN_INDEXABLE_POSTS, blogCategoryPath } from "../lib/blog-categories";
+import {
+  BLOG_CATEGORIES,
+  BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
+  BLOG_ROOT_MIN_INDEXABLE_POSTS,
+  blogCategoryPath,
+} from "../lib/blog-categories";
 import { DOCTORS, doctorPath, isCompleteDoctorProfile } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
 import { isSeoLandingIndexable } from "../lib/seo-compliance";
@@ -16,7 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/price/` },
     { url: `${SITE_URL}/about/` },
     { url: `${SITE_URL}/contacts/` },
-    { url: `${SITE_URL}/blog/` },
   ];
 
   const seo: MetadataRoute.Sitemap = ALL_SEO_LANDINGS
@@ -28,11 +32,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map((doctor) => ({ url: `${SITE_URL}${doctorPath(doctor)}` }));
 
   const posts = await getPublishedPosts(1000);
+  const indexablePosts = posts.filter((post) => post.indexable);
+  const newestBlogUpdate = indexablePosts.reduce(
+    (latest, post) => Math.max(latest, new Date(post.updated_at).getTime()),
+    0,
+  );
+
+  const blogRoot: MetadataRoute.Sitemap = indexablePosts.length >= BLOG_ROOT_MIN_INDEXABLE_POSTS
+    ? [{
+        url: `${SITE_URL}/blog/`,
+        lastModified: newestBlogUpdate ? new Date(newestBlogUpdate) : undefined,
+      }]
+    : [];
 
   const categories: MetadataRoute.Sitemap = BLOG_CATEGORIES.flatMap((category) => {
-    const categoryPosts = posts.filter(
-      (post) => post.indexable && post.category === category.slug,
-    );
+    const categoryPosts = indexablePosts.filter((post) => post.category === category.slug);
     if (categoryPosts.length < BLOG_CATEGORY_MIN_INDEXABLE_POSTS) return [];
     const newestUpdate = categoryPosts.reduce(
       (latest, post) => Math.max(latest, new Date(post.updated_at).getTime()),
@@ -44,12 +58,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }];
   });
 
-  const blog: MetadataRoute.Sitemap = posts
-    .filter((post) => post.indexable)
-    .map((post) => ({
-      url: `${SITE_URL}${blogPostPath(post)}`,
-      lastModified: new Date(post.updated_at),
-    }));
+  const blog: MetadataRoute.Sitemap = indexablePosts.map((post) => ({
+    url: `${SITE_URL}${blogPostPath(post)}`,
+    lastModified: new Date(post.updated_at),
+  }));
 
-  return [...base, ...seo, ...doctors, ...categories, ...blog];
+  return [...base, ...seo, ...doctors, ...blogRoot, ...categories, ...blog];
 }

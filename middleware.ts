@@ -13,6 +13,7 @@ const legacyPages: Record<string, string> = {
 
 const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
+const NON_CANONICAL_ROBOTS = "noindex, follow";
 const SESSION_COOKIE = "rc_admin_session";
 
 function isPrivateRoute(pathname: string) {
@@ -32,10 +33,20 @@ function isProtectedAdmin(pathname: string) {
   return adminPage || adminApi;
 }
 
+function isVercelAlias(request: NextRequest) {
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  return hostname === "vercel.app" || hostname.endsWith(".vercel.app");
+}
+
 function applyPrivateHeaders(response: NextResponse) {
   response.headers.set("X-Robots-Tag", PRIVATE_ROBOTS);
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
   response.headers.set("Pragma", "no-cache");
+  return response;
+}
+
+function applyNonCanonicalHeaders(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", NON_CANONICAL_ROBOTS);
   return response;
 }
 
@@ -53,7 +64,8 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = legacyPages[legacyId];
     url.search = "";
-    return NextResponse.redirect(url, 308);
+    const redirect = NextResponse.redirect(url, 308);
+    return isVercelAlias(request) ? applyNonCanonicalHeaders(redirect) : redirect;
   }
 
   const pathname = request.nextUrl.pathname;
@@ -65,15 +77,12 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  return isPrivateRoute(pathname) ? applyPrivateHeaders(response) : response;
+  if (isPrivateRoute(pathname)) return applyPrivateHeaders(response);
+  return isVercelAlias(request) ? applyNonCanonicalHeaders(response) : response;
 }
 
 export const config = {
   matcher: [
-    "/",
-    "/admin/:path*",
-    "/api/:path*",
-    "/preview/:path*",
-    "/internal/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|assets/).*)",
   ],
 };

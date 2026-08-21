@@ -2,6 +2,8 @@ import Link from "next/link";
 import { blogPostPath, getPublishedPostsByCategory, type PublicBlogPost } from "../lib/blog";
 import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "../lib/blog-categories";
 import { getSeoContentPlanItem } from "../lib/seo-content-plan";
+import { isSeoLandingIndexable } from "../lib/seo-compliance";
+import { resolveSeoLanding } from "../lib/seo-page-resolver";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, jsonLd } from "../lib/seo";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 
@@ -16,17 +18,17 @@ const RELATED_BY_CATEGORY: Record<BlogCategorySlug, RelatedLink[]> = {
     { label: "Дерматоскопія", href: "/dermatology/dermoscopy/" },
   ],
   acne: [
-    { label: "Акне: problem page", href: "/skin-problems/acne/" },
+    { label: "Що варто знати про акне", href: "/skin-problems/acne/" },
     { label: "Лікування акне", href: "/dermatology/acne-treatment/" },
     { label: "LED-терапія", href: "/cosmetology/hardware/led-therapy/" },
   ],
   rosacea: [
-    { label: "Розацеа: problem page", href: "/skin-problems/rosacea/" },
+    { label: "Що варто знати про розацеа", href: "/skin-problems/rosacea/" },
     { label: "Лікування розацеа", href: "/dermatology/rosacea-treatment/" },
     { label: "IPL-терапія", href: "/cosmetology/hardware/ipl/" },
   ],
   pigmentation: [
-    { label: "Пігментація: problem page", href: "/skin-problems/pigmentation/" },
+    { label: "Що варто знати про пігментацію", href: "/skin-problems/pigmentation/" },
     { label: "Лікування пігментації", href: "/dermatology/pigmentation-treatment/" },
     { label: "IPL-терапія", href: "/cosmetology/hardware/ipl/" },
   ],
@@ -88,6 +90,11 @@ function uniqueRelatedLinks(items: RelatedLink[]) {
   return Array.from(new Map(items.map((item) => [item.href, item])).values());
 }
 
+function canPromoteMedicalLink(item: RelatedLink) {
+  const landing = resolveSeoLanding(item.href);
+  return !landing || isSeoLandingIndexable(landing);
+}
+
 export function buildBlogArticleJsonLd(post: PublicBlogPost) {
   const category = getBlogCategory(post.category);
   const url = `${SITE_URL}${blogPostPath(post)}`;
@@ -141,11 +148,11 @@ export default async function BlogArticlePage({ post }: { post: PublicBlogPost }
   const paragraphs = post.body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
   const sources = normalizeSources(post.sources || []);
   const faq = normalizeFaq(post.faq || []);
-  const relatedLinks = planItem
+  const relatedLinks = (planItem
     ? uniqueRelatedLinks([planItem.moneyPage, ...planItem.supportingPages])
     : category
       ? RELATED_BY_CATEGORY[category.slug]
-      : [];
+      : []).filter(canPromoteMedicalLink);
   const relatedPosts = category
     ? (await getPublishedPostsByCategory(category.slug, 20))
         .filter((item) => item.id !== post.id && item.indexable)
@@ -194,16 +201,16 @@ export default async function BlogArticlePage({ post }: { post: PublicBlogPost }
         {sources.length ? (
           <section className="reset-blog-supporting">
             <p className="reset-blog-eyebrow">Джерела</p>
-            <h2>References</h2>
+            <h2>Використані матеріали</h2>
             <ul className="reset-blog-sources">
-              {sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.href ? <a href={source.href} target="_blank" rel="noreferrer">{source.label}</a> : source.label}</li>)}
+              {sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.href ? <a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a> : source.label}</li>)}
             </ul>
           </section>
         ) : null}
 
         {faq.length ? (
           <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">FAQ</p>
+            <p className="reset-blog-eyebrow">Запитання та відповіді</p>
             <h2>Часті запитання</h2>
             <div className="reset-blog-faq">
               {faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}
@@ -213,7 +220,7 @@ export default async function BlogArticlePage({ post }: { post: PublicBlogPost }
 
         {relatedPosts.length ? (
           <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">Related articles</p>
+            <p className="reset-blog-eyebrow">Матеріали за темою</p>
             <h2>Читайте також</h2>
             <div className="reset-blog-link-grid">
               {relatedPosts.map((item) => <Link href={blogPostPath(item)} key={item.id}>{item.title}<span>↗</span></Link>)}
