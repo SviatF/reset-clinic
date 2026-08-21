@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../components/SeoLandingPage.css";
 import "../components/SeoLandingPolish.css";
+import "../components/SeoLandingVisualFixes.css";
 import SeoComplianceClient from "../components/SeoComplianceClient";
 import {
   clinicJsonLd,
