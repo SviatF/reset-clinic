@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../lib/admin-auth";
 import { createBlogPost, getBlogPosts } from "../../../../lib/admin-data";
 import { normalizeBlogCategory } from "../../../../lib/blog-categories";
-
-function slugify(value: string) {
-  return value.toLowerCase().trim().replace(/[’'`]/g, "").replace(/[^a-z0-9а-яіїєґ\s-]/giu, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-}
+import { toUkrainianLatinSlug } from "../../../../lib/blog-slug";
 
 export async function POST(request: NextRequest) {
   const session = await getAdminSession();
@@ -13,7 +10,7 @@ export async function POST(request: NextRequest) {
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
-  const slug = slugify(String(form.get("slug") ?? "").trim() || title);
+  const slug = toUkrainianLatinSlug(String(form.get("slug") ?? "").trim() || title);
   if (!title || !slug) return NextResponse.redirect(new URL("/admin/blog/?error=missing", request.url), 303);
 
   const existing = await getBlogPosts(1000);

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import BlogArticlePage from "../../../components/BlogArticlePage";
+import BlogCategoryPage, { buildBlogCategoryMetadata } from "../../../components/BlogCategoryPage";
 import { blogPostPath, getPublishedPost } from "../../../lib/blog";
-import { getBlogCategory } from "../../../lib/blog-categories";
+import { blogCategoryPath, getBlogCategory } from "../../../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "../../../lib/seo";
 
 type Props = { params: Promise<{ segments: string[] }> };
@@ -19,7 +20,12 @@ async function resolveArticle(segments: string[]) {
     const category = getBlogCategory(categorySlug);
     return {
       post,
-      canonicalRoute: Boolean(post && category && post.category === category.slug),
+      canonicalRoute: Boolean(
+        post &&
+        category &&
+        post.category === category.slug &&
+        categorySlug === category.publicSlug,
+      ),
     };
   }
 
@@ -28,6 +34,14 @@ async function resolveArticle(segments: string[]) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { segments } = await params;
+
+  if (segments.length === 1) {
+    const category = getBlogCategory(segments[0]);
+    if (category && segments[0] === category.publicSlug) {
+      return buildBlogCategoryMetadata(category.slug);
+    }
+  }
+
   const { post, canonicalRoute } = await resolveArticle(segments);
   if (!post) return { title: SITE_NAME, robots: { index: false, follow: false } };
 
@@ -70,6 +84,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogDynamicArticlePage({ params }: Props) {
   const { segments } = await params;
+
+  if (segments.length === 1) {
+    const category = getBlogCategory(segments[0]);
+    if (category) {
+      if (segments[0] !== category.publicSlug) permanentRedirect(blogCategoryPath(category.slug));
+      return <BlogCategoryPage slug={category.slug} />;
+    }
+  }
+
   const { post, canonicalRoute } = await resolveArticle(segments);
   if (!post) notFound();
 

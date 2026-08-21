@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { getBlogPosts } from "../../../../lib/admin-data";
-import { BLOG_CATEGORIES, getBlogCategory } from "../../../../lib/blog-categories";
+import { blogPostPath } from "../../../../lib/blog";
+import { BLOG_CATEGORIES, blogCategoryPath, getBlogCategory } from "../../../../lib/blog-categories";
+import { toUkrainianLatinSlug } from "../../../../lib/blog-slug";
 import { getSeoContentPlanItem, SEO_CONTENT_PLAN } from "../../../../lib/seo-content-plan";
 
 type Props = { searchParams: Promise<{ error?: string; plan?: string }> };
+type SeoContentPlanItem = (typeof SEO_CONTENT_PLAN)[number];
 
 const errorMessages: Record<string, string> = {
   missing: "Заповніть заголовок і коректний slug.",
@@ -19,6 +22,16 @@ const intentLabels = {
   diagnostic: "Діагностичний",
 } as const;
 
+function plannedArticleSlug(item: SeoContentPlanItem) {
+  return toUkrainianLatinSlug(item.title);
+}
+
+function plannedArticlePath(item: SeoContentPlanItem) {
+  const category = getBlogCategory(item.category);
+  const slug = plannedArticleSlug(item);
+  return category ? `${blogCategoryPath(category.slug)}${slug}/` : `/blog/${slug}/`;
+}
+
 export default async function AdminBlogPage({ searchParams }: Props) {
   await requireAdmin();
   const posts = await getBlogPosts();
@@ -26,7 +39,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
   const selectedPlan = getSeoContentPlanItem(params.plan);
   const postsBySlug = new Map(posts.map((post) => [post.slug, post]));
   const publishedCount = posts.filter((post) => post.status === "published").length;
-  const planStarted = SEO_CONTENT_PLAN.filter((item) => postsBySlug.has(item.slug)).length;
+  const planStarted = SEO_CONTENT_PLAN.filter((item) => postsBySlug.has(plannedArticleSlug(item))).length;
   const p1Count = SEO_CONTENT_PLAN.filter((item) => item.priority === "P1").length;
 
   return (
@@ -51,7 +64,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
           <form className="admin-form" action="/api/admin/blog" method="post">
             <div className="admin-form-row">
               <label>Заголовок<input name="title" required defaultValue={selectedPlan?.title || ""} /></label>
-              <label>Slug<input name="slug" placeholder="botoks-lviv" defaultValue={selectedPlan?.slug || ""} /></label>
+              <label>Slug<input name="slug" placeholder="yak-pozbutysya-akne" defaultValue={selectedPlan ? plannedArticleSlug(selectedPlan) : ""} /><span className="admin-kpi-note">Український текст автоматично транслітерується латиницею.</span></label>
             </div>
             <div className="admin-form-row">
               <label>SEO категорія<select name="category" defaultValue={selectedPlan?.category || ""}><option value="">Без категорії</option>{BLOG_CATEGORIES.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></label>
@@ -96,10 +109,10 @@ export default async function AdminBlogPage({ searchParams }: Props) {
             <thead><tr><th>Пріоритет / тема</th><th>Кластер / keyword</th><th>Intent</th><th>Money page</th><th>Статус</th><th></th></tr></thead>
             <tbody>
               {SEO_CONTENT_PLAN.map((item) => {
-                const existing = postsBySlug.get(item.slug);
+                const existing = postsBySlug.get(plannedArticleSlug(item));
                 return (
                   <tr key={item.slug}>
-                    <td><span className={`admin-badge ${item.priority === "P1" ? "bad" : item.priority === "P2" ? "warn" : ""}`}>{item.priority}</span><br /><strong>{item.title}</strong><br /><span className="admin-code">/blog/{item.category}/{item.slug}/</span></td>
+                    <td><span className={`admin-badge ${item.priority === "P1" ? "bad" : item.priority === "P2" ? "warn" : ""}`}>{item.priority}</span><br /><strong>{item.title}</strong><br /><span className="admin-code">{plannedArticlePath(item)}</span></td>
                     <td>{getBlogCategory(item.category)?.name}<br /><span className="admin-kpi-note">{item.primaryKeyword}</span></td>
                     <td>{intentLabels[item.intent]}<br /><span className="admin-kpi-note">{item.angle}</span></td>
                     <td><Link href={item.moneyPage.href} target="_blank">{item.moneyPage.label} ↗</Link><br /><span className="admin-kpi-note">+ {item.supportingPages.length} supporting links</span></td>
@@ -116,7 +129,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
       <section className="admin-section">
         <div className="admin-section-header"><h2>Матеріали</h2><span>{publishedCount} published</span></div>
         <div className="admin-table-wrap">
-          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>Категорія / SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">/blog/{post.slug}/</span></td><td>{getBlogCategory(post.category)?.name || "Без категорії"}<br /><span className="admin-kpi-note">{post.target_keyword || "Keyword не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span>{!post.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає. Почни з P1 тем у SEO Content Plan вище.</div>}
+          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>Категорія / SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">{blogPostPath(post)}</span></td><td>{getBlogCategory(post.category)?.name || "Без категорії"}<br /><span className="admin-kpi-note">{post.target_keyword || "Keyword не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span>{!post.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає. Почни з P1 тем у SEO Content Plan вище.</div>}
         </div>
       </section>
     </>

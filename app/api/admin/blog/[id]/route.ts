@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "../../../../../lib/admin-auth";
 import { getBlogPost, getBlogPosts, updateBlogPost } from "../../../../../lib/admin-data";
 import { normalizeBlogCategory } from "../../../../../lib/blog-categories";
+import { toUkrainianLatinSlug } from "../../../../../lib/blog-slug";
 
 type Context = { params: Promise<{ id: string }> };
-function slugify(value: string) {
-  return value.toLowerCase().trim().replace(/[’'`]/g, "").replace(/[^a-z0-9а-яіїєґ\s-]/giu, "").replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-}
 
 export async function POST(request: NextRequest, { params }: Context) {
   const session = await getAdminSession();
@@ -18,7 +16,7 @@ export async function POST(request: NextRequest, { params }: Context) {
 
   const form = await request.formData();
   const title = String(form.get("title") ?? "").trim();
-  const slug = slugify(String(form.get("slug") ?? title));
+  const slug = toUkrainianLatinSlug(String(form.get("slug") ?? "").trim() || title);
   if (!title || !slug) {
     return NextResponse.redirect(new URL(`/admin/blog/${id}/?error=missing`, request.url), 303);
   }
