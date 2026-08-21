@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { getPublishedPosts } from "../lib/blog";
 import { BLOG_CATEGORIES, BLOG_CATEGORY_MIN_INDEXABLE_POSTS, blogCategoryPath } from "../lib/blog-categories";
-import { DOCTORS, doctorPath } from "../lib/doctors";
+import { DOCTORS, doctorPath, isCompleteDoctorProfile } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
+import { isSeoLandingIndexable } from "../lib/seo-compliance";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 
 export const dynamic = "force-dynamic";
@@ -19,19 +20,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/blog/`, lastModified, changeFrequency: "weekly", priority: 0.75 },
   ];
 
-  const seo: MetadataRoute.Sitemap = ALL_SEO_LANDINGS.map((landing) => ({
-    url: `${SITE_URL}${landing.path}`,
-    lastModified,
-    changeFrequency: landing.type === "category" ? "weekly" : "monthly",
-    priority: landing.priority,
-  }));
+  const seo: MetadataRoute.Sitemap = ALL_SEO_LANDINGS
+    .filter(isSeoLandingIndexable)
+    .map((landing) => ({
+      url: `${SITE_URL}${landing.path}`,
+      lastModified,
+      changeFrequency: landing.type === "category" ? "weekly" : "monthly",
+      priority: landing.priority,
+    }));
 
-  const doctors: MetadataRoute.Sitemap = DOCTORS.map((doctor) => ({
-    url: `${SITE_URL}${doctorPath(doctor)}`,
-    lastModified,
-    changeFrequency: "monthly",
-    priority: 0.78,
-  }));
+  const doctors: MetadataRoute.Sitemap = DOCTORS
+    .filter(isCompleteDoctorProfile)
+    .map((doctor) => ({
+      url: `${SITE_URL}${doctorPath(doctor)}`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.78,
+    }));
 
   const posts = await getPublishedPosts(1000);
 
@@ -55,7 +60,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blog: MetadataRoute.Sitemap = posts
     .filter((post) => post.indexable)
     .map((post) => ({
-      url: `${SITE_URL}/blog/${post.slug}/`,
+      url: post.category
+        ? `${SITE_URL}/blog/${post.category}/${post.slug}/`
+        : `${SITE_URL}/blog/${post.slug}/`,
       lastModified: new Date(post.updated_at),
       changeFrequency: "monthly",
       priority: 0.7,
