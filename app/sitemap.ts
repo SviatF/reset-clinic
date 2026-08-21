@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getPublishedPosts } from "../lib/blog";
+import { blogPostPath, getPublishedPosts } from "../lib/blog";
 import { BLOG_CATEGORIES, BLOG_CATEGORY_MIN_INDEXABLE_POSTS, blogCategoryPath } from "../lib/blog-categories";
 import { DOCTORS, doctorPath, isCompleteDoctorProfile } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
@@ -60,9 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blog: MetadataRoute.Sitemap = posts
     .filter((post) => post.indexable)
     .map((post) => ({
-      url: post.category
-        ? `${SITE_URL}/blog/${post.category}/${post.slug}/`
-        : `${SITE_URL}/blog/${post.slug}/`,
+      url: `${SITE_URL}${blogPostPath(post)}`,
       lastModified: new Date(post.updated_at),
       changeFrequency: "monthly",
       priority: 0.7,
