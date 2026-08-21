@@ -18,6 +18,11 @@ const UNVERIFIED_MEDICAL_PATHS = new Set([
   "/nutrition/insulin-resistance/",
 ]);
 
+// A doctor is never treated as a medical reviewer merely because the doctor
+// works with the same service. Add a path -> doctor slug only after RESET Clinic
+// explicitly confirms that this person reviewed the published page.
+const MEDICAL_REVIEWER_BY_PATH: Partial<Record<string, string>> = {};
+
 const GENERIC_PROCEDURE_SECTIONS = [
   {
     title: "Показання та для кого підходить",
@@ -114,7 +119,8 @@ export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
 }
 
 export function reviewerForLanding(landing: SeoLanding): DoctorProfile | null {
-  return DOCTORS.find((doctor) => doctor.relatedPaths.includes(landing.path)) ?? null;
+  const reviewerSlug = MEDICAL_REVIEWER_BY_PATH[landing.path];
+  return reviewerSlug ? DOCTORS.find((doctor) => doctor.slug === reviewerSlug) ?? null : null;
 }
 
 export function priceHrefForLanding(landing: SeoLanding) {
