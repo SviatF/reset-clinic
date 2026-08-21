@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getPublishedPostsByCategory } from "../lib/blog";
 import { blogCategoryPath, getBlogCategory } from "../lib/blog-categories";
 import { DOCTORS, doctorPath } from "../lib/doctors";
+import { getPublishedPricesForLanding } from "../lib/price-data";
 import {
   blogCategoryForLanding,
   buildCompliantLandingJsonLd,
@@ -49,6 +50,12 @@ const POLISH_CSS = `
 .seo-site-polished .seo-section ul{margin-top:20px}
 .seo-site-polished .seo-related-card{border-radius:18px;padding:20px}
 .seo-site-polished .seo-related-card small{display:block;margin-top:12px;font-size:11px;line-height:1.55;color:var(--muted)}
+.seo-site-polished .seo-price-list{display:grid;margin:10px 0 2px;border-top:1px solid var(--line)}
+.seo-site-polished .seo-price-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.seo-site-polished .seo-price-copy{display:grid;gap:3px;min-width:0}
+.seo-site-polished .seo-price-section{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.seo-site-polished .seo-price-service{font-size:11px;line-height:1.45;color:#554a43}
+.seo-site-polished .seo-price-value{font-size:12px;white-space:nowrap}
 .seo-site-polished .seo-contact-card strong{font-size:23px}
 .seo-site-polished .seo-doctors-band{padding:72px 0 78px}
 .seo-site-polished .seo-band-heading{margin-bottom:32px}
@@ -167,11 +174,16 @@ function SiteFooter() {
 }
 
 export default async function SeoLandingPage({ landing }: { landing: SeoLanding }) {
-  const schema = buildCompliantLandingJsonLd(landing);
+  const baseSchema = buildCompliantLandingJsonLd(landing);
+  const schema = {
+    ...baseSchema,
+    "@graph": baseSchema["@graph"].filter((node) => node["@type"] !== "FAQPage"),
+  };
   const children = directChildren(landing);
   const doctors = DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
   const reviewer = reviewerForLanding(landing);
   const priceHref = priceHrefForLanding(landing);
+  const priceRows = getPublishedPricesForLanding(landing.path, 5);
   const displayH1 = displayH1ForLanding(landing);
   const supplementalSections = supplementalLandingSections(landing);
   const blogCategory = blogCategoryForLanding(landing.path);
@@ -209,7 +221,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
             </div>
 
             <figure className="seo-hero-visual">
-              <img src={DEFAULT_OG_IMAGE} alt="Інтер’єр RESET Clinic у Львові" />
+              <img src={DEFAULT_OG_IMAGE} alt="Інтер’єр RESET Clinic у Львові" width={2446} height={1314} fetchPriority="high" decoding="async" />
               <figcaption className="seo-hero-caption">
                 <span>RESET Clinic · Львів</span>
                 <strong>{intentLabel(landing)}</strong>
@@ -266,8 +278,21 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
           ) : null}
           <section className="seo-related-card">
             <p>Вартість</p>
+            {priceRows.length ? (
+              <div className="seo-price-list" aria-label="Актуальні ціни з прайсу RESET Clinic">
+                {priceRows.map((row, index) => (
+                  <div className="seo-price-row" key={`${row.section}-${row.service}-${row.price}-${index}`}>
+                    <span className="seo-price-copy">
+                      {row.section ? <span className="seo-price-section">{row.section}</span> : null}
+                      <span className="seo-price-service">{row.service}</span>
+                    </span>
+                    <strong className="seo-price-value">{row.price}</strong>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div><Link href={priceHref}>Актуальний прайс RESET Clinic<span>↗</span></Link></div>
-            <small>Вартість залежить від конкретної послуги, зони, препарату або протоколу. Використовуємо один глобальний прайс без дубльованих SEO-сторінок цін.</small>
+            <small>Ціни беруться з єдиного опублікованого прайсу RESET Clinic. Остаточна вартість залежить від конкретної послуги, зони, препарату або протоколу.</small>
           </section>
           <section className="seo-related-card seo-contact-card">
             <p>RESET Clinic</p>
@@ -288,7 +313,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
             <div className="seo-doctor-grid">
               {doctors.map((doctor) => (
                 <Link className="seo-doctor-card" href={doctorPath(doctor)} key={doctor.slug}>
-                  <div className="seo-doctor-photo"><img src={doctor.image} alt={doctor.name} /></div>
+                  <div className="seo-doctor-photo"><img src={doctor.image} alt={doctor.name} loading="lazy" decoding="async" /></div>
                   <div><span>{doctor.role}</span><strong>{doctor.name}</strong><small>Профіль лікаря →</small></div>
                 </Link>
               ))}
