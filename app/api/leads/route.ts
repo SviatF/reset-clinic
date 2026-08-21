@@ -1,7 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { saveLead, updateLead, type Lead } from "../../../lib/admin-data";
-import { isAdminStoreConfigured } from "../../../lib/admin-store";
 import { crmErrorMessage, dispatchLeadToCrm, isCrmEnabled } from "../../../lib/crm-dispatch";
 
 type LeadPayload = {
@@ -42,10 +41,6 @@ function ipHash(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isAdminStoreConfigured()) {
-    return NextResponse.json({ ok: false, error: "lead_storage_not_configured" }, { status: 503 });
-  }
-
   let payload: LeadPayload;
   try {
     payload = (await request.json()) as LeadPayload;
@@ -99,7 +94,11 @@ export async function POST(request: NextRequest) {
 
   try {
     await saveLead(lead);
-  } catch {
+  } catch (error) {
+    console.error(
+      "lead_save_failed",
+      error instanceof Error ? error.message : "Unknown Blob storage error",
+    );
     return NextResponse.json({ ok: false, error: "lead_save_failed" }, { status: 502 });
   }
 

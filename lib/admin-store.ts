@@ -4,47 +4,41 @@ function staticToken() {
   return process.env.BLOB_READ_WRITE_TOKEN || "";
 }
 
-function oidcToken() {
-  return process.env.VERCEL_OIDC_TOKEN || "";
-}
-
-function storeId() {
-  return process.env.BLOB_STORE_ID || "";
-}
-
+/**
+ * Modern Vercel Blob connections use OIDC at runtime. The @vercel/blob SDK
+ * resolves that auth from Vercel's request context automatically, so we must
+ * not require VERCEL_OIDC_TOKEN to exist in process.env before calling it.
+ *
+ * A long-lived BLOB_READ_WRITE_TOKEN is still supported as a fallback for
+ * older connections and local development.
+ */
 function authOptions() {
   const token = staticToken();
-  if (token) return { token } as const;
-
-  const oidc = oidcToken();
-  const store = storeId();
-  if (oidc && store) return { oidcToken: oidc, storeId: store } as const;
-
-  throw new Error("Vercel Blob authentication is not configured");
+  return token ? ({ token } as const) : ({} as const);
 }
 
 export function isAdminStoreConfigured() {
-  return Boolean(staticToken() || (oidcToken() && storeId()));
+  // On Vercel, a connected Blob store can authenticate through runtime OIDC
+  // even when VERCEL_OIDC_TOKEN is not exposed as a normal environment var.
+  return Boolean(staticToken() || process.env.VERCEL);
 }
 
 export async function getAdminStoreHealth() {
-  if (!isAdminStoreConfigured()) {
-    return { configured: false, ok: false, mode: "none" as const, error: "Blob authentication is not configured" };
-  }
+  const mode = staticToken() ? ("token" as const) : process.env.VERCEL ? ("oidc" as const) : ("none" as const);
 
   try {
     await list({ prefix: "reset/", limit: 1, ...authOptions() });
     return {
       configured: true,
       ok: true,
-      mode: staticToken() ? ("token" as const) : ("oidc" as const),
+      mode,
       error: null,
     };
   } catch (error) {
     return {
-      configured: true,
+      configured: Boolean(staticToken() || process.env.VERCEL),
       ok: false,
-      mode: staticToken() ? ("token" as const) : ("oidc" as const),
+      mode,
       error: error instanceof Error ? error.message.slice(0, 300) : "Blob health check failed",
     };
   }
@@ -74,7 +68,6 @@ export async function putJson(pathname: string, value: unknown) {
 }
 
 export async function readJson<T>(pathname: string, fallback: T): Promise<T> {
-  if (!isAdminStoreConfigured()) return fallback;
   try {
     const blob = await findExactBlob(pathname);
     if (!blob) return fallback;
@@ -87,8 +80,6 @@ export async function readJson<T>(pathname: string, fallback: T): Promise<T> {
 }
 
 export async function listJson<T>(prefix: string, limit = 500): Promise<T[]> {
-  if (!isAdminStoreConfigured()) return [];
-
   try {
     const auth = authOptions();
     const blobs: Array<{ url: string; pathname: string; uploadedAt: Date }> = [];
