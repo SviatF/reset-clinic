@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PublicSiteFooter, PublicSiteHeader } from "../../components/PublicSiteChrome";
 import { blogPostPath, getPublishedPosts } from "../../lib/blog";
 import { BLOG_CATEGORIES, blogCategoryPath } from "../../lib/blog-categories";
-import { SITE_URL } from "../../lib/seo";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +18,13 @@ export const metadata: Metadata = {
     siteName: "RESET Clinic",
     title: "Блог RESET Clinic",
     description: "Доказові матеріали про косметологію, дерматологію, трихологію та здоров’я шкіри.",
+    images: [{ url: DEFAULT_OG_IMAGE, width: 2446, height: 1314, alt: "Блог RESET Clinic" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Блог RESET Clinic",
+    description: "Доказові матеріали про косметологію, дерматологію, трихологію та здоров’я шкіри.",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 
