@@ -25,182 +25,6 @@ const MAIN_NAV = [
   ["Ціни", "/price/"],
 ] as const;
 
-const POLISH_CSS = `
-.seo-site-polished .seo-header{min-height:74px;padding-top:10px;padding-bottom:10px;background:rgba(246,246,238,.97);backdrop-filter:blur(10px)}
-.seo-site-polished .seo-brand span{font-size:30px}.seo-site-polished .seo-brand small{font-size:6.5px}
-.seo-site-polished .seo-hero{padding:30px 0 62px;background:#f6f6ee}
-.seo-site-polished .seo-breadcrumbs{margin-bottom:30px}
-.seo-site-polished .seo-hero-grid{grid-template-columns:minmax(0,1.16fr) minmax(350px,.84fr);gap:52px}
-.seo-site-polished .seo-hero-copy{padding:8px 0}
-.seo-site-polished .seo-hero h1{font-size:clamp(48px,5vw,74px);line-height:.96;max-width:820px}
-.seo-site-polished .seo-lead{margin-top:24px;font-size:15px;line-height:1.72;max-width:680px}
-.seo-site-polished .seo-hero-actions{margin-top:28px}
-.seo-site-polished .seo-button{min-height:46px;padding:0 21px}
-.seo-site-polished .seo-hero-visual{min-height:470px;height:470px;border-radius:28px;box-shadow:none}
-.seo-site-polished .seo-hero-visual>img{height:470px}
-.seo-site-polished .seo-hero-caption{left:22px;right:22px;bottom:22px}
-.seo-site-polished .seo-hero-caption strong{font-size:25px}
-.seo-site-polished .seo-process-grid>div{padding-top:24px;padding-bottom:26px}
-.seo-site-polished .seo-process-grid span{margin-bottom:18px}
-.seo-site-polished .seo-process-grid strong{font-size:24px}
-.seo-site-polished .seo-content-grid{grid-template-columns:minmax(0,1fr) 300px;gap:64px;padding-top:74px;padding-bottom:78px}
-.seo-site-polished .seo-section{grid-template-columns:64px minmax(0,1fr);gap:24px;padding-bottom:50px;margin-bottom:50px}
-.seo-site-polished .seo-section h2{font-size:clamp(34px,3.3vw,48px);line-height:1.02;margin-bottom:20px}
-.seo-site-polished .seo-section p,.seo-site-polished .seo-section li{font-size:14px;line-height:1.78}
-.seo-site-polished .seo-section ul{margin-top:20px}
-.seo-site-polished .seo-related-card{border-radius:18px;padding:20px}
-.seo-site-polished .seo-related-card small{display:block;margin-top:12px;font-size:11px;line-height:1.55;color:var(--muted)}
-.seo-site-polished .seo-price-list{display:grid;margin:10px 0 2px;border-top:1px solid var(--line)}
-.seo-site-polished .seo-price-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
-.seo-site-polished .seo-price-copy{display:grid;gap:3px;min-width:0}
-.seo-site-polished .seo-price-section{font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
-.seo-site-polished .seo-price-service{font-size:11px;line-height:1.45;color:#554a43}
-.seo-site-polished .seo-price-value{font-size:12px;white-space:nowrap}
-.seo-site-polished .seo-contact-card strong{font-size:23px}
-.seo-site-polished .seo-doctors-band{padding:72px 0 78px}
-.seo-site-polished .seo-band-heading{margin-bottom:32px}
-.seo-site-polished .seo-band-heading h2{font-size:clamp(42px,4.4vw,60px)}
-.seo-site-polished .seo-doctor-card{border-radius:20px;min-height:170px;grid-template-columns:128px minmax(0,1fr)}
-.seo-site-polished .seo-doctor-photo{min-height:170px}
-.seo-site-polished .seo-doctor-card strong{font-size:26px}
-.seo-site-polished .seo-reviewer-band{padding:58px 0;background:#ebe6da;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.seo-site-polished .seo-reviewer-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:center}
-.seo-site-polished .seo-reviewer-card h2{font-family:var(--serif);font-size:clamp(34px,4vw,52px);font-weight:500;line-height:1;margin:8px 0 14px}
-.seo-site-polished .seo-reviewer-card p{max-width:760px;line-height:1.7;margin:0}
-.seo-site-polished .seo-faq{padding:76px 0}
-.seo-site-polished .seo-faq-layout{grid-template-columns:.68fr 1.32fr;gap:64px}
-.seo-site-polished .seo-faq h2{font-size:clamp(42px,4.4vw,60px)}
-.seo-site-polished .seo-faq summary{font-size:24px;padding:22px 0}
-.seo-site-polished .seo-final-cta{padding:76px 0}
-.seo-site-polished .seo-final-cta h2{font-size:clamp(46px,5.2vw,70px);line-height:.94}
-
-/* One RESET identity, several page rhythms. */
-.seo-site-polished .seo-hero,.seo-site-polished .seo-process-strip,.seo-site-polished .seo-section,.seo-site-polished .seo-directory-band{transition:background .2s ease,border-color .2s ease}
-.seo-site-polished .seo-hero-signature{display:flex;align-items:center;gap:10px;margin-top:28px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
-.seo-site-polished .seo-hero-signature:before{content:"";width:34px;height:1px;background:var(--accent);opacity:.65}
-
-/* Dermatology: quiet clinical editorial. */
-.seo-family-dermatology .seo-hero{background:linear-gradient(135deg,#f6f6ee 0%,#f6f6ee 68%,#ebe6da 68%,#ebe6da 100%)}
-.seo-family-dermatology .seo-hero-grid{grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);align-items:end}
-.seo-family-dermatology .seo-hero-visual{border-radius:54px 8px 54px 8px}
-.seo-family-dermatology .seo-process-strip{background:#fbfaf6}
-.seo-family-dermatology .seo-section-first{padding:34px 36px 38px;background:#ebe6da;border:0;border-radius:26px;margin-bottom:64px;grid-template-columns:54px minmax(0,1fr)}
-.seo-family-dermatology .seo-section-first .seo-section-kicker{padding-top:5px}
-.seo-family-dermatology .seo-section:not(.seo-section-first) h2{max-width:720px}
-
-/* Cosmetology: larger visual, premium panels, stronger contrast. */
-.seo-family-cosmetology .seo-hero{background:#ebe6da}
-.seo-family-cosmetology .seo-hero-grid{grid-template-columns:minmax(330px,.82fr) minmax(0,1.18fr);gap:34px}
-.seo-family-cosmetology .seo-hero-copy{position:relative;z-index:2;padding:34px 34px 38px;background:#f6f6ee;border:1px solid rgba(41,32,27,.08);border-radius:30px}
-.seo-family-cosmetology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual>img{height:550px;min-height:550px}
-.seo-family-cosmetology .seo-hero-visual{border-radius:30px}
-.seo-family-cosmetology .seo-process-strip{background:#29201b;color:#f6f6ee;border-color:rgba(246,246,238,.12)}
-.seo-family-cosmetology .seo-process-grid>div{border-color:rgba(246,246,238,.14)}
-.seo-family-cosmetology .seo-process-grid span{color:#c7a979}
-.seo-family-cosmetology .seo-process-grid p{color:rgba(246,246,238,.62)}
-.seo-family-cosmetology .seo-section{border-bottom:0;padding:34px 36px 38px;margin-bottom:18px;border-radius:26px;background:#fbfaf6;grid-template-columns:56px minmax(0,1fr)}
-.seo-family-cosmetology .seo-section:nth-child(even){background:#ebe6da}
-.seo-family-cosmetology .seo-section:last-child{margin-bottom:0}
-
-/* Problems: symptom-first magazine layout. */
-.seo-family-problems .seo-hero-grid{grid-template-columns:1fr;gap:28px}
-.seo-family-problems .seo-hero-copy{max-width:930px;padding-bottom:0}
-.seo-family-problems .seo-hero h1{max-width:1000px;font-size:clamp(56px,7vw,96px)}
-.seo-family-problems .seo-lead{max-width:850px}
-.seo-family-problems .seo-hero-visual,.seo-family-problems .seo-hero-visual>img{height:330px;min-height:330px}
-.seo-family-problems .seo-hero-visual{border-radius:28px}
-.seo-family-problems .seo-hero-visual>img{object-position:center 48%}
-.seo-family-problems .seo-hero-caption{grid-template-columns:auto 1fr auto;align-items:end;gap:20px}
-.seo-family-problems .seo-hero-caption strong{text-align:center}
-.seo-family-problems .seo-section-first{background:#29201b;color:#f6f6ee;border:0;border-radius:28px;padding:38px 40px 42px;grid-template-columns:56px minmax(0,1fr)}
-.seo-family-problems .seo-section-first p,.seo-family-problems .seo-section-first li{color:rgba(246,246,238,.72)}
-.seo-family-problems .seo-section-first .seo-section-kicker span{color:#c7a979}
-.seo-family-problems .seo-section-first .seo-section-kicker i{background:#c7a979}
-.seo-family-problems .seo-section ul{grid-template-columns:1fr}
-.seo-family-problems .seo-section li{padding:15px 18px 15px 20px}
-
-/* Nutrition / care: calmer, narrower reading measure. */
-.seo-family-nutrition .seo-hero{background:linear-gradient(180deg,#f6f6ee 0%,#f1eee5 100%)}
-.seo-family-nutrition .seo-hero-grid{grid-template-columns:minmax(0,1fr) 420px;gap:72px}
-.seo-family-nutrition .seo-hero-visual{border-radius:999px 999px 28px 28px}
-.seo-family-nutrition .seo-article{max-width:820px}
-.seo-family-nutrition .seo-section{grid-template-columns:48px minmax(0,1fr)}
-.seo-family-care .seo-hero{background:#fbfaf6}
-.seo-family-care .seo-hero-visual{border-radius:8px 54px 8px 54px}
-.seo-family-care .seo-section-first{background:#ebe6da;border:0;border-radius:28px;padding:36px 38px;grid-template-columns:52px minmax(0,1fr)}
-
-/* Category pages become visual directories, not long copies of treatment pages. */
-.seo-template-category .seo-hero h1{font-size:clamp(62px,7vw,98px)}
-.seo-template-category .seo-process-strip{background:#ebe6da}
-.seo-directory-band{padding:70px 0 76px;background:#29201b;color:#f6f6ee}
-.seo-directory-heading{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:60px;align-items:end;margin-bottom:38px}
-.seo-directory-heading .seo-eyebrow{color:rgba(246,246,238,.52)}
-.seo-directory-heading h2{margin:0;font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(44px,5vw,68px);font-weight:600;line-height:.94;letter-spacing:-.025em}
-.seo-directory-heading p:not(.seo-eyebrow){margin:0;max-width:620px;color:rgba(246,246,238,.66);font-size:13px;line-height:1.75}
-.seo-directory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid rgba(246,246,238,.16)}
-.seo-directory-link{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:25px 0;border-bottom:1px solid rgba(246,246,238,.16);text-decoration:none}
-.seo-directory-link:nth-child(odd){padding-right:30px;border-right:1px solid rgba(246,246,238,.16)}
-.seo-directory-link:nth-child(even){padding-left:30px}
-.seo-directory-link strong{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(25px,2.7vw,36px);font-weight:600;line-height:1}
-.seo-directory-link span{font-size:18px;transition:transform .2s ease}
-.seo-directory-link:hover span{transform:translate(3px,-3px)}
-.seo-template-category .seo-content-grid{padding-top:68px}
-.seo-template-category .seo-section{grid-template-columns:1fr;gap:0}
-.seo-template-category .seo-section-kicker{display:none}
-.seo-template-category .seo-section h2{max-width:760px}
-
-/* Procedure pages feel like service experiences rather than articles. */
-.seo-template-procedure .seo-content-grid{gap:48px}
-.seo-template-procedure .seo-side{padding-top:8px}
-.seo-template-procedure .seo-price-list{background:#f6f6ee;border-radius:14px;padding:0 12px;border-top:0}
-
-@media(max-width:1024px){
-  .seo-site-polished .seo-hero-grid{grid-template-columns:1fr 390px;gap:36px}
-  .seo-site-polished .seo-hero h1{font-size:clamp(46px,6vw,66px)}
-  .seo-site-polished .seo-content-grid{grid-template-columns:minmax(0,1fr) 270px;gap:38px}
-  .seo-site-polished .seo-section{grid-template-columns:50px minmax(0,1fr);gap:18px}
-  .seo-family-cosmetology .seo-hero-grid{grid-template-columns:minmax(300px,.9fr) minmax(0,1.1fr)}
-  .seo-family-problems .seo-hero-grid{grid-template-columns:1fr}
-  .seo-family-nutrition .seo-hero-grid{grid-template-columns:minmax(0,1fr) 340px;gap:42px}
-}
-@media(max-width:767px){
-  .seo-site-polished .seo-header{min-height:66px;padding-left:18px;padding-right:18px}
-  .seo-site-polished .seo-brand span{font-size:27px}
-  .seo-site-polished .seo-hero{padding:20px 0 42px}
-  .seo-site-polished .seo-breadcrumbs{margin-bottom:22px}
-  .seo-site-polished .seo-hero-grid,.seo-family-cosmetology .seo-hero-grid,.seo-family-nutrition .seo-hero-grid{grid-template-columns:1fr;gap:28px}
-  .seo-site-polished .seo-hero h1,.seo-template-category .seo-hero h1,.seo-family-problems .seo-hero h1{font-size:clamp(40px,12vw,58px);line-height:.97}
-  .seo-site-polished .seo-lead{font-size:14px;line-height:1.68;margin-top:20px}
-  .seo-site-polished .seo-hero-visual,.seo-site-polished .seo-hero-visual>img,.seo-family-cosmetology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual>img,.seo-family-problems .seo-hero-visual,.seo-family-problems .seo-hero-visual>img{height:360px;min-height:360px}
-  .seo-site-polished .seo-hero-visual,.seo-family-dermatology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual,.seo-family-care .seo-hero-visual,.seo-family-nutrition .seo-hero-visual{border-radius:22px}
-  .seo-family-cosmetology .seo-hero-copy{padding:26px 22px 28px;border-radius:22px}
-  .seo-family-problems .seo-hero-caption{display:grid;grid-template-columns:1fr;gap:5px;align-items:start}
-  .seo-family-problems .seo-hero-caption strong{text-align:left}
-  .seo-site-polished .seo-process-grid{grid-template-columns:1fr}
-  .seo-site-polished .seo-process-grid>div{padding:20px 0;border-right:0;border-bottom:1px solid var(--line)}
-  .seo-family-cosmetology .seo-process-grid>div{border-bottom-color:rgba(246,246,238,.14)}
-  .seo-site-polished .seo-process-grid>div:last-child{border-bottom:0}
-  .seo-site-polished .seo-content-grid{grid-template-columns:1fr;gap:34px;padding-top:50px;padding-bottom:56px}
-  .seo-site-polished .seo-section,.seo-family-dermatology .seo-section-first,.seo-family-cosmetology .seo-section,.seo-family-problems .seo-section-first,.seo-family-care .seo-section-first,.seo-family-nutrition .seo-section{grid-template-columns:1fr;gap:12px;padding-bottom:38px;margin-bottom:38px}
-  .seo-family-dermatology .seo-section-first,.seo-family-cosmetology .seo-section,.seo-family-problems .seo-section-first,.seo-family-care .seo-section-first{padding:28px 24px;border-radius:22px}
-  .seo-site-polished .seo-section-kicker{padding-top:0}
-  .seo-site-polished .seo-section h2{font-size:36px}
-  .seo-site-polished .seo-section ul{grid-template-columns:1fr}
-  .seo-site-polished .seo-side{display:grid;gap:12px}
-  .seo-site-polished .seo-related-primary{position:static}
-  .seo-directory-band{padding:52px 0 58px}
-  .seo-directory-heading{grid-template-columns:1fr;gap:18px;margin-bottom:30px}
-  .seo-directory-grid{grid-template-columns:1fr}
-  .seo-directory-link:nth-child(odd),.seo-directory-link:nth-child(even){padding:20px 0;border-right:0}
-  .seo-site-polished .seo-doctors-band,.seo-site-polished .seo-faq,.seo-site-polished .seo-final-cta,.seo-site-polished .seo-reviewer-band{padding:58px 0}
-  .seo-site-polished .seo-doctor-grid{grid-template-columns:1fr}
-  .seo-site-polished .seo-reviewer-card{grid-template-columns:1fr;gap:24px}
-  .seo-site-polished .seo-faq-layout{grid-template-columns:1fr;gap:34px}
-  .seo-site-polished .seo-faq-heading{position:static}
-  .seo-site-polished .seo-final-grid{grid-template-columns:1fr;align-items:start}
-}
-`;
-
 function directChildren(landing: SeoLanding) {
   if (landing.type !== "category") return [];
   return ALL_SEO_LANDINGS.filter((candidate) => {
@@ -274,13 +98,22 @@ function publicBlogPostPath(post: { slug: string; category: string | null }) {
   return category ? `/blog/${category.slug}/${post.slug}/` : `/blog/${post.slug}/`;
 }
 
+function Brand({ footer = false }: { footer?: boolean }) {
+  return (
+    <Link
+      className="seo-brand seo-brand-image"
+      href="/"
+      aria-label={footer ? "RESET Clinic — головна" : "RESET Clinic — головна"}
+    >
+      <img className="seo-brand-logo" src="/assets/logo-main.png" alt="RESET Clinic" />
+    </Link>
+  );
+}
+
 function SiteHeader() {
   return (
     <header className="seo-header">
-      <Link className="seo-brand" href="/" aria-label="RESET Clinic — головна">
-        <span>RESET</span>
-        <small>клініка естетичної медицини</small>
-      </Link>
+      <Brand />
       <nav className="seo-nav" aria-label="Основна навігація">
         {MAIN_NAV.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
       </nav>
@@ -302,7 +135,7 @@ function SiteFooter() {
     <footer className="seo-footer">
       <div className="seo-shell seo-footer-grid">
         <div className="seo-footer-brand-block">
-          <Link className="seo-brand" href="/"><span>RESET</span><small>клініка естетичної медицини</small></Link>
+          <Brand footer />
           <p>Львів, вул. Кульпарківська, 93/2</p>
           <a href="tel:+380932828888">+380 93 282 88 88</a>
         </div>
@@ -340,7 +173,6 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
 
   return (
     <main className={`seo-site seo-site-polished seo-template-${landing.type} seo-family-${family}`}>
-      <style dangerouslySetInnerHTML={{ __html: POLISH_CSS }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
       <SiteHeader />
 
@@ -392,8 +224,11 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
         <section className="seo-directory-band" aria-label={`Напрями: ${displayH1}`}>
           <div className="seo-shell">
             <div className="seo-directory-heading">
-              <div><p className="seo-eyebrow">Оберіть потрібний напрям</p><h2>Знайдіть свій наступний крок</h2></div>
-              <p>Не потрібно знати медичну назву методу. Оберіть найближчий за змістом напрям — далі сторінка допоможе перейти до конкретної проблеми, лікування або процедури.</p>
+              <div>
+                <p className="seo-eyebrow">Напрями та послуги</p>
+                <h2>Оберіть потрібний напрям</h2>
+              </div>
+              <p>Оберіть напрям, що відповідає вашому запиту. На сторінці кожної послуги описані показання, підхід RESET Clinic, пов’язані методи, лікарі та актуальна вартість.</p>
             </div>
             <div className="seo-directory-grid">
               {children.map((child) => (
