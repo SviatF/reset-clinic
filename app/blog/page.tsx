@@ -85,48 +85,97 @@ export default async function BlogIndexPage() {
     : null;
 
   return (
-    <div className="seo-site">
+    <div className="seo-site reset-blog-page reset-blog-home">
       {collectionSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionSchema) }} /> : null}
       <PublicSiteHeader />
       <main>
-        <section className="reset-blog-hero">
-          <div className="reset-blog-eyebrow">Знання · RESET Clinic</div>
-          <h1>Блог про шкіру, естетику та здоров’я.</h1>
-          <p className="reset-blog-lead">Зрозумілі матеріали про стан шкіри, сучасні методи діагностики, косметологічні процедури, догляд і ситуації, коли варто звернутися до спеціаліста.</p>
-        </section>
-
-        <section className="reset-blog-grid" aria-label="Категорії блогу">
-          {BLOG_CATEGORIES.map((category) => (
-            <Link className="reset-blog-card" href={blogCategoryPath(category.slug)} key={category.slug}>
-              <div>
-                <div className="reset-blog-meta">Тематичний розділ</div>
-                <h2>{category.name}</h2>
-                <p>{category.description}</p>
-              </div>
-              <div className="reset-blog-meta">Переглянути →</div>
-            </Link>
-          ))}
-        </section>
-
-        <section className="reset-blog-grid" aria-label="Останні матеріали">
-          {posts.length ? posts.map((post) => (
-            <Link className="reset-blog-card" href={blogPostPath(post)} key={post.id}>
-              <div>
-                <div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : "RESET Clinic"}</div>
-                <h2>{post.title}</h2>
-                <p>{post.excerpt || "Читати матеріал RESET Clinic."}</p>
-              </div>
-              <div className="reset-blog-meta">{post.author_name || "RESET Clinic"} →</div>
-            </Link>
-          )) : (
-            <div className="reset-blog-card">
-              <div>
-                <div className="reset-blog-meta">RESET Clinic</div>
-                <h2>Нові матеріали готуються</h2>
-                <p>Ми поступово додаємо практичні пояснення про здоров’я шкіри, процедури та догляд.</p>
+        <section className="reset-blog-hero reset-blog-home-hero">
+          <div className="reset-blog-shell reset-blog-hero-grid">
+            <div className="reset-blog-hero-copy">
+              <div className="reset-blog-eyebrow">Редакція RESET Clinic · Львів</div>
+              <h1>Про шкіру й естетичну медицину — зрозуміло.</h1>
+              <p className="reset-blog-lead">
+                Пояснюємо симптоми, лікування, процедури й догляд без зайвої складності. Матеріали створюються як орієнтир перед консультацією, а не як заміна персональної діагностики.
+              </p>
+              <div className="reset-blog-hero-notes" aria-label="Принципи редакції">
+                <span>Медичний контекст</span>
+                <span>Практичні пояснення</span>
+                <span>Без універсальних обіцянок</span>
               </div>
             </div>
-          )}
+            <figure className="reset-blog-hero-visual">
+              <img src={DEFAULT_OG_IMAGE} alt="Інтер’єр RESET Clinic у Львові" width="2446" height="1314" decoding="async" />
+              <figcaption>
+                <span>RESET Clinic · knowledge</span>
+                <strong>Доказовий підхід до шкіри</strong>
+                <small>Кульпарківська, 93/2 · Львів</small>
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section className="reset-blog-topics">
+          <div className="reset-blog-shell">
+            <div className="reset-blog-section-heading">
+              <div>
+                <p className="reset-blog-eyebrow">Теми</p>
+                <h2>Оберіть те, що вас турбує</h2>
+              </div>
+              <p>Від симптомів і щоденного догляду — до процедур та медичних напрямів RESET Clinic.</p>
+            </div>
+            <div className="reset-blog-category-grid" aria-label="Категорії блогу">
+              {BLOG_CATEGORIES.map((category, index) => (
+                <Link className="reset-blog-category-card" href={blogCategoryPath(category.slug)} key={category.slug}>
+                  <div className="reset-blog-card-index">{String(index + 1).padStart(2, "0")}</div>
+                  <div className="reset-blog-card-copy">
+                    <h3>{category.name}</h3>
+                    <p>{category.description}</p>
+                  </div>
+                  <span className="reset-blog-card-arrow" aria-hidden="true">↗</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="reset-blog-latest">
+          <div className="reset-blog-shell">
+            <div className="reset-blog-section-heading reset-blog-section-heading-light">
+              <div>
+                <p className="reset-blog-eyebrow">Матеріали</p>
+                <h2>Нове від редакції RESET</h2>
+              </div>
+              <p>Розбір питань, які пацієнти найчастіше ставлять на консультаціях.</p>
+            </div>
+
+            {posts.length ? (
+              <div className="reset-blog-post-grid" aria-label="Останні матеріали">
+                {posts.map((post, index) => (
+                  <Link className={`reset-blog-post-card${index === 0 ? " reset-blog-post-card-featured" : ""}`} href={blogPostPath(post)} key={post.id}>
+                    <div className="reset-blog-post-meta">
+                      <span>{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : "RESET Clinic"}</span>
+                      <span>{post.author_name || "RESET Clinic"}</span>
+                    </div>
+                    <h3>{post.title}</h3>
+                    <p>{post.excerpt || "Практичний матеріал від команди RESET Clinic."}</p>
+                    <div className="reset-blog-post-link">Читати матеріал <span>↗</span></div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="reset-blog-empty-state">
+                <div>
+                  <p className="reset-blog-eyebrow">Редакція в роботі</p>
+                  <h3>Перші матеріали вже готуються.</h3>
+                </div>
+                <p>Поки блог наповнюється, ви можете перейти до медичних напрямів RESET Clinic або записатися на консультацію, якщо потрібна персональна оцінка.</p>
+                <div className="reset-blog-empty-actions">
+                  <Link href="/dermatology/">Перейти до дерматології</Link>
+                  <Link href="/booking/">Записатися на консультацію</Link>
+                </div>
+              </div>
+            )}
+          </div>
         </section>
       </main>
       <PublicSiteFooter />
