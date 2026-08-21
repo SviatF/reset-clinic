@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 import { blogPostPath, getPublishedPostsByCategory } from "../lib/blog";
 import {
@@ -10,14 +11,14 @@ import {
 } from "../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
 
-async function categoryState(slug: BlogCategorySlug) {
+const categoryState = cache(async (slug: BlogCategorySlug) => {
   const category = getBlogCategory(slug);
   if (!category) return null;
   const posts = await getPublishedPostsByCategory(slug, 200);
   const indexablePosts = posts.filter((post) => post.indexable);
   const indexable = indexablePosts.length >= BLOG_CATEGORY_MIN_INDEXABLE_POSTS;
   return { category, posts, indexablePosts, indexable };
-}
+});
 
 export async function buildBlogCategoryMetadata(slug: BlogCategorySlug): Promise<Metadata> {
   const state = await categoryState(slug);
@@ -74,7 +75,7 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
         breadcrumb: { "@id": `${SITE_URL}${path}#breadcrumb` },
         mainEntity: {
           "@type": "ItemList",
-          itemListElement: state.posts.map((post, index) => ({
+          itemListElement: state.indexablePosts.map((post, index) => ({
             "@type": "ListItem",
             position: index + 1,
             url: `${SITE_URL}${blogPostPath(post)}`,
@@ -119,7 +120,11 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
             </Link>
           )) : (
             <div className="reset-blog-card">
-              <div><div className="reset-blog-meta">Категорія підготовлена</div><h2>Матеріали готуються</h2><p>Сторінка залишається noindex, доки тут не буде щонайменше {BLOG_CATEGORY_MIN_INDEXABLE_POSTS} якісних indexable матеріалів.</p></div>
+              <div>
+                <div className="reset-blog-meta">RESET Clinic</div>
+                <h2>Матеріали готуються</h2>
+                <p>Незабаром тут з’являться практичні пояснення й рекомендації команди RESET Clinic за цією темою.</p>
+              </div>
             </div>
           )}
         </section>
