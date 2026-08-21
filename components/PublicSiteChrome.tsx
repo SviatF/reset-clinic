@@ -13,9 +13,8 @@ const MAIN_NAV = [
 export function PublicSiteHeader() {
   return (
     <header className="seo-header">
-      <Link className="seo-brand" href="/" aria-label="RESET Clinic — головна">
-        <span>RESET</span>
-        <small>клініка естетичної медицини</small>
+      <Link className="seo-brand seo-brand-image" href="/" aria-label="RESET Clinic — головна">
+        <img className="seo-brand-logo" src="/assets/logo-main.png" alt="RESET Clinic" />
       </Link>
       <nav className="seo-nav" aria-label="Основна навігація">
         {MAIN_NAV.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
@@ -38,9 +37,8 @@ export function PublicSiteFooter() {
     <footer className="seo-footer">
       <div className="seo-shell seo-footer-grid">
         <div className="seo-footer-brand-block">
-          <Link className="seo-brand" href="/">
-            <span>RESET</span>
-            <small>клініка естетичної медицини</small>
+          <Link className="seo-brand seo-brand-image" href="/" aria-label="RESET Clinic — головна">
+            <img className="seo-brand-logo" src="/assets/logo-main.png" alt="RESET Clinic" />
           </Link>
           <p>Львів, вул. Кульпарківська, 93/2</p>
           <a href="tel:+380932828888">+380 93 282 88 88</a>
