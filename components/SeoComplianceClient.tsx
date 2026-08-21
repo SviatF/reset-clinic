@@ -9,8 +9,8 @@ const PRICE_ANCHORS: Array<{ id: string; patterns: string[] }> = [
   { id: "contouring", patterns: ["контурна пластика"] },
   { id: "biorevitalization", patterns: ["біоревітал"] },
   { id: "polynucleotides", patterns: ["полінуклеот"] },
-  { id: "mesotherapy", patterns: ["мезотерап"] },
   { id: "needle-free-mesotherapy", patterns: ["безін’єкційн", "безін'єкційн"] },
+  { id: "mesotherapy", patterns: ["мезотерап"] },
   { id: "ipl", patterns: ["ipl"] },
   { id: "microneedle-rf", patterns: ["мікроголков", "rf-ліфт", "rf ліфт"] },
   { id: "led", patterns: ["led"] },
@@ -29,14 +29,26 @@ function installPriceAnchors() {
   const candidates = [...document.querySelectorAll<HTMLElement>(
     "h1, h2, h3, h4, .section-title, .elementor-heading-title, [class*='service-name']",
   )];
+  const claimed = new Set<HTMLElement>();
 
   PRICE_ANCHORS.forEach(({ id, patterns }) => {
     if (document.getElementById(id)) return;
     const target = candidates.find((node) => {
+      if (claimed.has(node)) return false;
       const text = normalize(node.textContent || "");
       return patterns.some((pattern) => text.includes(pattern));
     });
-    if (target) target.id = id;
+    if (!target) return;
+
+    claimed.add(target);
+    const marker = document.createElement("span");
+    marker.id = id;
+    marker.setAttribute("aria-hidden", "true");
+    marker.style.display = "block";
+    marker.style.position = "relative";
+    marker.style.top = "-96px";
+    marker.style.visibility = "hidden";
+    target.before(marker);
   });
 
   const hash = window.location.hash.replace(/^#/, "");
