@@ -1,246 +1,36 @@
-import type { Metadata } from "next";
-import type { BlogCategorySlug } from "./blog-categories";
-import { DOCTORS, doctorPath, type DoctorProfile } from "./doctors";
-import { SITE_URL } from "./seo";
-import {
-  buildSeoLandingJsonLd,
-  buildSeoLandingMetadata,
-  type SeoLanding,
-} from "./seo-pages";
+import type { SeoLanding } from "./seo-pages";
+import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-base";
 
-const UNVERIFIED_MEDICAL_PATHS = new Set([
-  "/dermatology/perioral-dermatitis-treatment/",
-  "/dermatology/psoriasis-treatment/",
-  "/dermatology/folliculitis-treatment/",
-  "/dermatology/skin-infections-treatment/",
-  "/dermatology/melasma-treatment/",
-  "/nutrition/medical-weight-loss/",
-  "/nutrition/insulin-resistance/",
-]);
+export {
+  isSeoLandingIndexable,
+  displayH1ForLanding,
+  buildCompliantLandingMetadata,
+  reviewerForLanding,
+  priceHrefForLanding,
+  blogCategoryForLanding,
+  buildCompliantLandingJsonLd,
+} from "./seo-compliance-base";
 
-// Add path -> doctor slug only after RESET Clinic explicitly confirms that
-// the doctor reviewed that exact published page.
-const MEDICAL_REVIEWER_BY_PATH: Partial<Record<string, string>> = {};
-
-type LandingSection = SeoLanding["sections"][number];
-
-const GENERIC_PROCEDURE_SECTIONS: LandingSection[] = [
-  {
-    title: "Показання та для кого підходить",
-    text: ["Доцільність процедури визначає спеціаліст після оцінки задачі, стану шкіри, анамнезу та очікувань. Показання мають бути конкретними, а не формуватися лише з назви проблеми."],
-  },
-  {
-    title: "Протипоказання та обмеження",
-    text: ["Перед процедурою спеціаліст уточнює медичний анамнез, поточні стани, препарати та інші фактори, які можуть впливати на безпеку. Остаточний перелік обмежень визначається індивідуально."],
-  },
-  {
-    title: "Підготовка",
-    text: ["Якщо для конкретного протоколу потрібна підготовка, пацієнт отримує персональні рекомендації до візиту. Не варто самостійно скасовувати призначені лікарем препарати або починати нові засоби лише заради процедури."],
-  },
-  {
-    title: "Тривалість, кількість процедур і результат",
-    text: ["Тривалість візиту, кількість процедур і строки оцінки результату залежать від методу, зони, вихідного стану та індивідуальної відповіді. Реалістичний план обговорюється до початку курсу."],
-  },
-  {
-    title: "Відновлення та можливі реакції",
-    text: ["Період відновлення та допустимі реакції відрізняються між методиками. Після процедури RESET Clinic надає рекомендації щодо догляду, обмежень і ситуацій, у яких потрібно зв’язатися зі спеціалістом."],
-  },
-];
-
-const BOTULINUM_ZONE_SECTIONS: LandingSection[] = [
-  {
-    title: "Ботулінотерапія верхньої третини обличчя",
-    text: ["Верхня третина включає оцінку лоба, міжбрів’я та зони навколо очей. Обсяг корекції визначається не за шаблонною кількістю зон, а за мімікою, анатомією та бажаним ступенем збереження природної рухливості."],
-  },
-  {
-    title: "Ботулінотерапія лоба",
-    text: ["При роботі з лобом лікар оцінює активність фронтального м’яза, положення брів і взаємодію з іншими мімічними зонами. Рішення щодо точок і дозування приймається індивідуально."],
-  },
-  {
-    title: "Корекція міжбрів’я",
-    text: ["Міжбрівна зона оцінюється в русі та спокої. Мета — контроль надмірної м’язової активності без універсальної схеми для всіх пацієнтів."],
-  },
-  {
-    title: "Ботулінотерапія зони навколо очей",
-    text: ["Для периорбітальної зони враховують характер міміки, симетрію та анатомічні особливості. Корекція проводиться лише після перевірки показань і обговорення очікуваного результату."],
-  },
-  {
-    title: "Ботулінотерапія нижньої третини",
-    text: ["Нижня третина обличчя потребує особливо точної оцінки функції м’язів. Окремі задачі можуть коригуватися ботулінотерапією, але рішення залежить від анатомії та конкретного запиту."],
-  },
-  {
-    title: "Корекція платизми",
-    text: ["Робота з платизмою розглядається окремо від верхньої третини. Лікар оцінює активність м’яза шиї, контур нижньої третини та доцільність цього методу саме для конкретної задачі."],
-  },
-  {
-    title: "Ботулінотерапія жувальних м’язів",
-    text: ["Корекція масетерів не винесена в окрему thin SEO-page. Вона залишається частиною основної сторінки ботулінотерапії; показання визначаються після оцінки жувальних м’язів, анатомії та функціонального запиту."],
-  },
-];
-
-export function isSeoLandingIndexable(landing: SeoLanding) {
-  return !UNVERIFIED_MEDICAL_PATHS.has(landing.path);
-}
-
-export function displayH1ForLanding(landing: SeoLanding) {
-  return landing.path === "/skin-care/"
-    ? "Догляд за шкірою: рекомендації лікарів та косметологів"
-    : landing.h1;
-}
-
-export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
-  const base = buildSeoLandingMetadata(landing);
-  const index = isSeoLandingIndexable(landing);
-  return {
-    ...base,
-    robots: {
-      index,
-      follow: true,
-      googleBot: {
-        index,
-        follow: true,
-        "max-image-preview": "large",
-        "max-snippet": -1,
-        "max-video-preview": -1,
-      },
-    },
-  };
-}
-
-export function reviewerForLanding(landing: SeoLanding): DoctorProfile | null {
-  const reviewerSlug = MEDICAL_REVIEWER_BY_PATH[landing.path];
-  return reviewerSlug
-    ? DOCTORS.find((doctor) => doctor.slug === reviewerSlug) ?? null
-    : null;
-}
-
-export function priceHrefForLanding(landing: SeoLanding) {
-  const path = landing.path;
-  if (path.includes("botulinum-therapy")) return "/price/#botulinum";
-  if (path.includes("lip-contouring") || path.includes("face-contouring")) return "/price/#contouring";
-  if (path.includes("biorevitalization")) return "/price/#biorevitalization";
-  if (path.includes("polynucleotides")) return "/price/#polynucleotides";
-  if (path.includes("needle-free-mesotherapy")) return "/price/#needle-free-mesotherapy";
-  if (path.includes("mesotherapy")) return "/price/#mesotherapy";
-  if (path.includes("microneedle-rf")) return "/price/#microneedle-rf";
-  if (path.includes("/ipl/")) return "/price/#ipl";
-  if (path.includes("led-therapy")) return "/price/#led";
-  if (path.includes("aquapure")) return "/price/#aquapure";
-  if (path.includes("skin-diagnostics")) return "/price/#skin-diagnostics";
-  if (path.includes("trichologist") || path.includes("trichoscopy") || path.includes("hair-loss")) return "/price/#trichology";
-  if (path.startsWith("/nutrition/")) return "/price/#nutrition";
-  if (path.startsWith("/dermatology/")) return "/price/#dermatology";
-  return "/price/";
-}
-
-export function blogCategoryForLanding(path: string): BlogCategorySlug | null {
-  if (path.includes("acne") || path.includes("comedones-blackheads")) return "acne";
-  if (path.includes("rosacea") || path.includes("redness")) return "rosacea";
-  if (path.includes("pigmentation") || path.includes("melasma") || path.includes("uneven-skin-tone")) return "pigmentation";
-  if (path.startsWith("/cosmetology/")) return "cosmetology";
-  if (path === "/skin-care/" || path.includes("dry-skin") || path.includes("sensitive-skin")) return "skin-care";
-  if (path.startsWith("/nutrition/")) return "nutrition";
-  if (path.startsWith("/dermatology/") || path.startsWith("/skin-problems/")) return "dermatology";
-  return null;
-}
-
-export function buildCompliantLandingJsonLd(landing: SeoLanding) {
-  const base = buildSeoLandingJsonLd(landing) as {
-    "@context": string;
-    "@graph": Record<string, unknown>[];
-  };
-  const url = `${SITE_URL}${landing.path}`;
-  const reviewer = reviewerForLanding(landing);
-  const entityId = landing.type === "procedure" ? `${url}#procedure` : `${url}#service`;
-  const displayH1 = displayH1ForLanding(landing);
-
-  const graph = base["@graph"].flatMap((node) => {
-    const id = node["@id"];
-    if (landing.type === "procedure" && id === `${url}#service`) {
-      return [{
-        "@type": "MedicalProcedure",
-        "@id": entityId,
-        name: displayH1,
-        description: landing.description,
-        url,
-      }];
-    }
-    if (id === `${url}#webpage`) {
-      return [{
-        ...node,
-        headline: displayH1,
-        ...(landing.type === "service" || landing.type === "procedure"
-          ? { mainEntity: { "@id": entityId } }
-          : {}),
-        ...(landing.type !== "category"
-          ? {
-              reviewedBy: reviewer
-                ? { "@id": `${SITE_URL}${doctorPath(reviewer)}#person` }
-                : { "@id": `${SITE_URL}/#clinic` },
-            }
-          : {}),
-      }];
-    }
-    return [node];
-  });
-
-  if (reviewer) {
-    graph.push({
-      "@type": "Person",
-      "@id": `${SITE_URL}${doctorPath(reviewer)}#person`,
-      name: reviewer.name,
-      jobTitle: reviewer.role,
-      url: `${SITE_URL}${doctorPath(reviewer)}`,
-      image: `${SITE_URL}${reviewer.image}`,
-      worksFor: { "@id": `${SITE_URL}/#clinic` },
-    });
-  }
-
-  return { "@context": base["@context"], "@graph": graph };
+function cleanPublicMedicalCopy(value: string) {
+  return value
+    .replace(
+      "Корекція масетерів не винесена в окрему thin SEO-page. Вона залишається частиною основної сторінки ботулінотерапії;",
+      "Корекція жувальних м’язів розглядається як один із напрямів ботулінотерапії;",
+    )
+    .replace(
+      "Problem page не підміняє консультацію і не прив’язує симптом до однієї процедури.",
+      "Інформація на сторінці не підміняє консультацію і не прив’язує симптом до однієї процедури.",
+    )
+    .replace(/thin SEO-page/gi, "окрему сторінку")
+    .replace(/thin landing page/gi, "окремої сторінки")
+    .replace(/\bProblem page\b/gi, "Інформація на сторінці");
 }
 
 export function supplementalLandingSections(landing: SeoLanding): SeoLanding["sections"] {
-  if (landing.type === "category") return [];
-
-  if (landing.type === "problem") {
-    return [
-      {
-        title: "Коли потрібна консультація лікаря",
-        text: [`Якщо прояви, пов’язані з темою «${landing.h1}», зберігаються, посилюються, повторюються або викликають дискомфорт, доцільна професійна оцінка. Онлайн-опис не замінює діагноз.`],
-      },
-      {
-        title: "Як проводиться діагностика",
-        text: ["Діагностичний маршрут починається зі збору анамнезу та огляду. Додаткові методи, аналізи чи апаратна діагностика призначаються лише тоді, коли вони можуть змінити подальшу тактику."],
-      },
-      {
-        title: "Які методи лікування або корекції можуть розглядатися",
-        text: ["Метод залежить від причини, активності процесу, стану шкіри, супутніх факторів і попереднього лікування. Problem page не підміняє консультацію і не прив’язує симптом до однієї процедури."],
-      },
-    ];
-  }
-
-  if (landing.type === "procedure") {
-    return landing.path === "/cosmetology/injection/botulinum-therapy/"
-      ? [...BOTULINUM_ZONE_SECTIONS, ...GENERIC_PROCEDURE_SECTIONS]
-      : GENERIC_PROCEDURE_SECTIONS;
-  }
-
-  return [
-    {
-      title: "Кому може бути рекомендована консультація або послуга",
-      text: [`Звернення щодо «${landing.h1}» доцільне, коли потрібна професійна оцінка, уточнення причини, план лікування або контроль динаміки, а самостійні рішення не дають зрозумілого результату.`],
-    },
-    {
-      title: "Діагностика та персональний план",
-      text: ["Спеціаліст збирає анамнез, оцінює клінічну картину та визначає, чи потрібні додаткові дослідження. Після цього формується персональний маршрут без універсальних схем і гарантій результату."],
-    },
-    {
-      title: "Показання, протипоказання та безпека",
-      text: ["Конкретні показання та обмеження залежать від діагнозу, стану здоров’я, препаратів і запланованого методу. Перед будь-яким процедурним етапом вони перевіряються окремо."],
-    },
-    {
-      title: "Очікуваний результат, тривалість і кількість візитів",
-      text: ["Очікуваний результат, строки та кількість контрольних візитів залежать від вихідного стану і відповіді на план. Для медичних станів коректною метою є контроль і покращення, а не шаблонна обіцянка повного вилікування."],
-    },
-  ];
+  return baseSupplementalLandingSections(landing).map((section) => ({
+    ...section,
+    title: cleanPublicMedicalCopy(section.title),
+    text: section.text?.map(cleanPublicMedicalCopy),
+    bullets: section.bullets?.map(cleanPublicMedicalCopy),
+  }));
 }
