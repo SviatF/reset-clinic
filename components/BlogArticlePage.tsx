@@ -87,7 +87,6 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
   const category = getBlogCategory(post.category);
   const url = `${SITE_URL}${blogPostPath(post)}`;
   const sources = normalizeSources(post.sources || []);
-  const faq = normalizeFaq(post.faq || []);
   const articleType = post.schema_type === "Article" || post.schema_type === "BlogPosting"
     ? post.schema_type
     : "BlogPosting";
@@ -126,18 +125,6 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
       itemListElement: breadcrumbItems,
     },
   ];
-
-  if (faq.length) {
-    graph.push({
-      "@type": "FAQPage",
-      "@id": `${url}#faq`,
-      mainEntity: faq.map((item) => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: { "@type": "Answer", text: item.answer },
-      })),
-    });
-  }
 
   return { "@context": "https://schema.org", "@graph": graph };
 }
