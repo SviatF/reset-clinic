@@ -158,79 +158,116 @@ export default async function BlogArticlePage({ post }: { post: PublicBlogPost }
         .filter((item) => item.id !== post.id && item.indexable)
         .slice(0, 3)
     : [];
+  const heroImage = post.og_image || DEFAULT_OG_IMAGE;
 
   return (
-    <div className="seo-site">
+    <div className="seo-site reset-blog-page reset-blog-article-page">
       <PublicSiteHeader />
-      <main className="reset-blog-article">
+      <main>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
-        <nav className="reset-blog-eyebrow" aria-label="Breadcrumb">
-          <Link href="/blog/">Блог</Link>
-          {category ? <><span> · </span><Link href={blogCategoryPath(category.slug)}>{category.name}</Link></> : null}
-        </nav>
-        <h1>{post.title}</h1>
-        {post.excerpt ? <p className="intro">{post.excerpt}</p> : null}
 
-        <div className="reset-blog-author">
-          <strong>{post.author_name || SITE_NAME}</strong>
-          {post.reviewer_name ? <><br /><span>Медичний рецензент: {post.reviewer_name}{post.reviewer_title ? ` · ${post.reviewer_title}` : ""}</span></> : <><br /><span>Медична редакція: RESET Clinic</span></>}
-          {post.published_at ? <><br /><span className="reset-blog-meta">Опубліковано: {new Date(post.published_at).toLocaleDateString("uk-UA")}</span></> : null}
-          <br /><span className="reset-blog-meta">Оновлено: {new Date(post.updated_at).toLocaleDateString("uk-UA")}</span>
-        </div>
-
-        <article className="reset-blog-copy">
-          {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-        </article>
-
-        {relatedLinks.length ? (
-          <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">Пов’язані медичні сторінки</p>
-            <h2>Куди перейти далі</h2>
-            <div className="reset-blog-link-grid">
-              {relatedLinks.map((item) => <Link href={item.href} key={item.href}>{item.label}<span>↗</span></Link>)}
+        <section className="reset-blog-article-hero">
+          <div className="reset-blog-shell">
+            <nav className="reset-blog-breadcrumbs" aria-label="Breadcrumb">
+              <Link href="/blog/">Блог</Link>
+              {category ? <><span>/</span><Link href={blogCategoryPath(category.slug)}>{category.name}</Link></> : null}
+            </nav>
+            <div className="reset-blog-article-hero-grid">
+              <div className="reset-blog-article-hero-copy">
+                <p className="reset-blog-eyebrow">{category?.name || "Редакція RESET Clinic"}</p>
+                <h1>{post.title}</h1>
+                {post.excerpt ? <p className="reset-blog-article-intro">{post.excerpt}</p> : null}
+                <div className="reset-blog-article-meta-line">
+                  <span>{post.author_name || SITE_NAME}</span>
+                  {post.published_at ? <span>{new Date(post.published_at).toLocaleDateString("uk-UA")}</span> : null}
+                  <span>Оновлено {new Date(post.updated_at).toLocaleDateString("uk-UA")}</span>
+                </div>
+              </div>
+              <figure className="reset-blog-article-visual">
+                <img src={heroImage} alt={post.title} decoding="async" />
+                <figcaption><span>RESET Clinic · Editorial</span><strong>Медична інформація без зайвого шуму</strong></figcaption>
+              </figure>
             </div>
-          </section>
-        ) : null}
-
-        <section className="reset-blog-supporting">
-          <p className="reset-blog-eyebrow">Коли звернутися</p>
-          <h2>Стаття не замінює консультацію</h2>
-          <p>Якщо симптоми зберігаються, прогресують, повторюються або викликають значний дискомфорт, варто звернутися до профільного спеціаліста. Діагноз і персональні призначення не формуються лише за інформацією зі статті.</p>
+          </div>
         </section>
 
-        {sources.length ? (
-          <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">Джерела</p>
-            <h2>Використані матеріали</h2>
-            <ul className="reset-blog-sources">
-              {sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.href ? <a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a> : source.label}</li>)}
-            </ul>
-          </section>
-        ) : null}
+        <section className="reset-blog-article-body">
+          <div className="reset-blog-shell reset-blog-article-layout">
+            <aside className="reset-blog-article-rail">
+              <div className="reset-blog-rail-block">
+                <p className="reset-blog-eyebrow">Автор</p>
+                <strong>{post.author_name || SITE_NAME}</strong>
+              </div>
+              <div className="reset-blog-rail-block">
+                <p className="reset-blog-eyebrow">Медична перевірка</p>
+                <strong>{post.reviewer_name || "Редакція RESET Clinic"}</strong>
+                {post.reviewer_title ? <span>{post.reviewer_title}</span> : null}
+              </div>
+              {category ? (
+                <div className="reset-blog-rail-block reset-blog-rail-link">
+                  <p className="reset-blog-eyebrow">Тема</p>
+                  <Link href={blogCategoryPath(category.slug)}>{category.name} <span>↗</span></Link>
+                </div>
+              ) : null}
+            </aside>
 
-        {faq.length ? (
-          <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">Запитання та відповіді</p>
-            <h2>Часті запитання</h2>
-            <div className="reset-blog-faq">
-              {faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}
+            <div className="reset-blog-article-content">
+              <article className="reset-blog-copy">
+                {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+              </article>
+
+              {relatedLinks.length ? (
+                <section className="reset-blog-supporting reset-blog-supporting-dark">
+                  <p className="reset-blog-eyebrow">Профільні сторінки RESET</p>
+                  <h2>Де продовжити</h2>
+                  <div className="reset-blog-link-grid">
+                    {relatedLinks.map((item) => <Link href={item.href} key={item.href}>{item.label}<span>↗</span></Link>)}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="reset-blog-supporting reset-blog-medical-note">
+                <p className="reset-blog-eyebrow">Важливо</p>
+                <h2>Стаття не замінює консультацію</h2>
+                <p>Якщо симптоми зберігаються, прогресують, повторюються або викликають значний дискомфорт, варто звернутися до профільного спеціаліста. Діагноз і персональні призначення не формуються лише за інформацією зі статті.</p>
+              </section>
+
+              {sources.length ? (
+                <section className="reset-blog-supporting">
+                  <p className="reset-blog-eyebrow">Джерела</p>
+                  <h2>Використані матеріали</h2>
+                  <ul className="reset-blog-sources">
+                    {sources.map((source, index) => <li key={`${source.label}-${index}`}>{source.href ? <a href={source.href} target="_blank" rel="noopener noreferrer">{source.label}</a> : source.label}</li>)}
+                  </ul>
+                </section>
+              ) : null}
+
+              {faq.length ? (
+                <section className="reset-blog-supporting">
+                  <p className="reset-blog-eyebrow">Запитання та відповіді</p>
+                  <h2>Часті запитання</h2>
+                  <div className="reset-blog-faq">
+                    {faq.map((item) => <details key={item.question}><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}
+                  </div>
+                </section>
+              ) : null}
+
+              {relatedPosts.length ? (
+                <section className="reset-blog-supporting">
+                  <p className="reset-blog-eyebrow">За темою</p>
+                  <h2>Читайте також</h2>
+                  <div className="reset-blog-link-grid">
+                    {relatedPosts.map((item) => <Link href={blogPostPath(item)} key={item.id}>{item.title}<span>↗</span></Link>)}
+                  </div>
+                </section>
+              ) : null}
+
+              <section className="reset-blog-article-cta">
+                <div><p className="reset-blog-eyebrow">RESET Clinic · Львів</p><h2>Потрібна персональна оцінка?</h2><p>Запишіться на консультацію, якщо потрібен діагноз, план лікування або підбір процедури.</p></div>
+                <Link href="/booking/">Записатися <span>↗</span></Link>
+              </section>
             </div>
-          </section>
-        ) : null}
-
-        {relatedPosts.length ? (
-          <section className="reset-blog-supporting">
-            <p className="reset-blog-eyebrow">Матеріали за темою</p>
-            <h2>Читайте також</h2>
-            <div className="reset-blog-link-grid">
-              {relatedPosts.map((item) => <Link href={blogPostPath(item)} key={item.id}>{item.title}<span>↗</span></Link>)}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="reset-blog-article-cta">
-          <div><p className="reset-blog-eyebrow">RESET Clinic · Львів</p><h2>Потрібна персональна оцінка?</h2><p>Запишіться на консультацію, якщо потрібен діагноз, план лікування або підбір процедури.</p></div>
-          <Link href="/booking/">Записатися →</Link>
+          </div>
         </section>
       </main>
       <PublicSiteFooter />
