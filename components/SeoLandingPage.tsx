@@ -1,8 +1,18 @@
 import Link from "next/link";
+import { getPublishedPostsByCategory } from "../lib/blog";
+import { blogCategoryPath, getBlogCategory } from "../lib/blog-categories";
 import { DOCTORS, doctorPath } from "../lib/doctors";
+import {
+  blogCategoryForLanding,
+  buildCompliantLandingJsonLd,
+  displayH1ForLanding,
+  priceHrefForLanding,
+  reviewerForLanding,
+  supplementalLandingSections,
+} from "../lib/seo-compliance";
 import { DEFAULT_OG_IMAGE, jsonLd } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
-import { buildSeoLandingJsonLd, type SeoLanding } from "../lib/seo-pages";
+import type { SeoLanding } from "../lib/seo-pages";
 
 const MAIN_NAV = [
   ["Дерматологія", "/dermatology/"],
@@ -21,7 +31,7 @@ const POLISH_CSS = `
 .seo-site-polished .seo-breadcrumbs{margin-bottom:30px}
 .seo-site-polished .seo-hero-grid{grid-template-columns:minmax(0,1.16fr) minmax(350px,.84fr);gap:52px}
 .seo-site-polished .seo-hero-copy{padding:8px 0}
-.seo-site-polished .seo-hero h1{font-size:clamp(48px,5vw,74px);line-height:.96;max-width:780px}
+.seo-site-polished .seo-hero h1{font-size:clamp(48px,5vw,74px);line-height:.96;max-width:820px}
 .seo-site-polished .seo-lead{margin-top:24px;font-size:15px;line-height:1.72;max-width:680px}
 .seo-site-polished .seo-hero-actions{margin-top:28px}
 .seo-site-polished .seo-button{min-height:46px;padding:0 21px}
@@ -38,6 +48,7 @@ const POLISH_CSS = `
 .seo-site-polished .seo-section p,.seo-site-polished .seo-section li{font-size:14px;line-height:1.78}
 .seo-site-polished .seo-section ul{margin-top:20px}
 .seo-site-polished .seo-related-card{border-radius:18px;padding:20px}
+.seo-site-polished .seo-related-card small{display:block;margin-top:12px;font-size:11px;line-height:1.55;color:var(--muted)}
 .seo-site-polished .seo-contact-card strong{font-size:23px}
 .seo-site-polished .seo-doctors-band{padding:72px 0 78px}
 .seo-site-polished .seo-band-heading{margin-bottom:32px}
@@ -45,6 +56,10 @@ const POLISH_CSS = `
 .seo-site-polished .seo-doctor-card{border-radius:20px;min-height:170px;grid-template-columns:128px minmax(0,1fr)}
 .seo-site-polished .seo-doctor-photo{min-height:170px}
 .seo-site-polished .seo-doctor-card strong{font-size:26px}
+.seo-site-polished .seo-reviewer-band{padding:58px 0;background:#ebe6da;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.seo-site-polished .seo-reviewer-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:center}
+.seo-site-polished .seo-reviewer-card h2{font-family:var(--serif);font-size:clamp(34px,4vw,52px);font-weight:500;line-height:1;margin:8px 0 14px}
+.seo-site-polished .seo-reviewer-card p{max-width:760px;line-height:1.7;margin:0}
 .seo-site-polished .seo-faq{padding:76px 0}
 .seo-site-polished .seo-faq-layout{grid-template-columns:.68fr 1.32fr;gap:64px}
 .seo-site-polished .seo-faq h2{font-size:clamp(42px,4.4vw,60px)}
@@ -77,8 +92,9 @@ const POLISH_CSS = `
   .seo-site-polished .seo-section ul{grid-template-columns:1fr}
   .seo-site-polished .seo-side{display:grid;gap:12px}
   .seo-site-polished .seo-related-primary{position:static}
-  .seo-site-polished .seo-doctors-band,.seo-site-polished .seo-faq,.seo-site-polished .seo-final-cta{padding:58px 0}
+  .seo-site-polished .seo-doctors-band,.seo-site-polished .seo-faq,.seo-site-polished .seo-final-cta,.seo-site-polished .seo-reviewer-band{padding:58px 0}
   .seo-site-polished .seo-doctor-grid{grid-template-columns:1fr}
+  .seo-site-polished .seo-reviewer-card{grid-template-columns:1fr;gap:24px}
   .seo-site-polished .seo-faq-layout{grid-template-columns:1fr;gap:34px}
   .seo-site-polished .seo-faq-heading{position:static}
   .seo-site-polished .seo-final-grid{grid-template-columns:1fr;align-items:start}
@@ -99,6 +115,11 @@ function intentLabel(landing: SeoLanding) {
   if (landing.type === "procedure") return "Показання · процедура · супровід";
   if (landing.type === "service") return "Консультація · план · контроль";
   return "Напрям · послуги · лікарі";
+}
+
+function publicBlogPostPath(post: { slug: string; category: string | null }) {
+  const category = getBlogCategory(post.category);
+  return category ? `/blog/${category.slug}/${post.slug}/` : `/blog/${post.slug}/`;
 }
 
 function SiteHeader() {
@@ -145,10 +166,18 @@ function SiteFooter() {
   );
 }
 
-export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
-  const schema = buildSeoLandingJsonLd(landing);
+export default async function SeoLandingPage({ landing }: { landing: SeoLanding }) {
+  const schema = buildCompliantLandingJsonLd(landing);
   const children = directChildren(landing);
   const doctors = DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
+  const reviewer = reviewerForLanding(landing);
+  const priceHref = priceHrefForLanding(landing);
+  const displayH1 = displayH1ForLanding(landing);
+  const supplementalSections = supplementalLandingSections(landing);
+  const blogCategory = blogCategoryForLanding(landing.path);
+  const relatedPosts = blogCategory
+    ? (await getPublishedPostsByCategory(blogCategory, 10)).filter((post) => post.indexable).slice(0, landing.type === "problem" ? 4 : 3)
+    : [];
 
   return (
     <main className="seo-site seo-site-polished">
@@ -170,11 +199,11 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
           <div className="seo-hero-grid">
             <div className="seo-hero-copy">
               <p className="seo-eyebrow">{landing.eyebrow}</p>
-              <h1>{landing.h1}</h1>
+              <h1>{displayH1}</h1>
               <p className="seo-lead">{landing.intro}</p>
               <div className="seo-hero-actions">
                 <Link className="seo-button seo-button-dark" href="/booking/">Записатися на прийом</Link>
-                <Link className="seo-button" href="/price/">Переглянути ціни</Link>
+                <Link className="seo-button" href={priceHref}>Переглянути ціни</Link>
               </div>
               <p className="seo-medical-note">Інформація на сторінці не замінює консультацію лікаря. Тактика визначається індивідуально.</p>
             </div>
@@ -201,7 +230,7 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
 
       <div className="seo-shell seo-content-grid">
         <article className="seo-article">
-          {landing.sections.map((section, index) => (
+          {[...landing.sections, ...supplementalSections].map((section, index) => (
             <section className="seo-section" key={`${section.title}-${index}`}>
               <div className="seo-section-kicker"><span>{String(index + 1).padStart(2, "0")}</span><i /></div>
               <div>
@@ -226,6 +255,20 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
               <div>{group.items.map((item) => <Link href={item.href} key={`${group.title}-${item.href}`}>{item.label}<span>↗</span></Link>)}</div>
             </section>
           ))}
+          {relatedPosts.length && blogCategory ? (
+            <section className="seo-related-card">
+              <p>Статті за темою</p>
+              <div>
+                {relatedPosts.map((post) => <Link href={publicBlogPostPath(post)} key={post.id}>{post.title}<span>↗</span></Link>)}
+                <Link href={blogCategoryPath(blogCategory)}>Усі матеріали категорії<span>↗</span></Link>
+              </div>
+            </section>
+          ) : null}
+          <section className="seo-related-card">
+            <p>Вартість</p>
+            <div><Link href={priceHref}>Актуальний прайс RESET Clinic<span>↗</span></Link></div>
+            <small>Вартість залежить від конкретної послуги, зони, препарату або протоколу. Використовуємо один глобальний прайс без дубльованих SEO-сторінок цін.</small>
+          </section>
           <section className="seo-related-card seo-contact-card">
             <p>RESET Clinic</p>
             <strong>Львів, вул. Кульпарківська, 93/2</strong>
@@ -250,6 +293,19 @@ export default function SeoLandingPage({ landing }: { landing: SeoLanding }) {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {landing.type !== "category" ? (
+        <section className="seo-reviewer-band">
+          <div className="seo-shell seo-reviewer-card">
+            <div>
+              <p className="seo-eyebrow">Медична перевірка</p>
+              <h2>{reviewer ? `Матеріал перевірено: ${reviewer.name}` : "Медична редакція RESET Clinic"}</h2>
+              <p>{reviewer ? `${reviewer.role}. Пов’язаний профіль лікаря та його напрямки доступні на сайті RESET Clinic.` : "Медичні твердження публікуються в межах редакційного контролю клініки. Індивідуальні призначення та діагноз визначаються тільки під час консультації."}</p>
+            </div>
+            {reviewer ? <Link className="seo-button" href={doctorPath(reviewer)}>Профіль лікаря</Link> : <Link className="seo-button" href="/doctors/">Команда клініки</Link>}
           </div>
         </section>
       ) : null}
