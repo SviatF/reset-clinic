@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { blogPostPath, getPublishedPostsByCategory, type PublicBlogPost } from "../lib/blog";
 import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "../lib/blog-categories";
+import { getSeoContentPlanItem } from "../lib/seo-content-plan";
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL, jsonLd } from "../lib/seo";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 
@@ -83,6 +84,10 @@ function normalizeFaq(input: unknown[]): NormalizedFaq[] {
   });
 }
 
+function uniqueRelatedLinks(items: RelatedLink[]) {
+  return Array.from(new Map(items.map((item) => [item.href, item])).values());
+}
+
 export function buildBlogArticleJsonLd(post: PublicBlogPost) {
   const category = getBlogCategory(post.category);
   const url = `${SITE_URL}${blogPostPath(post)}`;
@@ -131,11 +136,16 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
 
 export default async function BlogArticlePage({ post }: { post: PublicBlogPost }) {
   const category = getBlogCategory(post.category);
+  const planItem = getSeoContentPlanItem(post.slug);
   const schema = buildBlogArticleJsonLd(post);
   const paragraphs = post.body.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
   const sources = normalizeSources(post.sources || []);
   const faq = normalizeFaq(post.faq || []);
-  const relatedLinks = category ? RELATED_BY_CATEGORY[category.slug] : [];
+  const relatedLinks = planItem
+    ? uniqueRelatedLinks([planItem.moneyPage, ...planItem.supportingPages])
+    : category
+      ? RELATED_BY_CATEGORY[category.slug]
+      : [];
   const relatedPosts = category
     ? (await getPublishedPostsByCategory(category.slug, 20))
         .filter((item) => item.id !== post.id && item.indexable)
