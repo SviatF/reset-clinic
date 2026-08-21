@@ -1,5 +1,6 @@
 import type { SeoLanding } from "./seo-pages";
 import { hasMarketingCopy } from "./seo-marketing-copy";
+import { hasExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-core";
 
 export {
@@ -35,7 +36,8 @@ export function supplementalLandingSections(landing: SeoLanding): SeoLanding["se
     bullets: section.bullets?.map(cleanPublicMedicalCopy),
   }));
 
-  if (!hasMarketingCopy(landing.path)) return cleaned;
+  const marketingFirst = hasMarketingCopy(landing.path) || hasExtraMarketingCopy(landing.path);
+  if (!marketingFirst) return cleaned;
 
   // Conversion-focused landings already contain their own unique medical and
   // decision-making sections. Do not append generic filler. The botulinum page
