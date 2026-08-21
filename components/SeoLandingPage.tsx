@@ -73,32 +73,125 @@ const POLISH_CSS = `
 .seo-site-polished .seo-faq summary{font-size:24px;padding:22px 0}
 .seo-site-polished .seo-final-cta{padding:76px 0}
 .seo-site-polished .seo-final-cta h2{font-size:clamp(46px,5.2vw,70px);line-height:.94}
+
+/* One RESET identity, several page rhythms. */
+.seo-site-polished .seo-hero,.seo-site-polished .seo-process-strip,.seo-site-polished .seo-section,.seo-site-polished .seo-directory-band{transition:background .2s ease,border-color .2s ease}
+.seo-site-polished .seo-hero-signature{display:flex;align-items:center;gap:10px;margin-top:28px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.seo-site-polished .seo-hero-signature:before{content:"";width:34px;height:1px;background:var(--accent);opacity:.65}
+
+/* Dermatology: quiet clinical editorial. */
+.seo-family-dermatology .seo-hero{background:linear-gradient(135deg,#f6f6ee 0%,#f6f6ee 68%,#ebe6da 68%,#ebe6da 100%)}
+.seo-family-dermatology .seo-hero-grid{grid-template-columns:minmax(0,1.2fr) minmax(340px,.8fr);align-items:end}
+.seo-family-dermatology .seo-hero-visual{border-radius:54px 8px 54px 8px}
+.seo-family-dermatology .seo-process-strip{background:#fbfaf6}
+.seo-family-dermatology .seo-section-first{padding:34px 36px 38px;background:#ebe6da;border:0;border-radius:26px;margin-bottom:64px;grid-template-columns:54px minmax(0,1fr)}
+.seo-family-dermatology .seo-section-first .seo-section-kicker{padding-top:5px}
+.seo-family-dermatology .seo-section:not(.seo-section-first) h2{max-width:720px}
+
+/* Cosmetology: larger visual, premium panels, stronger contrast. */
+.seo-family-cosmetology .seo-hero{background:#ebe6da}
+.seo-family-cosmetology .seo-hero-grid{grid-template-columns:minmax(330px,.82fr) minmax(0,1.18fr);gap:34px}
+.seo-family-cosmetology .seo-hero-copy{position:relative;z-index:2;padding:34px 34px 38px;background:#f6f6ee;border:1px solid rgba(41,32,27,.08);border-radius:30px}
+.seo-family-cosmetology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual>img{height:550px;min-height:550px}
+.seo-family-cosmetology .seo-hero-visual{border-radius:30px}
+.seo-family-cosmetology .seo-process-strip{background:#29201b;color:#f6f6ee;border-color:rgba(246,246,238,.12)}
+.seo-family-cosmetology .seo-process-grid>div{border-color:rgba(246,246,238,.14)}
+.seo-family-cosmetology .seo-process-grid span{color:#c7a979}
+.seo-family-cosmetology .seo-process-grid p{color:rgba(246,246,238,.62)}
+.seo-family-cosmetology .seo-section{border-bottom:0;padding:34px 36px 38px;margin-bottom:18px;border-radius:26px;background:#fbfaf6;grid-template-columns:56px minmax(0,1fr)}
+.seo-family-cosmetology .seo-section:nth-child(even){background:#ebe6da}
+.seo-family-cosmetology .seo-section:last-child{margin-bottom:0}
+
+/* Problems: symptom-first magazine layout. */
+.seo-family-problems .seo-hero-grid{grid-template-columns:1fr;gap:28px}
+.seo-family-problems .seo-hero-copy{max-width:930px;padding-bottom:0}
+.seo-family-problems .seo-hero h1{max-width:1000px;font-size:clamp(56px,7vw,96px)}
+.seo-family-problems .seo-lead{max-width:850px}
+.seo-family-problems .seo-hero-visual,.seo-family-problems .seo-hero-visual>img{height:330px;min-height:330px}
+.seo-family-problems .seo-hero-visual{border-radius:28px}
+.seo-family-problems .seo-hero-visual>img{object-position:center 48%}
+.seo-family-problems .seo-hero-caption{grid-template-columns:auto 1fr auto;align-items:end;gap:20px}
+.seo-family-problems .seo-hero-caption strong{text-align:center}
+.seo-family-problems .seo-section-first{background:#29201b;color:#f6f6ee;border:0;border-radius:28px;padding:38px 40px 42px;grid-template-columns:56px minmax(0,1fr)}
+.seo-family-problems .seo-section-first p,.seo-family-problems .seo-section-first li{color:rgba(246,246,238,.72)}
+.seo-family-problems .seo-section-first .seo-section-kicker span{color:#c7a979}
+.seo-family-problems .seo-section-first .seo-section-kicker i{background:#c7a979}
+.seo-family-problems .seo-section ul{grid-template-columns:1fr}
+.seo-family-problems .seo-section li{padding:15px 18px 15px 20px}
+
+/* Nutrition / care: calmer, narrower reading measure. */
+.seo-family-nutrition .seo-hero{background:linear-gradient(180deg,#f6f6ee 0%,#f1eee5 100%)}
+.seo-family-nutrition .seo-hero-grid{grid-template-columns:minmax(0,1fr) 420px;gap:72px}
+.seo-family-nutrition .seo-hero-visual{border-radius:999px 999px 28px 28px}
+.seo-family-nutrition .seo-article{max-width:820px}
+.seo-family-nutrition .seo-section{grid-template-columns:48px minmax(0,1fr)}
+.seo-family-care .seo-hero{background:#fbfaf6}
+.seo-family-care .seo-hero-visual{border-radius:8px 54px 8px 54px}
+.seo-family-care .seo-section-first{background:#ebe6da;border:0;border-radius:28px;padding:36px 38px;grid-template-columns:52px minmax(0,1fr)}
+
+/* Category pages become visual directories, not long copies of treatment pages. */
+.seo-template-category .seo-hero h1{font-size:clamp(62px,7vw,98px)}
+.seo-template-category .seo-process-strip{background:#ebe6da}
+.seo-directory-band{padding:70px 0 76px;background:#29201b;color:#f6f6ee}
+.seo-directory-heading{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:60px;align-items:end;margin-bottom:38px}
+.seo-directory-heading .seo-eyebrow{color:rgba(246,246,238,.52)}
+.seo-directory-heading h2{margin:0;font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(44px,5vw,68px);font-weight:600;line-height:.94;letter-spacing:-.025em}
+.seo-directory-heading p:not(.seo-eyebrow){margin:0;max-width:620px;color:rgba(246,246,238,.66);font-size:13px;line-height:1.75}
+.seo-directory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid rgba(246,246,238,.16)}
+.seo-directory-link{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:25px 0;border-bottom:1px solid rgba(246,246,238,.16);text-decoration:none}
+.seo-directory-link:nth-child(odd){padding-right:30px;border-right:1px solid rgba(246,246,238,.16)}
+.seo-directory-link:nth-child(even){padding-left:30px}
+.seo-directory-link strong{font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(25px,2.7vw,36px);font-weight:600;line-height:1}
+.seo-directory-link span{font-size:18px;transition:transform .2s ease}
+.seo-directory-link:hover span{transform:translate(3px,-3px)}
+.seo-template-category .seo-content-grid{padding-top:68px}
+.seo-template-category .seo-section{grid-template-columns:1fr;gap:0}
+.seo-template-category .seo-section-kicker{display:none}
+.seo-template-category .seo-section h2{max-width:760px}
+
+/* Procedure pages feel like service experiences rather than articles. */
+.seo-template-procedure .seo-content-grid{gap:48px}
+.seo-template-procedure .seo-side{padding-top:8px}
+.seo-template-procedure .seo-price-list{background:#f6f6ee;border-radius:14px;padding:0 12px;border-top:0}
+
 @media(max-width:1024px){
   .seo-site-polished .seo-hero-grid{grid-template-columns:1fr 390px;gap:36px}
   .seo-site-polished .seo-hero h1{font-size:clamp(46px,6vw,66px)}
   .seo-site-polished .seo-content-grid{grid-template-columns:minmax(0,1fr) 270px;gap:38px}
   .seo-site-polished .seo-section{grid-template-columns:50px minmax(0,1fr);gap:18px}
+  .seo-family-cosmetology .seo-hero-grid{grid-template-columns:minmax(300px,.9fr) minmax(0,1.1fr)}
+  .seo-family-problems .seo-hero-grid{grid-template-columns:1fr}
+  .seo-family-nutrition .seo-hero-grid{grid-template-columns:minmax(0,1fr) 340px;gap:42px}
 }
 @media(max-width:767px){
   .seo-site-polished .seo-header{min-height:66px;padding-left:18px;padding-right:18px}
   .seo-site-polished .seo-brand span{font-size:27px}
   .seo-site-polished .seo-hero{padding:20px 0 42px}
   .seo-site-polished .seo-breadcrumbs{margin-bottom:22px}
-  .seo-site-polished .seo-hero-grid{grid-template-columns:1fr;gap:28px}
-  .seo-site-polished .seo-hero h1{font-size:clamp(40px,12vw,58px);line-height:.97}
+  .seo-site-polished .seo-hero-grid,.seo-family-cosmetology .seo-hero-grid,.seo-family-nutrition .seo-hero-grid{grid-template-columns:1fr;gap:28px}
+  .seo-site-polished .seo-hero h1,.seo-template-category .seo-hero h1,.seo-family-problems .seo-hero h1{font-size:clamp(40px,12vw,58px);line-height:.97}
   .seo-site-polished .seo-lead{font-size:14px;line-height:1.68;margin-top:20px}
-  .seo-site-polished .seo-hero-visual,.seo-site-polished .seo-hero-visual>img{height:360px;min-height:360px}
-  .seo-site-polished .seo-hero-visual{border-radius:22px}
+  .seo-site-polished .seo-hero-visual,.seo-site-polished .seo-hero-visual>img,.seo-family-cosmetology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual>img,.seo-family-problems .seo-hero-visual,.seo-family-problems .seo-hero-visual>img{height:360px;min-height:360px}
+  .seo-site-polished .seo-hero-visual,.seo-family-dermatology .seo-hero-visual,.seo-family-cosmetology .seo-hero-visual,.seo-family-care .seo-hero-visual,.seo-family-nutrition .seo-hero-visual{border-radius:22px}
+  .seo-family-cosmetology .seo-hero-copy{padding:26px 22px 28px;border-radius:22px}
+  .seo-family-problems .seo-hero-caption{display:grid;grid-template-columns:1fr;gap:5px;align-items:start}
+  .seo-family-problems .seo-hero-caption strong{text-align:left}
   .seo-site-polished .seo-process-grid{grid-template-columns:1fr}
   .seo-site-polished .seo-process-grid>div{padding:20px 0;border-right:0;border-bottom:1px solid var(--line)}
+  .seo-family-cosmetology .seo-process-grid>div{border-bottom-color:rgba(246,246,238,.14)}
   .seo-site-polished .seo-process-grid>div:last-child{border-bottom:0}
   .seo-site-polished .seo-content-grid{grid-template-columns:1fr;gap:34px;padding-top:50px;padding-bottom:56px}
-  .seo-site-polished .seo-section{grid-template-columns:1fr;gap:12px;padding-bottom:38px;margin-bottom:38px}
+  .seo-site-polished .seo-section,.seo-family-dermatology .seo-section-first,.seo-family-cosmetology .seo-section,.seo-family-problems .seo-section-first,.seo-family-care .seo-section-first,.seo-family-nutrition .seo-section{grid-template-columns:1fr;gap:12px;padding-bottom:38px;margin-bottom:38px}
+  .seo-family-dermatology .seo-section-first,.seo-family-cosmetology .seo-section,.seo-family-problems .seo-section-first,.seo-family-care .seo-section-first{padding:28px 24px;border-radius:22px}
   .seo-site-polished .seo-section-kicker{padding-top:0}
   .seo-site-polished .seo-section h2{font-size:36px}
   .seo-site-polished .seo-section ul{grid-template-columns:1fr}
   .seo-site-polished .seo-side{display:grid;gap:12px}
   .seo-site-polished .seo-related-primary{position:static}
+  .seo-directory-band{padding:52px 0 58px}
+  .seo-directory-heading{grid-template-columns:1fr;gap:18px;margin-bottom:30px}
+  .seo-directory-grid{grid-template-columns:1fr}
+  .seo-directory-link:nth-child(odd),.seo-directory-link:nth-child(even){padding:20px 0;border-right:0}
   .seo-site-polished .seo-doctors-band,.seo-site-polished .seo-faq,.seo-site-polished .seo-final-cta,.seo-site-polished .seo-reviewer-band{padding:58px 0}
   .seo-site-polished .seo-doctor-grid{grid-template-columns:1fr}
   .seo-site-polished .seo-reviewer-card{grid-template-columns:1fr;gap:24px}
@@ -122,6 +215,58 @@ function intentLabel(landing: SeoLanding) {
   if (landing.type === "procedure") return "Показання · процедура · супровід";
   if (landing.type === "service") return "Консультація · план · контроль";
   return "Напрям · послуги · лікарі";
+}
+
+function visualFamily(landing: SeoLanding) {
+  if (landing.path.startsWith("/dermatology/")) return "dermatology";
+  if (landing.path.startsWith("/cosmetology/")) return "cosmetology";
+  if (landing.path.startsWith("/skin-problems/")) return "problems";
+  if (landing.path.startsWith("/nutrition/")) return "nutrition";
+  if (landing.path.startsWith("/skin-care/")) return "care";
+  return "default";
+}
+
+function familySignature(landing: SeoLanding) {
+  const family = visualFamily(landing);
+  if (family === "dermatology") return "Клінічна дерматологія";
+  if (family === "cosmetology") return "Естетична медицина";
+  if (family === "problems") return "Від симптому до рішення";
+  if (family === "nutrition") return "Системний підхід";
+  if (family === "care") return "Щоденний догляд";
+  return "RESET Clinic";
+}
+
+function journeySteps(landing: SeoLanding) {
+  if (landing.type === "problem") {
+    return [
+      ["01", "Симптом", "Фіксуємо, що саме турбує і як давно це триває."],
+      ["02", "Причина", "Відрізняємо косметичний прояв від стану, який потребує лікування."],
+      ["03", "Тактика", "Обираємо консультацію, лікування або процедуру за показаннями."],
+    ] as const;
+  }
+  if (landing.type === "procedure") {
+    return [
+      ["01", "Задача", "Визначаємо, який результат потрібен і чи підходить метод."],
+      ["02", "Протокол", "Параметри та обсяг процедури підбираються індивідуально."],
+      ["03", "Результат", "Пояснюємо строки ефекту, відновлення та подальший супровід."],
+    ] as const;
+  }
+  if (landing.type === "category") {
+    return [
+      ["01", "Ваш запит", "Починаємо не з назви процедури, а з того, що хочете вирішити."],
+      ["02", "Напрям", "Допомагаємо перейти до потрібної послуги, проблеми або методу."],
+      ["03", "Спеціаліст", "За потреби маршрут продовжується консультацією профільного лікаря."],
+    ] as const;
+  }
+  return [
+    ["01", "Оцінка", "Починаємо з анамнезу, огляду та визначення задачі."],
+    ["02", "Персональний план", "Метод і послідовність підбираються під конкретний стан."],
+    ["03", "Контроль", "За потреби коригуємо план на наступних візитах."],
+  ] as const;
+}
+
+function sectionClass(index: number) {
+  return `seo-section${index === 0 ? " seo-section-first" : ""} seo-section-variant-${index % 3}`;
 }
 
 function publicBlogPostPath(post: { slug: string; category: string | null }) {
@@ -190,9 +335,11 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
   const relatedPosts = blogCategory
     ? (await getPublishedPostsByCategory(blogCategory, 10)).filter((post) => post.indexable).slice(0, landing.type === "problem" ? 4 : 3)
     : [];
+  const family = visualFamily(landing);
+  const steps = journeySteps(landing);
 
   return (
-    <main className="seo-site seo-site-polished">
+    <main className={`seo-site seo-site-polished seo-template-${landing.type} seo-family-${family}`}>
       <style dangerouslySetInnerHTML={{ __html: POLISH_CSS }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
       <SiteHeader />
@@ -218,6 +365,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
                 <Link className="seo-button" href={priceHref}>Переглянути ціни</Link>
               </div>
               <p className="seo-medical-note">Інформація на сторінці не замінює консультацію лікаря. Тактика визначається індивідуально.</p>
+              <div className="seo-hero-signature" aria-hidden="true">{familySignature(landing)}</div>
             </div>
 
             <figure className="seo-hero-visual">
@@ -234,16 +382,34 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
 
       <section className="seo-process-strip" aria-label="Підхід RESET Clinic">
         <div className="seo-shell seo-process-grid">
-          <div><span>01</span><strong>Оцінка запиту</strong><p>Починаємо з анамнезу, огляду та визначення задачі.</p></div>
-          <div><span>02</span><strong>Персональний план</strong><p>Метод і послідовність підбираються під конкретний стан.</p></div>
-          <div><span>03</span><strong>Контроль динаміки</strong><p>За потреби коригуємо план на наступних візитах.</p></div>
+          {steps.map(([number, title, text]) => (
+            <div key={number}><span>{number}</span><strong>{title}</strong><p>{text}</p></div>
+          ))}
         </div>
       </section>
+
+      {landing.type === "category" && children.length ? (
+        <section className="seo-directory-band" aria-label={`Напрями: ${displayH1}`}>
+          <div className="seo-shell">
+            <div className="seo-directory-heading">
+              <div><p className="seo-eyebrow">Оберіть потрібний напрям</p><h2>Знайдіть свій наступний крок</h2></div>
+              <p>Не потрібно знати медичну назву методу. Оберіть найближчий за змістом напрям — далі сторінка допоможе перейти до конкретної проблеми, лікування або процедури.</p>
+            </div>
+            <div className="seo-directory-grid">
+              {children.map((child) => (
+                <Link className="seo-directory-link" href={child.path} key={child.path}>
+                  <strong>{child.breadcrumbs.at(-1)?.name ?? child.h1}</strong><span>↗</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div className="seo-shell seo-content-grid">
         <article className="seo-article">
           {[...landing.sections, ...supplementalSections].map((section, index) => (
-            <section className="seo-section" key={`${section.title}-${index}`}>
+            <section className={sectionClass(index)} key={`${section.title}-${index}`}>
               <div className="seo-section-kicker"><span>{String(index + 1).padStart(2, "0")}</span><i /></div>
               <div>
                 <h2>{section.title}</h2>
@@ -255,7 +421,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
         </article>
 
         <aside className="seo-side">
-          {children.length ? (
+          {children.length && landing.type !== "category" ? (
             <section className="seo-related-card seo-related-primary">
               <p>У цьому розділі</p>
               <div>{children.map((child) => <Link href={child.path} key={child.path}>{child.breadcrumbs.at(-1)?.name ?? child.h1}<span>↗</span></Link>)}</div>
