@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: SITE_NAME, robots: { index: false, follow: false } };
   }
 
-  const canonical = post.canonical_url || `${SITE_URL}${blogPostPath(post)}`;
+  const canonical = `${SITE_URL}${blogPostPath(post)}`;
   const title = post.seo_title || post.title;
   const description = post.seo_description || post.excerpt || `Матеріал ${SITE_NAME}.`;
   const image = post.og_image || DEFAULT_OG_IMAGE;
