@@ -18,45 +18,36 @@ const UNVERIFIED_MEDICAL_PATHS = new Set([
   "/nutrition/insulin-resistance/",
 ]);
 
-// A doctor is never treated as a medical reviewer merely because the doctor
-// works with the same service. Add a path -> doctor slug only after RESET Clinic
-// explicitly confirms that this person reviewed the published page.
+// Add path -> doctor slug only after RESET Clinic explicitly confirms that
+// the doctor reviewed that exact published page.
 const MEDICAL_REVIEWER_BY_PATH: Partial<Record<string, string>> = {};
 
-const GENERIC_PROCEDURE_SECTIONS = [
+type LandingSection = SeoLanding["sections"][number];
+
+const GENERIC_PROCEDURE_SECTIONS: LandingSection[] = [
   {
     title: "Показання та для кого підходить",
-    text: [
-      "Доцільність процедури визначає спеціаліст після оцінки задачі, стану шкіри, анамнезу та очікувань. Показання мають бути конкретними, а не формуватися лише з назви проблеми.",
-    ],
+    text: ["Доцільність процедури визначає спеціаліст після оцінки задачі, стану шкіри, анамнезу та очікувань. Показання мають бути конкретними, а не формуватися лише з назви проблеми."],
   },
   {
     title: "Протипоказання та обмеження",
-    text: [
-      "Перед процедурою спеціаліст уточнює медичний анамнез, поточні стани, препарати та інші фактори, які можуть впливати на безпеку. Остаточний перелік обмежень визначається індивідуально.",
-    ],
+    text: ["Перед процедурою спеціаліст уточнює медичний анамнез, поточні стани, препарати та інші фактори, які можуть впливати на безпеку. Остаточний перелік обмежень визначається індивідуально."],
   },
   {
     title: "Підготовка",
-    text: [
-      "Якщо для конкретного протоколу потрібна підготовка, пацієнт отримує персональні рекомендації до візиту. Не варто самостійно скасовувати призначені лікарем препарати або починати нові засоби лише заради процедури.",
-    ],
+    text: ["Якщо для конкретного протоколу потрібна підготовка, пацієнт отримує персональні рекомендації до візиту. Не варто самостійно скасовувати призначені лікарем препарати або починати нові засоби лише заради процедури."],
   },
   {
     title: "Тривалість, кількість процедур і результат",
-    text: [
-      "Тривалість візиту, кількість процедур і строки оцінки результату залежать від методу, зони, вихідного стану та індивідуальної відповіді. Реалістичний план обговорюється до початку курсу.",
-    ],
+    text: ["Тривалість візиту, кількість процедур і строки оцінки результату залежать від методу, зони, вихідного стану та індивідуальної відповіді. Реалістичний план обговорюється до початку курсу."],
   },
   {
     title: "Відновлення та можливі реакції",
-    text: [
-      "Період відновлення та допустимі реакції відрізняються між методиками. Після процедури RESET Clinic надає рекомендації щодо догляду, обмежень і ситуацій, у яких потрібно зв’язатися зі спеціалістом.",
-    ],
+    text: ["Період відновлення та допустимі реакції відрізняються між методиками. Після процедури RESET Clinic надає рекомендації щодо догляду, обмежень і ситуацій, у яких потрібно зв’язатися зі спеціалістом."],
   },
 ];
 
-const BOTULINUM_ZONE_SECTIONS = [
+const BOTULINUM_ZONE_SECTIONS: LandingSection[] = [
   {
     title: "Ботулінотерапія верхньої третини обличчя",
     text: ["Верхня третина включає оцінку лоба, міжбрів’я та зони навколо очей. Обсяг корекції визначається не за шаблонною кількістю зон, а за мімікою, анатомією та бажаним ступенем збереження природної рухливості."],
@@ -92,16 +83,14 @@ export function isSeoLandingIndexable(landing: SeoLanding) {
 }
 
 export function displayH1ForLanding(landing: SeoLanding) {
-  if (landing.path === "/skin-care/") {
-    return "Догляд за шкірою: рекомендації лікарів та косметологів";
-  }
-  return landing.h1;
+  return landing.path === "/skin-care/"
+    ? "Догляд за шкірою: рекомендації лікарів та косметологів"
+    : landing.h1;
 }
 
 export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
   const base = buildSeoLandingMetadata(landing);
   const index = isSeoLandingIndexable(landing);
-
   return {
     ...base,
     robots: {
@@ -120,7 +109,9 @@ export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
 
 export function reviewerForLanding(landing: SeoLanding): DoctorProfile | null {
   const reviewerSlug = MEDICAL_REVIEWER_BY_PATH[landing.path];
-  return reviewerSlug ? DOCTORS.find((doctor) => doctor.slug === reviewerSlug) ?? null : null;
+  return reviewerSlug
+    ? DOCTORS.find((doctor) => doctor.slug === reviewerSlug) ?? null
+    : null;
 }
 
 export function priceHrefForLanding(landing: SeoLanding) {
@@ -165,7 +156,6 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
 
   const graph = base["@graph"].flatMap((node) => {
     const id = node["@id"];
-
     if (landing.type === "procedure" && id === `${url}#service`) {
       return [{
         "@type": "MedicalProcedure",
@@ -175,20 +165,22 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
         url,
       }];
     }
-
     if (id === `${url}#webpage`) {
       return [{
         ...node,
         headline: displayH1,
-        ...(landing.type === "service" || landing.type === "procedure" ? { mainEntity: { "@id": entityId } } : {}),
-        ...(landing.type !== "category" ? {
-          reviewedBy: reviewer
-            ? { "@id": `${SITE_URL}${doctorPath(reviewer)}#person` }
-            : { "@id": `${SITE_URL}/#clinic` },
-        } : {}),
+        ...(landing.type === "service" || landing.type === "procedure"
+          ? { mainEntity: { "@id": entityId } }
+          : {}),
+        ...(landing.type !== "category"
+          ? {
+              reviewedBy: reviewer
+                ? { "@id": `${SITE_URL}${doctorPath(reviewer)}#person` }
+                : { "@id": `${SITE_URL}/#clinic` },
+            }
+          : {}),
       }];
     }
-
     return [node];
   });
 
@@ -207,63 +199,48 @@ export function buildCompliantLandingJsonLd(landing: SeoLanding) {
   return { "@context": base["@context"], "@graph": graph };
 }
 
-export function supplementalLandingSections(landing: SeoLanding) {
+export function supplementalLandingSections(landing: SeoLanding): SeoLanding["sections"] {
   if (landing.type === "category") return [];
 
   if (landing.type === "problem") {
     return [
       {
         title: "Коли потрібна консультація лікаря",
-        text: [
-          `Якщо прояви, пов’язані з темою «${landing.h1}», зберігаються, посилюються, повторюються або викликають дискомфорт, доцільна професійна оцінка. Онлайн-опис не замінює діагноз.`,
-        ],
+        text: [`Якщо прояви, пов’язані з темою «${landing.h1}», зберігаються, посилюються, повторюються або викликають дискомфорт, доцільна професійна оцінка. Онлайн-опис не замінює діагноз.`],
       },
       {
         title: "Як проводиться діагностика",
-        text: [
-          "Діагностичний маршрут починається зі збору анамнезу та огляду. Додаткові методи, аналізи чи апаратна діагностика призначаються лише тоді, коли вони можуть змінити подальшу тактику.",
-        ],
+        text: ["Діагностичний маршрут починається зі збору анамнезу та огляду. Додаткові методи, аналізи чи апаратна діагностика призначаються лише тоді, коли вони можуть змінити подальшу тактику."],
       },
       {
         title: "Які методи лікування або корекції можуть розглядатися",
-        text: [
-          "Метод залежить від причини, активності процесу, стану шкіри, супутніх факторів і попереднього лікування. Problem page не підміняє консультацію і не прив’язує симптом до однієї процедури.",
-        ],
+        text: ["Метод залежить від причини, активності процесу, стану шкіри, супутніх факторів і попереднього лікування. Problem page не підміняє консультацію і не прив’язує симптом до однієї процедури."],
       },
     ];
   }
 
   if (landing.type === "procedure") {
-    if (landing.path === "/cosmetology/injection/botulinum-therapy/") {
-      return [...BOTULINUM_ZONE_SECTIONS, ...GENERIC_PROCEDURE_SECTIONS];
-    }
-    return GENERIC_PROCEDURE_SECTIONS;
+    return landing.path === "/cosmetology/injection/botulinum-therapy/"
+      ? [...BOTULINUM_ZONE_SECTIONS, ...GENERIC_PROCEDURE_SECTIONS]
+      : GENERIC_PROCEDURE_SECTIONS;
   }
 
   return [
     {
       title: "Кому може бути рекомендована консультація або послуга",
-      text: [
-        `Звернення щодо «${landing.h1}» доцільне, коли потрібна професійна оцінка, уточнення причини, план лікування або контроль динаміки, а самостійні рішення не дають зрозумілого результату.`,
-      ],
+      text: [`Звернення щодо «${landing.h1}» доцільне, коли потрібна професійна оцінка, уточнення причини, план лікування або контроль динаміки, а самостійні рішення не дають зрозумілого результату.`],
     },
     {
       title: "Діагностика та персональний план",
-      text: [
-        "Спеціаліст збирає анамнез, оцінює клінічну картину та визначає, чи потрібні додаткові дослідження. Після цього формується персональний маршрут без універсальних схем і гарантій результату.",
-      ],
+      text: ["Спеціаліст збирає анамнез, оцінює клінічну картину та визначає, чи потрібні додаткові дослідження. Після цього формується персональний маршрут без універсальних схем і гарантій результату."],
     },
     {
       title: "Показання, протипоказання та безпека",
-      text: [
-        "Конкретні показання та обмеження залежать від діагнозу, стану здоров’я, препаратів і запланованого методу. Перед будь-яким процедурним етапом вони перевіряються окремо.",
-      ],
+      text: ["Конкретні показання та обмеження залежать від діагнозу, стану здоров’я, препаратів і запланованого методу. Перед будь-яким процедурним етапом вони перевіряються окремо."],
     },
     {
       title: "Очікуваний результат, тривалість і кількість візитів",
-      text: [
-        "Очікуваний результат, строки та кількість контрольних візитів залежать від вихідного стану і відповіді на план. Для медичних станів коректною метою є контроль і покращення, а не шаблонна обіцянка повного вилікування.",
-      ],
+      text: ["Очікуваний результат, строки та кількість контрольних візитів залежать від вихідного стану і відповіді на план. Для медичних станів коректною метою є контроль і покращення, а не шаблонна обіцянка повного вилікування."],
     },
   ];
 }
