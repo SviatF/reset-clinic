@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 
-const PRICE_ANCHORS: Array<{ id: string; patterns: string[] }> = [
+type AnchorDefinition = { id: string; patterns: string[] };
+
+const PRICE_ANCHORS: AnchorDefinition[] = [
   { id: "dermatology", patterns: ["дерматолог"] },
   { id: "trichology", patterns: ["трихолог", "трихоскоп"] },
   { id: "botulinum", patterns: ["ботулінотерап"] },
@@ -19,24 +21,31 @@ const PRICE_ANCHORS: Array<{ id: string; patterns: string[] }> = [
   { id: "nutrition", patterns: ["нутриціолог"] },
 ];
 
+const BOTULINUM_ANCHORS: AnchorDefinition[] = [
+  { id: "upper-third", patterns: ["ботулінотерапія верхньої третини обличчя"] },
+  { id: "forehead", patterns: ["ботулінотерапія лоба"] },
+  { id: "glabella", patterns: ["корекція міжбрів’я", "корекція міжбрів'я"] },
+  { id: "crows-feet", patterns: ["ботулінотерапія зони навколо очей"] },
+  { id: "lower-face", patterns: ["ботулінотерапія нижньої третини"] },
+  { id: "platysma", patterns: ["корекція платизми"] },
+  { id: "masseter", patterns: ["ботулінотерапія жувальних м’язів", "ботулінотерапія жувальних м'язів"] },
+];
+
 function normalize(value: string) {
   return value.toLocaleLowerCase("uk-UA").replace(/\s+/g, " ").trim();
 }
 
-function installPriceAnchors() {
-  if (window.location.pathname !== "/price/") return;
-
-  const candidates = [...document.querySelectorAll<HTMLElement>(
-    "h1, h2, h3, h4, .section-title, .elementor-heading-title, [class*='service-name']",
-  )];
-  const claimed = new Set<HTMLElement>();
-
-  PRICE_ANCHORS.forEach(({ id, patterns }) => {
+function addAnchors(
+  definitions: AnchorDefinition[],
+  candidates: HTMLElement[],
+  claimed = new Set<HTMLElement>(),
+) {
+  definitions.forEach(({ id, patterns }) => {
     if (document.getElementById(id)) return;
     const target = candidates.find((node) => {
       if (claimed.has(node)) return false;
       const text = normalize(node.textContent || "");
-      return patterns.some((pattern) => text.includes(pattern));
+      return patterns.some((pattern) => text.includes(normalize(pattern)));
     });
     if (!target) return;
 
@@ -50,17 +59,37 @@ function installPriceAnchors() {
     marker.style.visibility = "hidden";
     target.before(marker);
   });
+}
 
+function scrollToHash() {
   const hash = window.location.hash.replace(/^#/, "");
   if (!hash) return;
-  const target = document.getElementById(hash);
-  target?.scrollIntoView({ block: "start" });
+  document.getElementById(hash)?.scrollIntoView({ block: "start" });
+}
+
+function installSeoAnchors() {
+  const pathname = window.location.pathname;
+
+  if (pathname === "/price/") {
+    const candidates = [...document.querySelectorAll<HTMLElement>(
+      "h1, h2, h3, h4, .section-title, .elementor-heading-title, [class*='service-name']",
+    )];
+    addAnchors(PRICE_ANCHORS, candidates);
+    scrollToHash();
+    return;
+  }
+
+  if (pathname === "/cosmetology/injection/botulinum-therapy/") {
+    const candidates = [...document.querySelectorAll<HTMLElement>("h2")];
+    addAnchors(BOTULINUM_ANCHORS, candidates);
+    scrollToHash();
+  }
 }
 
 export default function SeoComplianceClient() {
   useEffect(() => {
-    installPriceAnchors();
-    const timer = window.setTimeout(installPriceAnchors, 150);
+    installSeoAnchors();
+    const timer = window.setTimeout(installSeoAnchors, 150);
     return () => window.clearTimeout(timer);
   }, []);
 
