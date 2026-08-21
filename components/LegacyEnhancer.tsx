@@ -61,12 +61,10 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
 
     rememberTracking();
 
-    // Keep only the viewport-specific snapshot in the live DOM. This avoids
-    // duplicate Elementor ids/targets from the hidden responsive snapshot.
-    const inactive = document.querySelector<HTMLElement>(
-      isMobile ? ".legacy-desktop" : ".legacy-mobile",
-    );
-    inactive?.remove();
+    // Both responsive snapshots stay mounted because React owns these nodes.
+    // globals.css already hides the inactive snapshot for the current viewport.
+    // Physically removing it caused React to crash while unmounting a legacy
+    // page during browser Back/Forward navigation.
 
     document.body.className = `${bodyClass}${isMobile ? " e--ua-isTouchDevice" : ""}`.trim();
 
