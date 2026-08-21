@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
-import { getPublishedPostsByCategory } from "../lib/blog";
+import { blogPostPath, getPublishedPostsByCategory } from "../lib/blog";
 import {
   BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
   blogCategoryPath,
@@ -70,7 +70,7 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
           itemListElement: state.posts.map((post, index) => ({
             "@type": "ListItem",
             position: index + 1,
-            url: `${SITE_URL}/blog/${post.slug}/`,
+            url: `${SITE_URL}${blogPostPath(post)}`,
             name: post.title,
           })),
         },
@@ -102,7 +102,7 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
         </section>
         <section className="reset-blog-grid">
           {state.posts.length ? state.posts.map((post) => (
-            <Link className="reset-blog-card" href={`/blog/${post.slug}/`} key={post.id}>
+            <Link className="reset-blog-card" href={blogPostPath(post)} key={post.id}>
               <div>
                 <div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : state.category.name}</div>
                 <h2>{post.title}</h2>

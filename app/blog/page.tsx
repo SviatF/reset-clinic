@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicSiteFooter, PublicSiteHeader } from "../../components/PublicSiteChrome";
-import { getPublishedPosts } from "../../lib/blog";
+import { blogPostPath, getPublishedPosts } from "../../lib/blog";
 import { BLOG_CATEGORIES, blogCategoryPath } from "../../lib/blog-categories";
 import { SITE_URL } from "../../lib/seo";
 
@@ -48,7 +48,7 @@ export default async function BlogIndexPage() {
 
         <section className="reset-blog-grid" aria-label="Останні матеріали">
           {posts.length ? posts.map((post) => (
-            <Link className="reset-blog-card" href={`/blog/${post.slug}/`} key={post.id}>
+            <Link className="reset-blog-card" href={blogPostPath(post)} key={post.id}>
               <div><div className="reset-blog-meta">{post.published_at ? new Date(post.published_at).toLocaleDateString("uk-UA") : "RESET Clinic"}</div><h2>{post.title}</h2><p>{post.excerpt || "Читати матеріал RESET Clinic."}</p></div>
               <div className="reset-blog-meta">{post.author_name || "RESET Clinic"} →</div>
             </Link>

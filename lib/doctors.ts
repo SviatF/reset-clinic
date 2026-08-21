@@ -8,6 +8,11 @@ export type DoctorProfile = {
   bio: string;
   image: string;
   relatedPaths: string[];
+  specialties?: string[];
+  education?: string[];
+  certifications?: string[];
+  experience?: string;
+  schedule?: string;
 };
 
 export const DOCTORS: DoctorProfile[] = [
@@ -78,10 +83,26 @@ export function doctorPath(doctor: DoctorProfile) {
   return `/doctors/${doctor.slug}/`;
 }
 
+export function isCompleteDoctorProfile(doctor: DoctorProfile) {
+  return Boolean(
+    doctor.name &&
+    doctor.image &&
+    doctor.role &&
+    doctor.bio &&
+    doctor.specialties?.length &&
+    doctor.education?.length &&
+    doctor.certifications?.length &&
+    doctor.experience?.trim() &&
+    doctor.schedule?.trim() &&
+    doctor.relatedPaths.length,
+  );
+}
+
 export function doctorMetadata(doctor: DoctorProfile) {
   const path = doctorPath(doctor);
   const title = `${doctor.name} — ${doctor.role.toLowerCase()} у Львові | ${SITE_NAME}`;
   const description = `${doctor.name} — ${doctor.role} RESET Clinic у Львові. Напрямки роботи, професійний підхід, пов’язані процедури та запис на консультацію.`;
+  const index = isCompleteDoctorProfile(doctor);
   return {
     title,
     description,
@@ -97,9 +118,9 @@ export function doctorMetadata(doctor: DoctorProfile) {
     },
     twitter: { card: "summary_large_image" as const, title, description, images: [doctor.image || DEFAULT_OG_IMAGE] },
     robots: {
-      index: true,
+      index,
       follow: true,
-      googleBot: { index: true, follow: true, "max-image-preview": "large" as const, "max-snippet": -1, "max-video-preview": -1 },
+      googleBot: { index, follow: true, "max-image-preview": "large" as const, "max-snippet": -1, "max-video-preview": -1 },
     },
   };
 }
@@ -129,6 +150,9 @@ export function doctorJsonLd(doctor: DoctorProfile) {
         image: `${SITE_URL}${doctor.image}`,
         worksFor: { "@id": `${SITE_URL}/#clinic` },
         url,
+        ...(doctor.specialties?.length ? { knowsAbout: doctor.specialties } : {}),
+        ...(doctor.education?.length ? { alumniOf: doctor.education.map((name) => ({ "@type": "EducationalOrganization", name })) } : {}),
+        ...(doctor.certifications?.length ? { award: doctor.certifications } : {}),
       },
       {
         "@type": "BreadcrumbList",

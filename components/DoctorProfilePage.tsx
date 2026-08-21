@@ -21,6 +21,8 @@ function relatedLandings(doctor: DoctorProfile) {
 
 export default function DoctorProfilePage({ doctor }: { doctor: DoctorProfile }) {
   const related = relatedLandings(doctor);
+  let sectionNumber = 0;
+  const nextNumber = () => String(++sectionNumber).padStart(2, "0");
 
   return (
     <main className="seo-site seo-doctor-profile">
@@ -59,7 +61,7 @@ export default function DoctorProfilePage({ doctor }: { doctor: DoctorProfile })
                 <Link className="seo-button seo-button-dark" href="/booking/">Записатися на прийом</Link>
                 <Link className="seo-button" href="/doctors/">Усі лікарі</Link>
               </div>
-              <p className="seo-medical-note">Профіль сформований на основі інформації, опублікованої RESET Clinic.</p>
+              <p className="seo-medical-note">Профіль сформований тільки з інформації, опублікованої та підтвердженої RESET Clinic.</p>
             </div>
 
             <figure className="seo-hero-visual seo-doctor-hero-visual">
@@ -85,19 +87,56 @@ export default function DoctorProfilePage({ doctor }: { doctor: DoctorProfile })
       <div className="seo-shell seo-content-grid">
         <article className="seo-article">
           <section className="seo-section">
-            <div className="seo-section-kicker"><span>01</span><i /></div>
+            <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
             <div><h2>Про лікаря</h2><p>{doctor.bio}</p></div>
           </section>
+
+          {doctor.specialties?.length ? (
+            <section className="seo-section">
+              <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
+              <div><h2>Спеціалізація</h2><ul>{doctor.specialties.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            </section>
+          ) : null}
+
+          {doctor.education?.length ? (
+            <section className="seo-section">
+              <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
+              <div><h2>Освіта</h2><ul>{doctor.education.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            </section>
+          ) : null}
+
+          {doctor.certifications?.length ? (
+            <section className="seo-section">
+              <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
+              <div><h2>Сертифікації та підвищення кваліфікації</h2><ul>{doctor.certifications.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            </section>
+          ) : null}
+
+          {doctor.experience ? (
+            <section className="seo-section">
+              <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
+              <div><h2>Досвід</h2><p>{doctor.experience}</p></div>
+            </section>
+          ) : null}
+
           <section className="seo-section">
-            <div className="seo-section-kicker"><span>02</span><i /></div>
+            <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
             <div>
               <h2>Напрямки роботи</h2>
-              <p>Сторінки процедур і напрямків, які відповідають інформації, опублікованій у профілі лікаря.</p>
+              <p>Сторінки процедур і напрямків, які відповідають підтвердженій інформації у профілі лікаря.</p>
               {related.length ? <ul>{related.map((landing) => <li key={landing.path}><Link href={landing.path}>{landing.h1}</Link></li>)}</ul> : null}
             </div>
           </section>
+
+          {doctor.schedule ? (
+            <section className="seo-section">
+              <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
+              <div><h2>Графік прийому</h2><p>{doctor.schedule}</p></div>
+            </section>
+          ) : null}
+
           <section className="seo-section">
-            <div className="seo-section-kicker"><span>03</span><i /></div>
+            <div className="seo-section-kicker"><span>{nextNumber()}</span><i /></div>
             <div><h2>Запис на консультацію</h2><p>Для вибору процедури або плану корекції важлива очна оцінка задачі, анатомічних особливостей і можливих протипоказань.</p></div>
           </section>
         </article>

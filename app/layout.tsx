@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../components/SeoLandingPage.css";
+import SeoComplianceClient from "../components/SeoComplianceClient";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLd(websiteJsonLd) }}
         />
+        <SeoComplianceClient />
         {children}
       </body>
     </html>
