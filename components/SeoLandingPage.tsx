@@ -11,9 +11,10 @@ import {
   reviewerForLanding,
   supplementalLandingSections,
 } from "../lib/seo-compliance";
-import { DEFAULT_OG_IMAGE, jsonLd } from "../lib/seo";
+import { jsonLd } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 import type { SeoLanding } from "../lib/seo-pages";
+import { seoLandingVisual } from "../lib/seo-visuals";
 
 const MAIN_NAV = [
   ["Дерматологія", "/dermatology/"],
@@ -170,6 +171,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
     : [];
   const family = visualFamily(landing);
   const steps = journeySteps(landing);
+  const heroVisual = seoLandingVisual(landing.path);
 
   return (
     <main className={`seo-site seo-site-polished seo-template-${landing.type} seo-family-${family}`}>
@@ -201,7 +203,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
             </div>
 
             <figure className="seo-hero-visual">
-              <img src={DEFAULT_OG_IMAGE} alt="Інтер’єр RESET Clinic у Львові" width={2446} height={1314} fetchPriority="high" decoding="async" />
+              <img src={heroVisual.src} alt={heroVisual.alt} width={2446} height={1314} fetchPriority="high" decoding="async" />
               <figcaption className="seo-hero-caption">
                 <span>RESET Clinic · Львів</span>
                 <strong>{intentLabel(landing)}</strong>
