@@ -3,7 +3,9 @@ import "./globals.css";
 import "../components/SeoLandingPage.css";
 import "../components/SeoLandingPolish.css";
 import "../components/SeoLandingVisualFixes.css";
+import "../components/PremiumMotion.css";
 import SeoComplianceClient from "../components/SeoComplianceClient";
+import PremiumMotion from "../components/PremiumMotion";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,
@@ -85,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: jsonLd(websiteJsonLd) }}
         />
         <SeoComplianceClient />
+        <PremiumMotion />
         {children}
       </body>
     </html>
