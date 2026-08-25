@@ -34,9 +34,28 @@ function isProtectedAdmin(pathname: string) {
   return adminPage || adminApi;
 }
 
+function normalizeHost(value: string | null | undefined) {
+  if (!value) return null;
+  const first = value.split(",")[0]?.trim().toLowerCase();
+  if (!first) return null;
+  return first.replace(/^https?:\/\//, "").split("/")[0]?.split(":")[0] || null;
+}
+
 function isNonCanonicalHost(request: NextRequest) {
-  const hostname = request.nextUrl.hostname.toLowerCase();
-  return !CANONICAL_HOSTS.has(hostname);
+  // Traditional Node hosts such as CityHost often sit behind a reverse proxy.
+  // In that setup request.nextUrl.hostname can be the internal proxy host/socket
+  // even though the visitor requested resetclinic.org. Trust the original-host
+  // forwarding headers first, then Host, and only then Next's parsed hostname.
+  const candidates = [
+    request.headers.get("x-forwarded-host"),
+    request.headers.get("x-original-host"),
+    request.headers.get("host"),
+    request.nextUrl.hostname,
+  ]
+    .map(normalizeHost)
+    .filter((host): host is string => Boolean(host));
+
+  return !candidates.some((host) => CANONICAL_HOSTS.has(host));
 }
 
 function applyPrivateHeaders(response: NextResponse) {
