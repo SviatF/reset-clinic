@@ -30,6 +30,25 @@
   color:#8a6d3b;
 }
 
+/* Keep the responsive dropdown anchored to the whole action group, not only
+   to the Menu button. This prevents the panel from sliding past the left edge
+   on narrow service pages while preserving its desktop/tablet alignment. */
+@media(max-width:1120px){
+  .seo-site-polished .seo-header-actions{
+    position:relative;
+  }
+
+  .seo-site-polished .seo-mobile-menu{
+    position:static;
+  }
+
+  .seo-site-polished .seo-mobile-menu-panel{
+    left:auto;
+    right:0;
+    max-width:calc(100vw - 28px);
+  }
+}
+
 @media(max-width:767px){
   .seo-site-polished .seo-header .seo-brand-logo{
     width:108px;
