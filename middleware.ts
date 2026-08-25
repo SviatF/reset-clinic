@@ -15,6 +15,7 @@ const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
 const NON_CANONICAL_ROBOTS = "noindex, follow";
 const SESSION_COOKIE = "rc_admin_session";
+const CANONICAL_HOSTS = new Set(["resetclinic.org", "www.resetclinic.org"]);
 
 function isPrivateRoute(pathname: string) {
   return PRIVATE_PREFIXES.some(
@@ -33,9 +34,9 @@ function isProtectedAdmin(pathname: string) {
   return adminPage || adminApi;
 }
 
-function isVercelAlias(request: NextRequest) {
+function isNonCanonicalHost(request: NextRequest) {
   const hostname = request.nextUrl.hostname.toLowerCase();
-  return hostname === "vercel.app" || hostname.endsWith(".vercel.app");
+  return !CANONICAL_HOSTS.has(hostname);
 }
 
 function applyPrivateHeaders(response: NextResponse) {
@@ -65,7 +66,7 @@ export function middleware(request: NextRequest) {
     url.pathname = legacyPages[legacyId];
     url.search = "";
     const redirect = NextResponse.redirect(url, 308);
-    return isVercelAlias(request) ? applyNonCanonicalHeaders(redirect) : redirect;
+    return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(redirect) : redirect;
   }
 
   const pathname = request.nextUrl.pathname;
@@ -78,7 +79,7 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   if (isPrivateRoute(pathname)) return applyPrivateHeaders(response);
-  return isVercelAlias(request) ? applyNonCanonicalHeaders(response) : response;
+  return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(response) : response;
 }
 
 export const config = {
