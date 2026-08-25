@@ -32,6 +32,14 @@ function normalizeWave2Landing(landing: SeoLanding): SeoLanding {
   return { ...landing, description };
 }
 
+function normalizeHeadingTypography(landing: SeoLanding): SeoLanding {
+  // Cormorant Garamond's short hyphen is visibly angled at large display sizes.
+  // Keep the heading font intact, but use its straight en-dash glyph for
+  // tightly joined compounds such as IPL-терапія, LED-терапія and RF-ліфтинг.
+  const h1 = landing.h1.replace(/(\S)-(?=\S)/g, "$1–");
+  return h1 === landing.h1 ? landing : { ...landing, h1 };
+}
+
 function enhanceStructuralLinks(landing: SeoLanding): SeoLanding {
   if (landing.path === "/cosmetology/injection/botulinum-therapy/") {
     const sections = landing.sections.map((section) => {
@@ -113,7 +121,8 @@ export const ALL_SEO_LANDINGS = [
   .map(enhanceStructuralLinks)
   .map(applyMarketingCopy)
   .map(applyExtraMarketingCopy)
-  .map(sanitizeSeoLandingPublicCopy);
+  .map(sanitizeSeoLandingPublicCopy)
+  .map(normalizeHeadingTypography);
 
 export function resolveSeoLanding(path: string) {
   const normalized = normalizeSeoPath(path);
