@@ -31,9 +31,11 @@ function audit(html: string, indexable: boolean, expectedPath: string) {
   const wordCount = text ? text.split(" ").length : 0;
   const imageTags = [...html.matchAll(/<img\b[^>]*>/gi)].map((match) => match[0]);
   const imagesMissingAlt = imageTags.filter((tag) => !/\balt=["'][^"']*["']/i.test(tag)).length;
+  const imagesEmptyAlt = imageTags.filter((tag) => /\balt=["']\s*["']/i.test(tag)).length;
   const ogTitle = metaContent(html, "og:title");
   const ogDescription = metaContent(html, "og:description");
   const twitterCard = metaContent(html, "twitter:card");
+  const leakedEditorialTerms = text.match(/\b(?:SEO|intent|keyword|commercial page|landing page|problem page|treatment page|thin page)\b/gi) ?? [];
   const issues: string[] = [];
   let score = 0;
 
@@ -68,9 +70,11 @@ function audit(html: string, indexable: boolean, expectedPath: string) {
   if ((indexable && !noindex) || (!indexable && noindex)) score += 10;
   else issues.push(indexable ? "Сторінка випадково noindex" : "Noindex-сторінка не має noindex");
 
-  if (imagesMissingAlt > 0) issues.push(`Зображення без alt: ${imagesMissingAlt}`);
+  if (imagesMissingAlt > 0) issues.push(`Зображення без alt-атрибута: ${imagesMissingAlt}`);
+  if (imagesEmptyAlt > 0) issues.push(`Порожні alt (перевірити, чи зображення декоративні): ${imagesEmptyAlt}`);
   if (!ogTitle || !ogDescription) issues.push("Open Graph: відсутній og:title або og:description");
   if (!twitterCard) issues.push("Twitter Card metadata відсутня");
+  if (leakedEditorialTerms.length > 0) issues.push(`Публічний текст містить внутрішню SEO-термінологію: ${Array.from(new Set(leakedEditorialTerms)).join(", ")}`);
 
   return { score: Math.min(score, 100), issues, wordCount, internalLinks, h1: h1 || null };
 }
