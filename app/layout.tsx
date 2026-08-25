@@ -58,6 +58,11 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  icons: {
+    icon: [{ url: "/assets/favicon.png", type: "image/png" }],
+    shortcut: "/assets/favicon.png",
+    apple: "/assets/favicon.png",
+  },
   manifest: "/manifest.webmanifest",
 };
 
