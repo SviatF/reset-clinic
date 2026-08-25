@@ -1,7 +1,11 @@
 import type { SeoLanding } from "./seo-pages";
 import { hasMarketingCopy } from "./seo-marketing-copy";
 import { hasExtraMarketingCopy } from "./seo-marketing-copy-extra";
-import { supplementalLandingSections as baseSupplementalLandingSections } from "./seo-compliance-core";
+import {
+  buildCompliantLandingJsonLd as baseBuildCompliantLandingJsonLd,
+  supplementalLandingSections as baseSupplementalLandingSections,
+} from "./seo-compliance-core";
+import { SITE_URL } from "./seo";
 
 export {
   isSeoLandingIndexable,
@@ -10,8 +14,37 @@ export {
   reviewerForLanding,
   priceHrefForLanding,
   blogCategoryForLanding,
-  buildCompliantLandingJsonLd,
 } from "./seo-compliance-core";
+
+export function buildCompliantLandingJsonLd(landing: SeoLanding) {
+  const schema = baseBuildCompliantLandingJsonLd(landing) as {
+    "@context": string;
+    "@graph": Record<string, unknown>[];
+  };
+
+  if (landing.type !== "procedure") return schema;
+
+  const url = `${SITE_URL}${landing.path}`;
+  const serviceId = `${url}#service`;
+  if (schema["@graph"].some((node) => node["@id"] === serviceId)) return schema;
+
+  return {
+    ...schema,
+    "@graph": [
+      ...schema["@graph"],
+      {
+        "@type": "Service",
+        "@id": serviceId,
+        name: landing.h1,
+        description: landing.description,
+        url,
+        provider: { "@id": `${SITE_URL}/#clinic` },
+        areaServed: { "@type": "City", name: "Львів" },
+        serviceType: landing.h1,
+      },
+    ],
+  };
+}
 
 function cleanPublicMedicalCopy(value: string) {
   return value
