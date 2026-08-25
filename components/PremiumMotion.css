@@ -1,0 +1,217 @@
+/* RESET Clinic premium motion system.
+   Motion is progressive enhancement only: SSR content stays fully visible without JS. */
+
+:root{
+  --reset-motion-ease:cubic-bezier(.22,1,.36,1);
+  --reset-motion-soft:cubic-bezier(.16,1,.3,1);
+}
+
+.reset-motion-ready [data-reset-motion]{
+  opacity:0;
+  translate:0 24px;
+  filter:blur(2px);
+  transition:
+    opacity .78s var(--reset-motion-ease),
+    translate .92s var(--reset-motion-ease),
+    filter .9s var(--reset-motion-ease);
+  transition-delay:var(--reset-motion-delay,0ms);
+  will-change:opacity,translate,filter;
+}
+
+.reset-motion-ready [data-reset-motion="hero"]{
+  translate:0 18px;
+  filter:blur(1px);
+  transition-duration:.82s,1.02s,.94s;
+}
+
+.reset-motion-ready [data-reset-motion="card"]{
+  translate:0 18px;
+  transition-duration:.7s,.82s,.78s;
+}
+
+.reset-motion-ready [data-reset-motion].reset-motion-visible{
+  opacity:1;
+  translate:0 0;
+  filter:blur(0);
+  will-change:auto;
+}
+
+.reset-motion-ready [data-reset-media]{
+  opacity:.9;
+  scale:1.035;
+  filter:saturate(.92) contrast(.98);
+  transition:
+    opacity 1s var(--reset-motion-soft),
+    scale 1.35s var(--reset-motion-soft),
+    filter 1.2s var(--reset-motion-soft);
+  will-change:scale,translate,opacity;
+}
+
+.reset-motion-ready [data-reset-media].reset-motion-visible{
+  opacity:1;
+  scale:1;
+  filter:saturate(1) contrast(1);
+}
+
+[data-reset-parallax]{
+  translate:0 var(--reset-parallax-y,0px);
+}
+
+/* Very soft light response on premium hero imagery. */
+[data-reset-spotlight]{
+  isolation:isolate;
+}
+
+[data-reset-spotlight]::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  opacity:0;
+  background:radial-gradient(
+    520px circle at var(--reset-pointer-x,50%) var(--reset-pointer-y,45%),
+    rgba(255,255,255,.16),
+    rgba(255,255,255,.045) 31%,
+    transparent 64%
+  );
+  transition:opacity .48s ease;
+}
+
+@media(hover:hover) and (pointer:fine){
+  [data-reset-spotlight]:hover::before{opacity:1}
+}
+
+/* Navigation: restrained editorial underline instead of a loud hover effect. */
+.seo-nav a,
+.seo-footer-links a{
+  position:relative;
+}
+
+.seo-nav a::after,
+.seo-footer-links a::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-6px;
+  height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:right center;
+  opacity:.45;
+  transition:transform .42s var(--reset-motion-ease);
+}
+
+.seo-nav a:hover::after,
+.seo-footer-links a:hover::after{
+  transform:scaleX(1);
+  transform-origin:left center;
+}
+
+/* Buttons keep the clinical restraint but gain a tactile premium response. */
+.seo-button,
+.seo-header-cta,
+.reset-blog-empty-actions a,
+.reset-blog a[class*="cta"],
+.reset-blog a[class*="action"]{
+  transition:
+    translate .35s var(--reset-motion-ease),
+    box-shadow .35s var(--reset-motion-ease),
+    background-color .28s ease,
+    color .28s ease,
+    border-color .28s ease;
+}
+
+@media(hover:hover) and (pointer:fine){
+  .seo-button:hover,
+  .seo-header-cta:hover,
+  .reset-blog-empty-actions a:hover,
+  .reset-blog a[class*="cta"]:hover,
+  .reset-blog a[class*="action"]:hover{
+    translate:0 -2px;
+    box-shadow:0 12px 30px rgba(41,32,27,.11);
+  }
+}
+
+/* Cards lift by only a few pixels; imagery moves even less to avoid a template-like feel. */
+.seo-doctor-card,
+.seo-related-card,
+.seo-directory-link,
+.reset-blog-category-card,
+.reset-blog-article-card{
+  transition:
+    translate .42s var(--reset-motion-ease),
+    box-shadow .42s var(--reset-motion-ease),
+    border-color .35s ease,
+    background-color .35s ease;
+}
+
+.seo-doctor-photo img,
+.reset-blog-category-card img,
+.reset-blog-article-card img{
+  transition:scale .75s var(--reset-motion-soft);
+}
+
+@media(hover:hover) and (pointer:fine){
+  .seo-related-card:hover,
+  .seo-directory-link:hover,
+  .reset-blog-category-card:hover,
+  .reset-blog-article-card:hover{
+    translate:0 -3px;
+    box-shadow:0 22px 52px rgba(41,32,27,.085);
+  }
+
+  .seo-doctor-card:hover .seo-doctor-photo img,
+  .reset-blog-category-card:hover img,
+  .reset-blog-article-card:hover img{
+    scale:1.025;
+  }
+}
+
+/* FAQ receives a quiet open-state emphasis. */
+.seo-faq details{
+  transition:background-color .35s ease,padding-inline .35s var(--reset-motion-ease);
+}
+
+.seo-faq details[open]{
+  background:rgba(138,109,59,.035);
+}
+
+/* Legacy Elementor snapshots: no structural DOM changes, only composited motion. */
+.legacy-page [data-reset-motion]{
+  backface-visibility:hidden;
+}
+
+@media(max-width:767px){
+  .reset-motion-ready [data-reset-motion]{
+    translate:0 16px;
+    filter:none;
+    transition-duration:.62s,.72s,.01s;
+  }
+
+  .reset-motion-ready [data-reset-motion="hero"]{
+    translate:0 12px;
+  }
+
+  [data-reset-parallax]{translate:0 0}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .reset-motion-ready [data-reset-motion],
+  .reset-motion-ready [data-reset-media],
+  [data-reset-parallax]{
+    opacity:1!important;
+    translate:0!important;
+    scale:1!important;
+    filter:none!important;
+    transition:none!important;
+    animation:none!important;
+    will-change:auto!important;
+  }
+
+  [data-reset-spotlight]::before{display:none}
+
+  .seo-nav a::after,
+  .seo-footer-links a::after{transition:none}
+}
