@@ -136,7 +136,7 @@ async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
     }),
   );
 
-  return rows.filter((row): row is T => row !== null);
+  return rows.filter((row) => row !== null) as T[];
 }
 
 export function putJson(pathname: string, value: unknown) {
