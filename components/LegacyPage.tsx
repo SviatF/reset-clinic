@@ -15,31 +15,66 @@ export type MobilePageData = {
   referenceHeight: number;
 };
 
+const HOME_CATEGORY_LINKS: Record<string, string> = {
+  "Дерматологія": "/dermatology/",
+  "Доглядова косметологія": "/cosmetology/",
+  "Ін’єкційна косметологія": "/cosmetology/injection/",
+  "Апаратна косметологія": "/cosmetology/hardware/",
+  "Трихологія": "/dermatology/trichologist-lviv/",
+  "Сімейна медицина та нутриціологія": "/nutrition/",
+};
+
+function plainHeadingText(value: string) {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function linkHomepageCategoryHeadings(html: string, route: string) {
+  if (route !== "/") return html;
+
+  return html.replace(
+    /<(h[1-6])([^>]*)>([\s\S]*?)<\/\1>/gi,
+    (full, tag: string, attrs: string, inner: string) => {
+      const href = HOME_CATEGORY_LINKS[plainHeadingText(inner)];
+      if (!href || /<a\b/i.test(inner)) return full;
+      return `<${tag}${attrs}><a class="reset-home-category-link" href="${href}">${inner}</a></${tag}>`;
+    },
+  );
+}
+
 export default function LegacyPage({
   data,
   mobile,
+  route,
 }: {
   data: LegacyPageData;
   mobile?: MobilePageData;
+  route: string;
 }) {
+  const desktopHtml = linkHomepageCategoryHeadings(data.html, route);
+  const mobileHtml = mobile ? linkHomepageCategoryHeadings(mobile.html, route) : undefined;
+
   return (
     <>
       {data.stylesheets.map((href, index) => (
-        <link key={index} rel="stylesheet" href={href} />
+        <link key={index} rel="stylesheet" href={href} data-reset-legacy-stylesheet="true" />
       ))}
       {data.inlineStyles.map((css, index) => (
         <style key={index} dangerouslySetInnerHTML={{ __html: css }} />
       ))}
 
       <div
-        className={`legacy-page legacy-desktop ${data.bodyClass}`}
-        dangerouslySetInnerHTML={{ __html: data.html }}
+        className={`legacy-page legacy-styles-pending legacy-desktop ${data.bodyClass}`}
+        dangerouslySetInnerHTML={{ __html: desktopHtml }}
       />
 
-      {mobile ? (
+      {mobile && mobileHtml ? (
         <div
-          className={`legacy-page legacy-mobile ${mobile.bodyClass}`}
-          dangerouslySetInnerHTML={{ __html: mobile.html }}
+          className={`legacy-page legacy-styles-pending legacy-mobile ${mobile.bodyClass}`}
+          dangerouslySetInnerHTML={{ __html: mobileHtml }}
         />
       ) : null}
 
