@@ -165,7 +165,7 @@ function setupLegacyCarousel(root: HTMLElement, clean: Array<() => void>) {
     autoplay = true;
   }
 
-  let timer: ReturnType<typeof window.setInterval> | undefined;
+  let timer: number | undefined;
   const startAutoplay = () => {
     if (!autoplay || timer) return;
     timer = window.setInterval(() => go(1), 5000);
