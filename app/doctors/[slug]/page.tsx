@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DoctorProfilePage from "../../../components/DoctorProfilePage";
 import { doctorMetadata, getDoctor } from "../../../lib/doctors";
-import "./doctor-profile-logo.module.css";
 
 export const dynamic = "force-dynamic";
 
