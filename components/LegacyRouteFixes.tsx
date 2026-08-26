@@ -10,9 +10,23 @@ const ABOUT_GALLERY_IMAGES = [
   "/assets/desktop-c65be15cfb9648d4bc419e7965dec68355592ca6.jpg",
 ] as const;
 
+const HOME_CATEGORY_TITLES = new Set([
+  "ДЕРМАТОЛОГІЯ",
+  "ДОГЛЯДОВА КОСМЕТОЛОГІЯ",
+  "ІН’ЄКЦІЙНА КОСМЕТОЛОГІЯ",
+  "ІН'ЄКЦІЙНА КОСМЕТОЛОГІЯ",
+  "АПАРАТНА КОСМЕТОЛОГІЯ",
+  "ТРИХОЛОГІЯ",
+  "СІМЕЙНА МЕДИЦИНА ТА НУТРИЦІОЛОГІЯ",
+]);
+
 function activeLegacyPage() {
   const isMobile = window.matchMedia("(max-width: 767px)").matches;
   return document.querySelector<HTMLElement>(isMobile ? ".legacy-mobile" : ".legacy-desktop");
+}
+
+function normalizedText(value: string | null | undefined) {
+  return (value || "").replace(/\s+/g, " ").trim();
 }
 
 function repairAboutMobileCarousel(active: HTMLElement | null) {
@@ -51,6 +65,227 @@ function repairAboutMobileCarousel(active: HTMLElement | null) {
   const wrapper = carousel.querySelector<HTMLElement>(".swiper-wrapper");
   viewport?.style.setProperty("min-height", "280px", "important");
   wrapper?.style.setProperty("align-items", "stretch", "important");
+}
+
+function findHomepageCategoryCard(link: HTMLAnchorElement, active: HTMLElement) {
+  const heading = link.closest<HTMLElement>("h1, h2, h3, h4, h5, h6");
+  const headingText = normalizedText(heading?.textContent || link.textContent);
+  let node = heading?.parentElement ?? link.parentElement;
+
+  while (node && node !== active) {
+    if (
+      node.matches(
+        ".e-con, [data-element_type='container'], .elementor-column, .elementor-widget-wrap",
+      )
+    ) {
+      const text = normalizedText(node.textContent);
+      const headingCount = node.querySelectorAll("h1, h2, h3, h4, h5, h6").length;
+      if (text.length >= headingText.length + 20 && headingCount <= 2) return node;
+    }
+    node = node.parentElement;
+  }
+
+  return heading?.closest<HTMLElement>(".e-con, [data-element_type='container']") ?? null;
+}
+
+function setupHomepageCategoryCards(active: HTMLElement, clean: Array<() => void>) {
+  const generatedLinks = [...active.querySelectorAll<HTMLAnchorElement>("a.reset-home-category-link[href]")];
+  const links = generatedLinks.length
+    ? generatedLinks
+    : [...active.querySelectorAll<HTMLAnchorElement>("h1 a[href], h2 a[href], h3 a[href], h4 a[href]")].filter(
+        (link) => HOME_CATEGORY_TITLES.has(normalizedText(link.textContent).toUpperCase()),
+      );
+
+  links.forEach((link) => {
+    const card = findHomepageCategoryCard(link, active);
+    const href = link.getAttribute("href");
+    if (!card || !href || card.dataset.resetHomeCategoryCard === "1") return;
+
+    card.dataset.resetHomeCategoryCard = "1";
+    card.style.setProperty("cursor", "pointer", "important");
+    if (!card.hasAttribute("role")) card.setAttribute("role", "link");
+    if (!card.hasAttribute("tabindex")) card.tabIndex = 0;
+
+    const navigate = () => {
+      window.location.assign(href);
+    };
+
+    const click = (event: MouseEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("a, button, input, textarea, select, label, [role='button']")
+      ) {
+        return;
+      }
+      navigate();
+    };
+
+    const keydown = (event: KeyboardEvent) => {
+      if (event.target !== card || (event.key !== "Enter" && event.key !== " ")) return;
+      event.preventDefault();
+      navigate();
+    };
+
+    card.addEventListener("click", click);
+    card.addEventListener("keydown", keydown);
+    clean.push(() => card.removeEventListener("click", click));
+    clean.push(() => card.removeEventListener("keydown", keydown));
+  });
+}
+
+function findPhilosophyCarouselSection(active: HTMLElement) {
+  const heading = [...active.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, .elementor-heading-title")].find(
+    (element) => normalizedText(element.textContent).toUpperCase() === "НАША ФІЛОСОФІЯ",
+  );
+
+  let node = heading?.parentElement ?? null;
+  while (node && node !== active) {
+    if (
+      node.querySelector(".swiper-wrapper") &&
+      node.querySelector(
+        ".elementor-swiper-button-prev, .elementor-swiper-button-next, .swiper-button-prev, .swiper-button-next",
+      )
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+
+  return [...active.querySelectorAll<HTMLElement>(".elementor-widget, .e-widget-swiper")].find((candidate) => {
+    const bullets = candidate.querySelectorAll(".swiper-pagination-bullet").length;
+    return (
+      bullets >= 3 &&
+      !!candidate.querySelector(".swiper-wrapper") &&
+      !!candidate.querySelector(
+        ".elementor-swiper-button-prev, .elementor-swiper-button-next, .swiper-button-prev, .swiper-button-next",
+      )
+    );
+  }) ?? null;
+}
+
+function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() => void>) {
+  const section = findPhilosophyCarouselSection(active);
+  if (!section) return;
+
+  const wrapper = section.querySelector<HTMLElement>(".swiper-wrapper");
+  if (!wrapper) return;
+
+  const viewport = wrapper.closest<HTMLElement>(".elementor-main-swiper, .swiper") ?? wrapper.parentElement;
+  if (!viewport) return;
+
+  const allSlides = [...wrapper.children].filter(
+    (node): node is HTMLElement => node instanceof HTMLElement && node.classList.contains("swiper-slide"),
+  );
+  const slides = allSlides.filter((slide) => !slide.classList.contains("swiper-slide-duplicate"));
+  if (slides.length < 2) return;
+
+  allSlides
+    .filter((slide) => slide.classList.contains("swiper-slide-duplicate"))
+    .forEach((slide) => slide.style.setProperty("display", "none", "important"));
+
+  viewport.style.setProperty("overflow", "hidden", "important");
+  wrapper.style.setProperty("display", "flex", "important");
+  wrapper.style.setProperty("width", "100%", "important");
+  wrapper.style.setProperty("transition", "transform 500ms ease", "important");
+  wrapper.style.setProperty("will-change", "transform", "important");
+
+  slides.forEach((slide) => {
+    slide.style.setProperty("flex", "0 0 100%", "important");
+    slide.style.setProperty("width", "100%", "important");
+    slide.style.setProperty("margin-right", "0", "important");
+  });
+
+  const previous = section.querySelector<HTMLElement>(
+    ".elementor-swiper-button-prev, .swiper-button-prev",
+  );
+  const next = section.querySelector<HTMLElement>(
+    ".elementor-swiper-button-next, .swiper-button-next",
+  );
+  const bullets = [...section.querySelectorAll<HTMLElement>(".swiper-pagination-bullet")].slice(
+    0,
+    slides.length,
+  );
+
+  [previous, next].forEach((control) => {
+    control?.style.setProperty("pointer-events", "auto", "important");
+    control?.style.setProperty("cursor", "pointer", "important");
+    control?.style.setProperty("z-index", "20", "important");
+    control?.removeAttribute("aria-disabled");
+  });
+  bullets.forEach((bullet) => {
+    bullet.style.setProperty("pointer-events", "auto", "important");
+    bullet.style.setProperty("cursor", "pointer", "important");
+  });
+
+  let index = Math.max(
+    0,
+    slides.findIndex((slide) => slide.classList.contains("swiper-slide-active")),
+  );
+
+  const render = () => {
+    wrapper.style.setProperty("transform", `translate3d(-${index * 100}%, 0, 0)`, "important");
+    slides.forEach((slide, slideIndex) => {
+      slide.classList.toggle("swiper-slide-active", slideIndex === index);
+      slide.classList.toggle(
+        "swiper-slide-prev",
+        slideIndex === (index - 1 + slides.length) % slides.length,
+      );
+      slide.classList.toggle("swiper-slide-next", slideIndex === (index + 1) % slides.length);
+      slide.setAttribute("aria-label", `${slideIndex + 1} / ${slides.length}`);
+    });
+    bullets.forEach((bullet, bulletIndex) => {
+      const activeBullet = bulletIndex === index;
+      bullet.classList.toggle("swiper-pagination-bullet-active", activeBullet);
+      bullet.setAttribute("aria-current", activeBullet ? "true" : "false");
+    });
+  };
+
+  const syncIndex = () => {
+    const current = slides.findIndex((slide) => slide.classList.contains("swiper-slide-active"));
+    if (current >= 0) index = current;
+  };
+
+  const go = (delta: number) => {
+    syncIndex();
+    index = (index + delta + slides.length) % slides.length;
+    render();
+  };
+
+  const previousClick = (event: Event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    go(-1);
+  };
+  const nextClick = (event: Event) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    go(1);
+  };
+
+  previous?.addEventListener("click", previousClick, true);
+  next?.addEventListener("click", nextClick, true);
+  clean.push(() => previous?.removeEventListener("click", previousClick, true));
+  clean.push(() => next?.removeEventListener("click", nextClick, true));
+
+  bullets.forEach((bullet, bulletIndex) => {
+    const click = (event: Event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      index = bulletIndex;
+      render();
+    };
+    bullet.addEventListener("click", click, true);
+    clean.push(() => bullet.removeEventListener("click", click, true));
+  });
+
+  render();
+}
+
+function setupHomepageInteractions(active: HTMLElement | null, clean: Array<() => void>) {
+  if (!active) return;
+  setupHomepageCategoryCards(active, clean);
+  setupHomepagePhilosophyCarousel(active, clean);
 }
 
 function hideElementAndFollowingSiblings(element: HTMLElement) {
@@ -103,6 +338,10 @@ export default function LegacyRouteFixes({ route }: { route: string }) {
 
     if (route === "/about/") repairAboutMobileCarousel(active);
     if (route === "/doctors/") trimDoctorsPage(active);
+    if (route === "/") {
+      const frame = window.requestAnimationFrame(() => setupHomepageInteractions(active, clean));
+      clean.push(() => window.cancelAnimationFrame(frame));
+    }
 
     const pages = [...document.querySelectorAll<HTMLElement>(".legacy-page")];
     const reveal = () => {
