@@ -42,7 +42,7 @@ export default async function Page({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: jsonLd(schema) }}
         />
       ))}
-      <LegacyPage data={data} mobile={mobile} />
+      <LegacyPage data={data} mobile={mobile} route={key} />
     </>
   );
 }
