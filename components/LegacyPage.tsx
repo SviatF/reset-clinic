@@ -1,4 +1,3 @@
-import HomepageMobileCarouselAutoplay from "./HomepageMobileCarouselAutoplay";
 import LegacyBookingEnhancer from "./LegacyBookingEnhancer";
 import LegacyEnhancer from "./LegacyEnhancer";
 import LegacyRouteFixes from "./LegacyRouteFixes";
@@ -92,6 +91,22 @@ export default function LegacyPage({
         <style key={index} dangerouslySetInnerHTML={{ __html: css }} />
       ))}
 
+      {route === "/" ? (
+        <style>{`
+          @media (max-width: 767px) {
+            .legacy-mobile .elementor-element-153f2e1,
+            .legacy-mobile [data-id="153f2e1"] {
+              display: none !important;
+              height: 0 !important;
+              min-height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+            }
+          }
+        `}</style>
+      ) : null}
+
       <div
         className={`legacy-page legacy-styles-pending legacy-desktop ${data.bodyClass}`}
         dangerouslySetInnerHTML={{ __html: desktopHtml }}
@@ -134,7 +149,6 @@ export default function LegacyPage({
       </div>
 
       <LegacyRouteFixes route={route} />
-      <HomepageMobileCarouselAutoplay route={route} />
       <LegacyEnhancer bodyClass={data.bodyClass} />
       <LegacyBookingEnhancer bodyClass={data.bodyClass} />
     </>
