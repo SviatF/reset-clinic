@@ -1,3 +1,4 @@
+import HomepageMobileCarouselAutoplay from "./HomepageMobileCarouselAutoplay";
 import LegacyBookingEnhancer from "./LegacyBookingEnhancer";
 import LegacyEnhancer from "./LegacyEnhancer";
 import LegacyRouteFixes from "./LegacyRouteFixes";
@@ -133,6 +134,7 @@ export default function LegacyPage({
       </div>
 
       <LegacyRouteFixes route={route} />
+      <HomepageMobileCarouselAutoplay route={route} />
       <LegacyEnhancer bodyClass={data.bodyClass} />
       <LegacyBookingEnhancer bodyClass={data.bodyClass} />
     </>
