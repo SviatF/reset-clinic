@@ -29,8 +29,8 @@ export default function DoctorProfilePage({ doctor }: { doctor: DoctorProfile })
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(doctorJsonLd(doctor)) }} />
 
       <header className="seo-header">
-        <Link className="seo-brand" href="/" aria-label="RESET Clinic — головна">
-          <span>RESET</span><small>клініка естетичної медицини</small>
+        <Link className="seo-brand seo-brand-image" href="/" aria-label="RESET Clinic — головна">
+          <img src="/assets/logo-main.png" alt="RESET Clinic" />
         </Link>
         <nav className="seo-nav" aria-label="Основна навігація">
           {MAIN_NAV.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
