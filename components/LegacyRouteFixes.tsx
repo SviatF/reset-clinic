@@ -10,6 +10,14 @@ const ABOUT_GALLERY_IMAGES = [
   "/assets/desktop-c65be15cfb9648d4bc419e7965dec68355592ca6.jpg",
 ] as const;
 
+const HOME_PHILOSOPHY_IMAGES = [
+  "/assets/mobile-6dff7433211d4169812cea0cec5bf9be74ba951c.png",
+  "/assets/mobile-6d26d14a32f0be45401e2fdef7c09430326c0db2.jpg",
+  "/assets/mobile-abedf6979a778b5ef07f2d35ddb83ffffba432d4.jpg",
+  "/assets/desktop-47d0752051af2be99173977e7f35d39cab004f6b.jpg",
+  "/assets/desktop-d37ca7b60b86de4310777a91975507cb15579fef.jpg",
+] as const;
+
 const HOME_CATEGORY_TITLES = new Set([
   "ДЕРМАТОЛОГІЯ",
   "ДОГЛЯДОВА КОСМЕТОЛОГІЯ",
@@ -134,25 +142,31 @@ function setupHomepageCategoryCards(active: HTMLElement, clean: Array<() => void
   });
 }
 
-function findPhilosophyCarouselSection(active: HTMLElement) {
+function findHomepagePhilosophyCarousel(active: HTMLElement) {
+  if (active.classList.contains("legacy-mobile")) {
+    const exact = active.querySelector<HTMLElement>('.e-widget-swiper[data-id="153f2e1"]');
+    if (exact) return exact;
+  }
+
   const heading = [...active.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, .elementor-heading-title")].find(
     (element) => normalizedText(element.textContent).toUpperCase() === "НАША ФІЛОСОФІЯ",
   );
 
   let node = heading?.parentElement ?? null;
   while (node && node !== active) {
+    const carousel = node.querySelector<HTMLElement>(".e-widget-swiper");
     if (
-      node.querySelector(".swiper-wrapper") &&
-      node.querySelector(
+      carousel?.querySelector(".swiper-wrapper") &&
+      carousel.querySelector(
         ".elementor-swiper-button-prev, .elementor-swiper-button-next, .swiper-button-prev, .swiper-button-next",
       )
     ) {
-      return node;
+      return carousel;
     }
     node = node.parentElement;
   }
 
-  return [...active.querySelectorAll<HTMLElement>(".elementor-widget, .e-widget-swiper")].find((candidate) => {
+  return [...active.querySelectorAll<HTMLElement>(".e-widget-swiper")].find((candidate) => {
     const bullets = candidate.querySelectorAll(".swiper-pagination-bullet").length;
     return (
       bullets >= 3 &&
@@ -165,10 +179,13 @@ function findPhilosophyCarouselSection(active: HTMLElement) {
 }
 
 function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() => void>) {
-  const section = findPhilosophyCarouselSection(active);
-  if (!section) return;
+  if (!active.classList.contains("legacy-mobile")) return;
 
-  const wrapper = section.querySelector<HTMLElement>(".swiper-wrapper");
+  const carousel = findHomepagePhilosophyCarousel(active);
+  if (!carousel || carousel.dataset.resetHomepageCarousel === "1") return;
+  carousel.dataset.resetHomepageCarousel = "1";
+
+  const wrapper = carousel.querySelector<HTMLElement>(".swiper-wrapper");
   if (!wrapper) return;
 
   const viewport = wrapper.closest<HTMLElement>(".elementor-main-swiper, .swiper") ?? wrapper.parentElement;
@@ -185,24 +202,35 @@ function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() =>
     .forEach((slide) => slide.style.setProperty("display", "none", "important"));
 
   viewport.style.setProperty("overflow", "hidden", "important");
+  viewport.style.setProperty("touch-action", "pan-y", "important");
   wrapper.style.setProperty("display", "flex", "important");
   wrapper.style.setProperty("width", "100%", "important");
   wrapper.style.setProperty("transition", "transform 500ms ease", "important");
   wrapper.style.setProperty("will-change", "transform", "important");
 
-  slides.forEach((slide) => {
+  slides.forEach((slide, slideIndex) => {
     slide.style.setProperty("flex", "0 0 100%", "important");
     slide.style.setProperty("width", "100%", "important");
     slide.style.setProperty("margin-right", "0", "important");
+
+    const image = slide.querySelector<HTMLElement>(".elementor-carousel-image");
+    const src = HOME_PHILOSOPHY_IMAGES[slideIndex % HOME_PHILOSOPHY_IMAGES.length];
+    if (image && src) {
+      image.style.setProperty("background-image", `url("${src}")`, "important");
+      image.style.setProperty("background-size", "cover", "important");
+      image.style.setProperty("background-position", "center", "important");
+      image.style.setProperty("background-repeat", "no-repeat", "important");
+      image.setAttribute("aria-label", `RESET Clinic — фото ${slideIndex + 1}`);
+    }
   });
 
-  const previous = section.querySelector<HTMLElement>(
+  const previous = carousel.querySelector<HTMLElement>(
     ".elementor-swiper-button-prev, .swiper-button-prev",
   );
-  const next = section.querySelector<HTMLElement>(
+  const next = carousel.querySelector<HTMLElement>(
     ".elementor-swiper-button-next, .swiper-button-next",
   );
-  const bullets = [...section.querySelectorAll<HTMLElement>(".swiper-pagination-bullet")].slice(
+  const bullets = [...carousel.querySelectorAll<HTMLElement>(".swiper-pagination-bullet")].slice(
     0,
     slides.length,
   );
@@ -210,7 +238,7 @@ function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() =>
   [previous, next].forEach((control) => {
     control?.style.setProperty("pointer-events", "auto", "important");
     control?.style.setProperty("cursor", "pointer", "important");
-    control?.style.setProperty("z-index", "20", "important");
+    control?.style.setProperty("z-index", "50", "important");
     control?.removeAttribute("aria-disabled");
   });
   bullets.forEach((bullet) => {
@@ -222,6 +250,7 @@ function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() =>
     0,
     slides.findIndex((slide) => slide.classList.contains("swiper-slide-active")),
   );
+  let lastPointerAction = 0;
 
   const render = () => {
     wrapper.style.setProperty("transform", `translate3d(-${index * 100}%, 0, 0)`, "important");
@@ -252,32 +281,72 @@ function setupHomepagePhilosophyCarousel(active: HTMLElement, clean: Array<() =>
     render();
   };
 
-  const previousClick = (event: Event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    go(-1);
-  };
-  const nextClick = (event: Event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    go(1);
+  const bindControl = (control: HTMLElement | null, delta: number) => {
+    if (!control) return;
+
+    const activate = (event: Event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if ("stopImmediatePropagation" in event) event.stopImmediatePropagation();
+
+      const now = Date.now();
+      if (event.type === "click" && now - lastPointerAction < 500) return;
+      if (event.type === "pointerup") lastPointerAction = now;
+      go(delta);
+    };
+
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      activate(event);
+    };
+
+    control.addEventListener("pointerup", activate, true);
+    control.addEventListener("click", activate, true);
+    control.addEventListener("keydown", keydown, true);
+    clean.push(() => control.removeEventListener("pointerup", activate, true));
+    clean.push(() => control.removeEventListener("click", activate, true));
+    clean.push(() => control.removeEventListener("keydown", keydown, true));
   };
 
-  previous?.addEventListener("click", previousClick, true);
-  next?.addEventListener("click", nextClick, true);
-  clean.push(() => previous?.removeEventListener("click", previousClick, true));
-  clean.push(() => next?.removeEventListener("click", nextClick, true));
+  bindControl(previous, -1);
+  bindControl(next, 1);
 
   bullets.forEach((bullet, bulletIndex) => {
     const click = (event: Event) => {
       event.preventDefault();
-      event.stopImmediatePropagation();
+      event.stopPropagation();
+      if ("stopImmediatePropagation" in event) event.stopImmediatePropagation();
       index = bulletIndex;
       render();
     };
     bullet.addEventListener("click", click, true);
     clean.push(() => bullet.removeEventListener("click", click, true));
   });
+
+  let pointerStart: number | null = null;
+  const pointerDown = (event: PointerEvent) => {
+    pointerStart = event.clientX;
+  };
+  const pointerUp = (event: PointerEvent) => {
+    if (pointerStart === null) return;
+    const distance = event.clientX - pointerStart;
+    pointerStart = null;
+    if (Math.abs(distance) < 45) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    go(distance < 0 ? 1 : -1);
+  };
+  const pointerCancel = () => {
+    pointerStart = null;
+  };
+
+  viewport.addEventListener("pointerdown", pointerDown, true);
+  viewport.addEventListener("pointerup", pointerUp, true);
+  viewport.addEventListener("pointercancel", pointerCancel, true);
+  clean.push(() => viewport.removeEventListener("pointerdown", pointerDown, true));
+  clean.push(() => viewport.removeEventListener("pointerup", pointerUp, true));
+  clean.push(() => viewport.removeEventListener("pointercancel", pointerCancel, true));
 
   render();
 }
