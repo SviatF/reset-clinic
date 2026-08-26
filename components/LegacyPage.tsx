@@ -25,6 +25,15 @@ const HOME_CATEGORY_LINKS: Record<string, string> = {
   "Сімейна медицина та нутриціологія": "/nutrition/",
 };
 
+const MOBILE_ASSET_REWRITES: Record<string, Array<[string, string]>> = {
+  "/about/": [
+    [
+      "/wp-content/uploads/2026/08/IMG_9170-scaled.jpg",
+      "/assets/desktop-3febdea9eeb32b25099c039d28f1c2a2fd197d0f.jpg",
+    ],
+  ],
+};
+
 function plainHeadingText(value: string) {
   return value
     .replace(/<[^>]*>/g, " ")
@@ -46,6 +55,13 @@ function linkHomepageCategoryHeadings(html: string, route: string) {
   );
 }
 
+function repairMobileAssets(html: string, route: string) {
+  return (MOBILE_ASSET_REWRITES[route] ?? []).reduce(
+    (result, [from, to]) => result.split(from).join(to),
+    html,
+  );
+}
+
 export default function LegacyPage({
   data,
   mobile,
@@ -56,13 +72,20 @@ export default function LegacyPage({
   route: string;
 }) {
   const desktopHtml = linkHomepageCategoryHeadings(data.html, route);
-  const mobileHtml = mobile ? linkHomepageCategoryHeadings(mobile.html, route) : undefined;
-  const hiddenUntilStyled = { visibility: "hidden" as const, backgroundColor: "#f5f4ed" };
+  const mobileHtml = mobile
+    ? repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route)
+    : undefined;
 
   return (
     <>
       {data.stylesheets.map((href, index) => (
-        <link key={index} rel="stylesheet" href={href} data-reset-legacy-stylesheet="true" />
+        <link
+          key={index}
+          rel="stylesheet"
+          href={href}
+          precedence="legacy"
+          data-reset-legacy-stylesheet="true"
+        />
       ))}
       {data.inlineStyles.map((css, index) => (
         <style key={index} dangerouslySetInnerHTML={{ __html: css }} />
@@ -70,14 +93,12 @@ export default function LegacyPage({
 
       <div
         className={`legacy-page legacy-styles-pending legacy-desktop ${data.bodyClass}`}
-        style={hiddenUntilStyled}
         dangerouslySetInnerHTML={{ __html: desktopHtml }}
       />
 
       {mobile && mobileHtml ? (
         <div
           className={`legacy-page legacy-styles-pending legacy-mobile ${mobile.bodyClass}`}
-          style={hiddenUntilStyled}
           dangerouslySetInnerHTML={{ __html: mobileHtml }}
         />
       ) : null}
