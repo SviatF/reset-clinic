@@ -52,6 +52,143 @@ function isElementorPopupTrigger(element: HTMLElement) {
   return isPopup && looksLikeMenu;
 }
 
+function setupLegacyCarousel(root: HTMLElement, clean: Array<() => void>) {
+  const viewport = root.querySelector<HTMLElement>(".elementor-main-swiper, .swiper");
+  const wrapper = root.querySelector<HTMLElement>(".swiper-wrapper");
+  if (!viewport || !wrapper) return;
+
+  const allSlides = [...wrapper.children].filter(
+    (node): node is HTMLElement => node instanceof HTMLElement && node.classList.contains("swiper-slide"),
+  );
+  const slides = allSlides.filter((slide) => !slide.classList.contains("swiper-slide-duplicate"));
+  if (slides.length < 2) return;
+
+  allSlides
+    .filter((slide) => slide.classList.contains("swiper-slide-duplicate"))
+    .forEach((slide) => {
+      slide.style.display = "none";
+    });
+
+  viewport.style.overflow = "hidden";
+  wrapper.style.display = "flex";
+  wrapper.style.width = "100%";
+  wrapper.style.transition = "transform 500ms ease";
+  wrapper.style.transform = "translate3d(0, 0, 0)";
+  wrapper.style.willChange = "transform";
+
+  slides.forEach((slide) => {
+    slide.style.flex = "0 0 100%";
+    slide.style.width = "100%";
+    slide.style.marginRight = "0";
+  });
+
+  const bullets = [
+    ...root.querySelectorAll<HTMLElement>(".swiper-pagination-bullet"),
+  ].slice(0, slides.length);
+  const previous = root.querySelector<HTMLElement>(".elementor-swiper-button-prev");
+  const next = root.querySelector<HTMLElement>(".elementor-swiper-button-next");
+  let index = Math.max(
+    0,
+    slides.findIndex((slide) => slide.classList.contains("swiper-slide-active")),
+  );
+
+  const render = () => {
+    wrapper.style.transform = `translate3d(-${index * 100}%, 0, 0)`;
+    slides.forEach((slide, slideIndex) => {
+      slide.classList.toggle("swiper-slide-active", slideIndex === index);
+      slide.classList.toggle(
+        "swiper-slide-prev",
+        slideIndex === (index - 1 + slides.length) % slides.length,
+      );
+      slide.classList.toggle("swiper-slide-next", slideIndex === (index + 1) % slides.length);
+      slide.setAttribute("aria-label", `${slideIndex + 1} / ${slides.length}`);
+    });
+    bullets.forEach((bullet, bulletIndex) => {
+      const active = bulletIndex === index;
+      bullet.classList.toggle("swiper-pagination-bullet-active", active);
+      bullet.setAttribute("aria-current", active ? "true" : "false");
+    });
+  };
+
+  const go = (delta: number) => {
+    index = (index + delta + slides.length) % slides.length;
+    render();
+  };
+
+  const previousClick = (event: Event) => {
+    event.preventDefault();
+    go(-1);
+  };
+  const nextClick = (event: Event) => {
+    event.preventDefault();
+    go(1);
+  };
+  previous?.addEventListener("click", previousClick);
+  next?.addEventListener("click", nextClick);
+  clean.push(() => previous?.removeEventListener("click", previousClick));
+  clean.push(() => next?.removeEventListener("click", nextClick));
+
+  bullets.forEach((bullet, bulletIndex) => {
+    const click = (event: Event) => {
+      event.preventDefault();
+      index = bulletIndex;
+      render();
+    };
+    bullet.addEventListener("click", click);
+    clean.push(() => bullet.removeEventListener("click", click));
+  });
+
+  let pointerStart: number | null = null;
+  const pointerDown = (event: PointerEvent) => {
+    pointerStart = event.clientX;
+  };
+  const pointerUp = (event: PointerEvent) => {
+    if (pointerStart === null) return;
+    const distance = event.clientX - pointerStart;
+    pointerStart = null;
+    if (Math.abs(distance) < 45) return;
+    go(distance < 0 ? 1 : -1);
+  };
+  viewport.addEventListener("pointerdown", pointerDown);
+  viewport.addEventListener("pointerup", pointerUp);
+  viewport.addEventListener("pointercancel", () => {
+    pointerStart = null;
+  });
+  clean.push(() => viewport.removeEventListener("pointerdown", pointerDown));
+  clean.push(() => viewport.removeEventListener("pointerup", pointerUp));
+
+  let autoplay = true;
+  try {
+    const settings = JSON.parse(root.dataset.settings || "{}");
+    autoplay = settings.autoplay !== "no";
+  } catch {
+    autoplay = true;
+  }
+
+  let timer: ReturnType<typeof window.setInterval> | undefined;
+  const startAutoplay = () => {
+    if (!autoplay || timer) return;
+    timer = window.setInterval(() => go(1), 5000);
+  };
+  const stopAutoplay = () => {
+    if (!timer) return;
+    window.clearInterval(timer);
+    timer = undefined;
+  };
+  root.addEventListener("mouseenter", stopAutoplay);
+  root.addEventListener("mouseleave", startAutoplay);
+  root.addEventListener("focusin", stopAutoplay);
+  root.addEventListener("focusout", startAutoplay);
+  clean.push(() => root.removeEventListener("mouseenter", stopAutoplay));
+  clean.push(() => root.removeEventListener("mouseleave", startAutoplay));
+  clean.push(() => root.removeEventListener("focusin", stopAutoplay));
+  clean.push(() => root.removeEventListener("focusout", startAutoplay));
+  clean.push(stopAutoplay);
+
+  render();
+  startAutoplay();
+}
+
 export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
   useLayoutEffect(() => {
     const clean: Array<() => void> = [];
@@ -72,6 +209,35 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
       isMobile ? ".legacy-mobile" : ".legacy-desktop",
     );
 
+    // Keep a client-side route change from briefly painting raw Elementor HTML
+    // before all of the page-specific legacy stylesheets have loaded.
+    const legacyPages = [...document.querySelectorAll<HTMLElement>(".legacy-page")];
+    const styleLinks = [
+      ...document.querySelectorAll<HTMLLinkElement>('link[data-reset-legacy-stylesheet="true"]'),
+    ];
+    let revealed = false;
+    const revealLegacyPages = () => {
+      if (revealed) return;
+      revealed = true;
+      legacyPages.forEach((page) => page.classList.remove("legacy-styles-pending"));
+    };
+    const pendingStyles = styleLinks.filter((link) => !link.sheet);
+    if (pendingStyles.length === 0) {
+      window.requestAnimationFrame(revealLegacyPages);
+    } else {
+      let remaining = pendingStyles.length;
+      const styleDone = () => {
+        remaining -= 1;
+        if (remaining <= 0) window.requestAnimationFrame(revealLegacyPages);
+      };
+      pendingStyles.forEach((link) => {
+        link.addEventListener("load", styleDone, { once: true });
+        link.addEventListener("error", styleDone, { once: true });
+      });
+      const fallback = window.setTimeout(revealLegacyPages, 3000);
+      clean.push(() => window.clearTimeout(fallback));
+    }
+
     // Elementor normally performs these mutations in its frontend runtime.
     // The migrated site keeps the resulting static visual state without
     // loading Elementor/WordPress JavaScript.
@@ -81,6 +247,10 @@ export default function LegacyEnhancer({ bodyClass }: { bodyClass: string }) {
     active
       ?.querySelectorAll<HTMLElement>(".e-con, [data-settings*='background_background']")
       .forEach((element) => element.classList.add("e-lazyloaded"));
+
+    active?.querySelectorAll<HTMLElement>(".e-widget-swiper").forEach((carousel) => {
+      setupLegacyCarousel(carousel, clean);
+    });
 
     active?.querySelectorAll<HTMLFormElement>("form").forEach((form, formIndex) => {
       const fn = async (event: Event) => {
