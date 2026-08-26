@@ -1,5 +1,6 @@
 import LegacyBookingEnhancer from "./LegacyBookingEnhancer";
 import LegacyEnhancer from "./LegacyEnhancer";
+import LegacyRouteFixes from "./LegacyRouteFixes";
 
 export type LegacyPageData = {
   title: string;
@@ -56,6 +57,7 @@ export default function LegacyPage({
 }) {
   const desktopHtml = linkHomepageCategoryHeadings(data.html, route);
   const mobileHtml = mobile ? linkHomepageCategoryHeadings(mobile.html, route) : undefined;
+  const hiddenUntilStyled = { visibility: "hidden" as const, backgroundColor: "#f5f4ed" };
 
   return (
     <>
@@ -68,12 +70,14 @@ export default function LegacyPage({
 
       <div
         className={`legacy-page legacy-styles-pending legacy-desktop ${data.bodyClass}`}
+        style={hiddenUntilStyled}
         dangerouslySetInnerHTML={{ __html: desktopHtml }}
       />
 
       {mobile && mobileHtml ? (
         <div
           className={`legacy-page legacy-styles-pending legacy-mobile ${mobile.bodyClass}`}
+          style={hiddenUntilStyled}
           dangerouslySetInnerHTML={{ __html: mobileHtml }}
         />
       ) : null}
@@ -107,6 +111,7 @@ export default function LegacyPage({
         </nav>
       </div>
 
+      <LegacyRouteFixes route={route} />
       <LegacyEnhancer bodyClass={data.bodyClass} />
       <LegacyBookingEnhancer bodyClass={data.bodyClass} />
     </>
