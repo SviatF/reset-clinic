@@ -1,0 +1,45 @@
+.seo-doctor-profile .seo-header .seo-brand-image {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex: 0 0 132px !important;
+  width: 132px !important;
+  min-width: 132px !important;
+  max-width: 132px !important;
+  height: 56px !important;
+  min-height: 0 !important;
+  max-height: 56px !important;
+  overflow: hidden !important;
+}
+
+.seo-doctor-profile .seo-header .seo-brand-image img {
+  display: block !important;
+  width: 132px !important;
+  min-width: 132px !important;
+  max-width: 132px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  max-height: 56px !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+}
+
+@media (max-width: 767px) {
+  .seo-doctor-profile .seo-header .seo-brand-image {
+    flex-basis: 112px !important;
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+    height: 46px !important;
+    max-height: 46px !important;
+  }
+
+  .seo-doctor-profile .seo-header .seo-brand-image img {
+    width: 112px !important;
+    min-width: 112px !important;
+    max-width: 112px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+  }
+}
