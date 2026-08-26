@@ -4,6 +4,7 @@ import "./globals.css";
 import "../components/SeoLandingPage.css";
 import "../components/SeoLandingPolish.css";
 import "../components/SeoLandingVisualFixes.css";
+import "../components/DoctorProfileLogo.css";
 import "../components/PremiumMotion.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
