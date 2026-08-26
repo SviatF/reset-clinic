@@ -30,7 +30,7 @@ export default function DoctorProfilePage({ doctor }: { doctor: DoctorProfile })
 
       <header className="seo-header">
         <Link className="seo-brand seo-brand-image" href="/" aria-label="RESET Clinic — головна">
-          <img src="/assets/logo-main.png" alt="RESET Clinic" />
+          <img src="/assets/logo-main.png" width={132} height={56} alt="RESET Clinic" />
         </Link>
         <nav className="seo-nav" aria-label="Основна навігація">
           {MAIN_NAV.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
