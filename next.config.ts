@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   trailingSlash: true,
+  productionBrowserSourceMaps: false,
+  experimental: {
+    webpackMemoryOptimizations: true,
+    serverSourceMaps: false,
+  },
   async redirects() {
     return [
       { source: "/blog/dermatology/", destination: "/blog/dermatolohiya/", permanent: true },
