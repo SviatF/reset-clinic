@@ -4,6 +4,7 @@ import { SHOP_IMAGE_SOURCES } from "../../../../lib/shop/image-sources";
 
 export const runtime = "nodejs";
 export const dynamic = "force-static";
+export function generateStaticParams() { return Object.keys(SHOP_IMAGE_SOURCES).map((slug) => ({ slug: `${slug}.webp` })); }
 
 function extractJpeg(source: Buffer) {
   const start = source.indexOf(Buffer.from([0xff, 0xd8, 0xff]));
