@@ -14,7 +14,8 @@ function extractJpeg(source: Buffer) {
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const relative = SHOP_IMAGE_SOURCES[slug];
+  const key = slug.replace(/\.webp$/i, "");
+  const relative = SHOP_IMAGE_SOURCES[key];
   if (!relative) return new Response("Not found", { status: 404 });
   try {
     const filePath = path.join(process.cwd(), "shop.resetclinic.org 3", "wp-content", "uploads", relative);
