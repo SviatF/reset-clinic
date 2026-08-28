@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { ShopProduct } from "@/lib/shop/catalog-types";
-import { formatShopPrice } from "@/lib/shop/catalog";
+import type { ShopProduct } from "../../lib/shop/catalog-types";
+import { formatShopPrice } from "../../lib/shop/catalog";
 
 export function ProductCard({ product }: { product: ShopProduct }) {
   return (
