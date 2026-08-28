@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddToCart } from "../../../../components/shop/AddToCart";
 import { ProductCard } from "../../../../components/shop/ProductCard";
 import { SHOP_PRODUCTS, formatShopPrice, getShopProduct } from "../../../../lib/shop/catalog";
 
@@ -46,7 +47,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="shop-product-price"><strong>{formatShopPrice(product.price)}</strong>{product.compareAtPrice ? <del>{formatShopPrice(product.compareAtPrice)}</del> : null}</div>
               {product.details ? <p className="shop-product-lead">{product.details}</p> : null}
               <div className="shop-attributes">{Object.entries(product.attributes).map(([name, value]) => <div className="shop-attribute" key={name}><span>{name}</span><strong>{value}</strong></div>)}</div>
-              <button className="shop-button" type="button">Додати в кошик</button>
+              <AddToCart slug={product.slug} name={product.name} price={product.price} />
             </div>
           </div>
           <div className="shop-detail-sections">
