@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     const wrapped = await readFile(filePath);
     const jpeg = extractJpeg(wrapped);
     if (!jpeg) return new Response("Invalid media", { status: 500 });
-    return new Response(jpeg, { headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
+    return new Response(new Uint8Array(jpeg), { headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
   } catch {
     return new Response("Not found", { status: 404 });
   }
