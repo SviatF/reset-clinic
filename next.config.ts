@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   compress: true,
   trailingSlash: true,
   productionBrowserSourceMaps: false,
+  outputFileTracingIncludes: {
+    "/shop-media/products/[slug]": ["./shop.resetclinic.org 3/wp-content/uploads/**/*"],
+  },
   experimental: {
     webpackMemoryOptimizations: true,
     serverSourceMaps: false,
