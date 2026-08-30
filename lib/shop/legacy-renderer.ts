@@ -85,10 +85,27 @@ function rewriteMarkup(html: string) {
     return `${attr}=${quote}${rewriteNavigationUrl(value)}${quote}`;
   });
 
-  // The old theme hides the native mouse cursor because WordPress JS renders a
-  // custom cursor. That JS is intentionally removed above, so restore the
-  // browser cursor explicitly.
-  const cursorFix = "<style id=\"reset-next-cursor-fix\">html,body,body *,a,button,input,select,textarea{cursor:auto!important}a,button,[role=\"button\"],input[type=\"submit\"]{cursor:pointer!important}</style>";
+  // The downloaded Vamtam theme adds these classes when its JS custom cursor is
+  // enabled. We intentionally strip the legacy JS above, so leaving the classes
+  // would keep `cursor:none!important` active and make the native mouse vanish.
+  result = result.replace(/(<body\b[^>]*\bclass=(['"]))(.*?)(\2)/i, (_match, prefix, quote, classes, suffix) => {
+    const clean = classes
+      .split(/\s+/)
+      .filter((name: string) => name && name !== "has-mouse-dot" && name !== "has-mouse-circle")
+      .join(" ");
+    return `${prefix}${clean}${suffix}`;
+  });
+
+  // Belt-and-suspenders cursor fix: override the old theme and hide the orphaned
+  // decorative cursor nodes if they are present in saved HTML.
+  const cursorFix = [
+    '<style id="reset-next-cursor-fix">',
+    'html,body,body *{cursor:default!important}',
+    'a,button,[role="button"],label,select,summary,input[type="button"],input[type="submit"],input[type="reset"]{cursor:pointer!important}',
+    'input,textarea{cursor:text!important}',
+    '#mouseDot,#mouseCircle{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
+    '</style>',
+  ].join("");
   if (/<\/head>/i.test(result)) result = result.replace(/<\/head>/i, `${cursorFix}</head>`);
   else result = `${cursorFix}${result}`;
 
