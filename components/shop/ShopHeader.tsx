@@ -1,5 +1,9 @@
-import Link from "next/link";
+"use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+const CART_KEY = "reset_shop_cart";
 const nav = [
   ["ГОЛОВНА", "/shop/"],
   ["ОБЛИЧЧЯ", "/shop/product-category/face/"],
@@ -21,6 +25,26 @@ function BagIcon() {
 }
 
 export function ShopHeader() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const sync = () => {
+      try {
+        const items = JSON.parse(localStorage.getItem(CART_KEY) || "[]") as Array<{ qty?: number }>;
+        setCount(items.reduce((sum, item) => sum + Math.max(0, Number(item.qty) || 0), 0));
+      } catch {
+        setCount(0);
+      }
+    };
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("reset-cart-updated", sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("reset-cart-updated", sync);
+    };
+  }, []);
+
   return (
     <header className="shop-header">
       <div className="shop-header-inner">
@@ -34,7 +58,7 @@ export function ShopHeader() {
         <div className="shop-actions">
           <Link className="shop-icon-link" href="/shop/my-account/" aria-label="Особистий кабінет"><AccountIcon /></Link>
           <Link className="shop-icon-link" href="/shop/?s=" aria-label="Пошук"><SearchIcon /></Link>
-          <Link className="shop-icon-link shop-bag-link" href="/shop/cart/" aria-label="Кошик"><BagIcon /><span className="shop-cart-count">0</span></Link>
+          <Link className="shop-icon-link shop-bag-link" href="/shop/cart/" aria-label={`Кошик: ${count} товарів`}><BagIcon /><span className="shop-cart-count">{count}</span></Link>
         </div>
       </div>
     </header>
