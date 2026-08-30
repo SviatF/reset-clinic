@@ -63,6 +63,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(clean, 308);
   }
 
+  // Saved WooCommerce category archives include /page/1/ and /page/2/ URLs.
+  // The new SSR category route renders the whole category, so collapse legacy
+  // pagination to one canonical URL instead of allowing those links to 404.
+  if (pathname.includes("/product-category/") && /\/page\/\d+\/?$/i.test(pathname)) {
+    const clean = request.nextUrl.clone();
+    clean.pathname = pathname.replace(/\/page\/\d+\/?$/i, "/");
+    return NextResponse.redirect(clean, 308);
+  }
+
   // The shop is one Next.js application but a completely isolated route tree.
   // Visitors on shop.resetclinic.org see clean URLs; internally they render /shop/*.
   if (host && SHOP_HOSTS.has(host)) {
