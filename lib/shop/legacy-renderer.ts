@@ -10,11 +10,39 @@ function rewriteAssetUrl(value: string) {
     .replace(/^\/\/?(?:wp-content|wp-includes)\//i, (match) => `/shop-archive/${match.replace(/^\/+/, "")}`);
 }
 
+function rewriteNavigationUrl(value: string) {
+  if (!value || /^(?:#|mailto:|tel:|javascript:|data:)/i.test(value)) return value;
+
+  let next = value;
+
+  if (/^https?:\/\/shop\.resetclinic\.org(?:\/|$)/i.test(next)) {
+    const rest = next.replace(/^https?:\/\/shop\.resetclinic\.org\/?/i, "");
+    next = `/shop/${rest}`;
+  } else if (
+    next.startsWith("/") &&
+    !next.startsWith("/shop/") &&
+    next !== "/shop" &&
+    !next.startsWith("/shop-archive/") &&
+    !next.startsWith("/shop-media/") &&
+    !next.startsWith("/_next/") &&
+    !next.startsWith("/wp-content/") &&
+    !next.startsWith("/wp-includes/")
+  ) {
+    next = `/shop${next}`;
+  }
+
+  // Browser-saved pages contain WordPress links such as
+  // product-category/hair/index.html. Next routes are canonical directories.
+  next = next.replace(/index\.html(?=([?#].*)?$)/i, "");
+  return next || "./";
+}
+
 function rewriteMarkup(html: string) {
   let result = html;
 
-  // Preserve the exact downloaded Elementor/Vamtam markup and CSS, but never
-  // execute the old WordPress/WooCommerce runtime scripts.
+  // Keep the downloaded Elementor/Vamtam document and CSS intact, but never
+  // execute the old WordPress/WooCommerce runtime scripts. The shop now runs
+  // inside Next.js and those scripts otherwise try to call a dead WP backend.
   result = result.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   result = result.replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
 
@@ -43,26 +71,46 @@ function rewriteMarkup(html: string) {
     return `href=${quote}${rewriteAssetUrl(value)}${quote}`;
   });
 
-  // On Vercel previews use /shop/*; middleware exposes these as clean URLs on
-  // shop.resetclinic.org after deployment.
-  result = result.replace(/\bhref=(['"])https?:\/\/shop\.resetclinic\.org(?:\/([^'"]*))?\1/gi, (_match, quote, rest = "") => {
-    const suffix = String(rest).replace(/^\/+/, "");
-    return `href=${quote}/shop/${suffix}${quote}`;
-  });
-
   result = result.replace(/\b(src|poster|href)=(['"])(\.\.?\/)*(wp-content|wp-includes)\/([^'"]+)\2/gi, (_match, attr, quote, _dots, root, rest) => {
     return `${attr}=${quote}/shop-archive/${root}/${rest}${quote}`;
   });
 
-  // CSS from the browser save can contain root-relative WordPress media URLs.
   result = result.replace(/url\((['"]?)\/(wp-content|wp-includes)\/([^)'"\s]+)\1\)/gi, (_match, quote, root, rest) => {
     return `url(${quote}/shop-archive/${root}/${rest}${quote})`;
   });
 
+  // Rewrite every navigation/form URL after media URLs have been handled.
+  // This fixes both clean WordPress URLs and browser-saved */index.html links.
+  result = result.replace(/\b(href|action)=(['"])([^'"]*)\2/gi, (_match, attr, quote, value) => {
+    return `${attr}=${quote}${rewriteNavigationUrl(value)}${quote}`;
+  });
+
+  // The old theme hides the native mouse cursor because WordPress JS renders a
+  // custom cursor. That JS is intentionally removed above, so restore the
+  // browser cursor explicitly.
+  const cursorFix = "<style id=\"reset-next-cursor-fix\">html,body,body *,a,button,input,select,textarea{cursor:auto!important}a,button,[role=\"button\"],input[type=\"submit\"]{cursor:pointer!important}</style>";
+  if (/<\/head>/i.test(result)) result = result.replace(/<\/head>/i, `${cursorFix}</head>`);
+  else result = `${cursorFix}${result}`;
+
   return result;
 }
 
-export async function loadLegacyShopDocument() {
-  const source = await readFile(path.join(ARCHIVE_ROOT, "index.html"), "utf8");
+function resolveDocumentPath(segments: string[] = []) {
+  const safeSegments = segments
+    .map((segment) => decodeURIComponent(segment).trim())
+    .filter(Boolean)
+    .filter((segment) => segment !== "." && segment !== ".." && !segment.includes("/") && !segment.includes("\\"));
+
+  if (safeSegments.at(-1)?.toLowerCase() === "index.html") safeSegments.pop();
+
+  const relative = safeSegments.length ? path.join(...safeSegments, "index.html") : "index.html";
+  const resolved = path.resolve(ARCHIVE_ROOT, relative);
+  const root = path.resolve(ARCHIVE_ROOT);
+  if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) throw new Error("Invalid shop archive path");
+  return resolved;
+}
+
+export async function loadLegacyShopDocument(segments: string[] = []) {
+  const source = await readFile(resolveDocumentPath(segments), "utf8");
   return rewriteMarkup(source);
 }

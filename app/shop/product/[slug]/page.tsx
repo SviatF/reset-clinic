@@ -5,8 +5,7 @@ import { AddToCart } from "../../../../components/shop/AddToCart";
 import { ProductCard } from "../../../../components/shop/ProductCard";
 import { SHOP_PRODUCTS, formatShopPrice, getShopProduct } from "../../../../lib/shop/catalog";
 
-export const dynamicParams = false;
-export function generateStaticParams() { return SHOP_PRODUCTS.map(({ slug }) => ({ slug })); }
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

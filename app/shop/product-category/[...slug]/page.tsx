@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "../../../../components/shop/ProductCard";
-import { SHOP_CATEGORIES, getProductsByCategory, getShopCategory } from "../../../../lib/shop/catalog";
+import { getProductsByCategory, getShopCategory } from "../../../../lib/shop/catalog";
 
-export const dynamicParams = false;
-export function generateStaticParams() { return Object.keys(SHOP_CATEGORIES).map((key) => ({ slug: key.split("/") })); }
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const { slug } = await params;
