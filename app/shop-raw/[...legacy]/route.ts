@@ -22,7 +22,10 @@ export async function GET(request: Request, { params }: Context) {
     // Until the compact archive is present, keep the current native Next.js
     // product/category pages available instead of hard-failing the storefront.
     const fallback = new URL(request.url);
-    fallback.pathname = `/shop/${legacy.filter((part) => part.toLowerCase() !== "index.html").join("/")}/`.replace(/\/+/g, "/");
+    const currentPath = fallback.pathname;
+    const previewPrefix = currentPath.startsWith("/shop/") ? "/shop" : "";
+    const cleanParts = legacy.filter((part) => part.toLowerCase() !== "index.html");
+    fallback.pathname = `${previewPrefix}/${cleanParts.join("/")}/`.replace(/\/+/g, "/");
     fallback.searchParams.set("native", "1");
     return NextResponse.redirect(fallback, 307);
   }
