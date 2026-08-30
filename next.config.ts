@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/shop": ["./shop.resetclinic.org 3/index.html"],
     "/shop/[...legacy]": ["./shop.resetclinic.org 3/**/*"],
+    "/shop-raw/[...legacy]": ["./shop.resetclinic.org 3/index.html", "./shop.resetclinic.org 3/shop-pages-compact.br"],
     "/shop-archive/[...path]": ["./shop.resetclinic.org 3/**/*"],
     "/shop-media/products/[slug]": ["./shop.resetclinic.org 3/wp-content/uploads/**/*"],
   },
