@@ -55,10 +55,21 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const host = primaryHost(request);
 
+  // Browser-saved shop pages link to */index.html. Canonicalize those URLs before
+  // route matching so both Vercel previews and the real shop subdomain work.
+  if (/\/index\.html$/i.test(pathname)) {
+    const clean = request.nextUrl.clone();
+    clean.pathname = pathname.replace(/index\.html$/i, "");
+    return NextResponse.redirect(clean, 308);
+  }
+
   // The shop is one Next.js application but a completely isolated route tree.
   // Visitors on shop.resetclinic.org see clean URLs; internally they render /shop/*.
   if (host && SHOP_HOSTS.has(host)) {
-    if (pathname.startsWith("/shop-media/")) return NextResponse.next();
+    // These are internal media endpoints used by the archived 1:1 shop markup.
+    // They must stay outside the /shop rewrite or CSS/images/fonts will 404.
+    if (pathname.startsWith("/shop-media/") || pathname.startsWith("/shop-archive/")) return NextResponse.next();
+
     if (pathname === "/shop" || pathname.startsWith("/shop/")) {
       const clean = request.nextUrl.clone();
       clean.pathname = pathname === "/shop" ? "/" : pathname.slice(5) || "/";
