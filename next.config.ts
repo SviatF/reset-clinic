@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   productionBrowserSourceMaps: false,
   outputFileTracingIncludes: {
+    "/shop-archive/[...path]": ["./shop.resetclinic.org 3/**/*"],
     "/shop-media/products/[slug]": ["./shop.resetclinic.org 3/wp-content/uploads/**/*"],
   },
   experimental: {
