@@ -1,7 +1,18 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { brotliDecompressSync } from "node:zlib";
 
 const ARCHIVE_ROOT = path.join(process.cwd(), "shop.resetclinic.org 3");
+const COMPACT_ARCHIVE = path.join(ARCHIVE_ROOT, "shop-pages-compact.br");
+
+type CompactShopPage = {
+  title: string;
+  bodyClass: string;
+  styles: string;
+  main: string;
+};
+
+let compactArchivePromise: Promise<Record<string, CompactShopPage>> | null = null;
 
 function rewriteAssetUrl(value: string) {
   if (!value) return value;
@@ -31,18 +42,13 @@ function rewriteNavigationUrl(value: string) {
     next = `/shop${next}`;
   }
 
-  // Browser-saved pages contain WordPress links such as
-  // product-category/hair/index.html. Next routes are canonical directories.
   next = next.replace(/index\.html(?=([?#].*)?$)/i, "");
   return next || "./";
 }
 
-function rewriteMarkup(html: string) {
+export function rewriteLegacyShopMarkup(html: string) {
   let result = html;
 
-  // Keep the downloaded Elementor/Vamtam document and CSS intact, but never
-  // execute the old WordPress/WooCommerce runtime scripts. The shop now runs
-  // inside Next.js and those scripts otherwise try to call a dead WP backend.
   result = result.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   result = result.replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, "");
 
@@ -79,16 +85,29 @@ function rewriteMarkup(html: string) {
     return `url(${quote}/shop-archive/${root}/${rest}${quote})`;
   });
 
-  // Rewrite every navigation/form URL after media URLs have been handled.
-  // This fixes both clean WordPress URLs and browser-saved */index.html links.
   result = result.replace(/\b(href|action)=(['"])([^'"]*)\2/gi, (_match, attr, quote, value) => {
     return `${attr}=${quote}${rewriteNavigationUrl(value)}${quote}`;
   });
 
-  // The old theme hides the native mouse cursor because WordPress JS renders a
-  // custom cursor. That JS is intentionally removed above, so restore the
-  // browser cursor explicitly.
-  const cursorFix = "<style id=\"reset-next-cursor-fix\">html,body,body *,a,button,input,select,textarea{cursor:auto!important}a,button,[role=\"button\"],input[type=\"submit\"]{cursor:pointer!important}</style>";
+  // Vamtam hides the native pointer when these classes are present and relies
+  // on JavaScript to render #mouseDot/#mouseCircle. The legacy JS is removed,
+  // therefore the classes have to go as well.
+  result = result.replace(/(<body\b[^>]*\bclass=(['"]))(.*?)(\2)/i, (_match, prefix, _quote, classes, suffix) => {
+    const clean = classes
+      .split(/\s+/)
+      .filter((name: string) => name && name !== "has-mouse-dot" && name !== "has-mouse-circle")
+      .join(" ");
+    return `${prefix}${clean}${suffix}`;
+  });
+
+  const cursorFix = [
+    '<style id="reset-next-cursor-fix">',
+    'html,body,body *{cursor:default!important}',
+    'a,button,[role="button"],label,select,summary,input[type="button"],input[type="submit"],input[type="reset"]{cursor:pointer!important}',
+    'input,textarea{cursor:text!important}',
+    '#mouseDot,#mouseCircle{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important}',
+    '</style>',
+  ].join("");
   if (/<\/head>/i.test(result)) result = result.replace(/<\/head>/i, `${cursorFix}</head>`);
   else result = `${cursorFix}${result}`;
 
@@ -110,7 +129,66 @@ function resolveDocumentPath(segments: string[] = []) {
   return resolved;
 }
 
+function replaceMainElement(shell: string, replacement: string) {
+  const startMatch = /<div\b[^>]*\bid=(['"])main\1[^>]*>/i.exec(shell);
+  if (!startMatch || startMatch.index == null) throw new Error("Archive shell main element not found");
+
+  const start = startMatch.index;
+  const tags = /<\/?div\b[^>]*>/gi;
+  tags.lastIndex = start;
+  let depth = 0;
+  let end = -1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tags.exec(shell))) {
+    if (/^<\/div/i.test(match[0])) depth -= 1;
+    else depth += 1;
+    if (depth === 0) {
+      end = tags.lastIndex;
+      break;
+    }
+  }
+
+  if (end === -1) throw new Error("Archive shell main element is malformed");
+  return `${shell.slice(0, start)}${replacement}${shell.slice(end)}`;
+}
+
+async function loadCompactArchive() {
+  if (!compactArchivePromise) {
+    compactArchivePromise = readFile(COMPACT_ARCHIVE)
+      .then((compressed) => brotliDecompressSync(compressed).toString("utf8"))
+      .then((json) => JSON.parse(json) as Record<string, CompactShopPage>)
+      .catch((error) => {
+        compactArchivePromise = null;
+        throw error;
+      });
+  }
+  return compactArchivePromise;
+}
+
+export async function loadCompactShopDocument(segments: string[]) {
+  const normalized = segments
+    .map((segment) => decodeURIComponent(segment).trim())
+    .filter(Boolean);
+  if (normalized.at(-1)?.toLowerCase() === "index.html") normalized.pop();
+
+  const key = normalized.join("/");
+  const pages = await loadCompactArchive();
+  const page = pages[key];
+  if (!page) throw new Error(`Compact shop page not found: ${key}`);
+
+  let shell = await readFile(path.join(ARCHIVE_ROOT, "index.html"), "utf8");
+  shell = replaceMainElement(shell, page.main);
+  shell = shell.replace(/<title\b[^>]*>[\s\S]*?<\/title>/i, `<title>${page.title}</title>`);
+  if (page.bodyClass) {
+    shell = shell.replace(/(<body\b[^>]*\bclass=(['"]))(.*?)(\2)/i, `$1${page.bodyClass}$4`);
+  }
+  if (page.styles) shell = shell.replace(/<\/head>/i, `${page.styles}</head>`);
+
+  return rewriteLegacyShopMarkup(shell);
+}
+
 export async function loadLegacyShopDocument(segments: string[] = []) {
   const source = await readFile(resolveDocumentPath(segments), "utf8");
-  return rewriteMarkup(source);
+  return rewriteLegacyShopMarkup(source);
 }
