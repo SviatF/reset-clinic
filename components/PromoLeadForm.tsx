@@ -11,6 +11,16 @@ declare global {
 
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
 
+type PromoLeadFormProps = {
+  service: string;
+  slug: string;
+  formId?: string;
+  compact?: boolean;
+  extraFields?: Record<string, unknown>;
+  buttonLabel?: string;
+  note?: string;
+};
+
 function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
   const params = new URLSearchParams(window.location.search);
   return params.get(key) ?? sessionStorage.getItem(`reset_${key}`) ?? undefined;
@@ -22,7 +32,15 @@ function track(event: string, payload: Record<string, unknown>) {
   if (typeof window.fbq === "function") window.fbq("trackCustom", event, payload);
 }
 
-export default function PromoLeadForm({ service, slug, formId = "promo-landing", compact = false }: { service: string; slug: string; formId?: string; compact?: boolean }) {
+export default function PromoLeadForm({
+  service,
+  slug,
+  formId = "promo-landing",
+  compact = false,
+  extraFields,
+  buttonLabel = "Записатися →",
+  note = "Адміністратор RESÉT clinic зв’яжеться з вами, уточнить запит і запропонує зручний час.",
+}: PromoLeadFormProps) {
   const startedAt = useRef(Date.now());
   const [status, setStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +79,11 @@ export default function PromoLeadForm({ service, slug, formId = "promo-landing",
           ttclid: trackingValue("ttclid"),
           startedAt: startedAt.current,
           website,
-          fields: { promo_service: slug, promo_surface: formId },
+          fields: {
+            promo_service: slug,
+            promo_surface: formId,
+            ...(extraFields ?? {}),
+          },
         }),
       });
       if (!response.ok) throw new Error(`Lead API ${response.status}`);
@@ -79,8 +101,8 @@ export default function PromoLeadForm({ service, slug, formId = "promo-landing",
       <label><span>Ваше ім’я</span><input name="name" autoComplete="name" maxLength={120} required placeholder="Ім’я" /></label>
       <label><span>Номер телефону</span><input name="phone" type="tel" autoComplete="tel" inputMode="tel" maxLength={40} required placeholder="+380" /></label>
       <label className="promo-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
-      <button type="submit" disabled={submitting}>{submitting ? "Надсилаємо…" : "Записатися →"}</button>
-      <p className="promo-form-note">Адміністратор RESÉT clinic зв’яжеться з вами, уточнить запит і запропонує зручний час.</p>
+      <button type="submit" disabled={submitting}>{submitting ? "Надсилаємо…" : buttonLabel}</button>
+      <p className="promo-form-note">{note}</p>
       <div className="promo-form-status" role="status" aria-live="polite">{status}</div>
     </form>
   );
