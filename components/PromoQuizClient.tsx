@@ -4,13 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { PromoServiceConfig } from "../lib/promo-data";
-
-declare global {
-  interface Window {
-    dataLayer?: Array<Record<string, unknown>>;
-    fbq?: (...args: unknown[]) => void;
-  }
-}
+import { trackLeadConversion, trackPromoCustomEvent } from "../lib/marketing-pixels";
 
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
 
@@ -20,9 +14,7 @@ function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
 }
 
 function track(event: string, payload: Record<string, unknown>) {
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ event, ...payload });
-  if (typeof window.fbq === "function") window.fbq("trackCustom", event, payload);
+  trackPromoCustomEvent(event, payload);
 }
 
 export default function PromoQuizClient({ config }: { config: PromoServiceConfig }) {
@@ -158,7 +150,15 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
         }),
       });
       if (!response.ok) throw new Error(`Lead API ${response.status}`);
+
       track("promo_quiz_lead_success", { promo_service: config.slug, source: entrySource });
+      trackLeadConversion({
+        content_name: config.serviceName,
+        form_id: `promo-quiz-${config.slug}`,
+        conversion_source: "promo_quiz_success",
+        promo_entry_source: entrySource,
+      });
+
       window.location.assign("/thank-you/");
     } catch (error) {
       console.error("Promo quiz submit failed", error);
