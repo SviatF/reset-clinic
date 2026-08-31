@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   experimental: {
     webpackMemoryOptimizations: true,
     serverSourceMaps: false,
+    cpus: 1,
+    workerThreads: false,
   },
   async redirects() {
     return [
