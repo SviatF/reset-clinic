@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getPublishedPostsByCategory } from "../lib/blog";
 import { blogCategoryPath, getBlogCategory } from "../lib/blog-categories";
@@ -14,6 +15,7 @@ import {
 import { jsonLd } from "../lib/seo";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 import type { SeoLanding } from "../lib/seo-pages";
+import { seoDoctorSlugsForLanding } from "../lib/seo-priority-pages";
 import { seoLandingVisual } from "../lib/seo-visuals";
 
 const MAIN_NAV = [
@@ -159,7 +161,12 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
     "@graph": baseSchema["@graph"].filter((node) => node["@type"] !== "FAQPage"),
   };
   const children = directChildren(landing);
-  const doctors = DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
+  const priorityDoctorSlugs = seoDoctorSlugsForLanding(landing.path);
+  const doctors = priorityDoctorSlugs
+    ? priorityDoctorSlugs
+        .map((slug) => DOCTORS.find((doctor) => doctor.slug === slug))
+        .filter((doctor): doctor is (typeof DOCTORS)[number] => Boolean(doctor))
+    : DOCTORS.filter((doctor) => doctor.relatedPaths.includes(landing.path));
   const reviewer = reviewerForLanding(landing);
   const priceHref = priceHrefForLanding(landing);
   const priceRows = getPublishedPricesForLanding(landing.path, 5);
@@ -203,7 +210,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
             </div>
 
             <figure className="seo-hero-visual">
-              <img src={heroVisual.src} alt={heroVisual.alt} width={2446} height={1314} fetchPriority="high" decoding="async" />
+              <Image src={heroVisual.src} alt={heroVisual.alt} fill sizes="(max-width: 900px) 100vw, 46vw" priority style={{ objectFit: "cover" }} />
               <figcaption className="seo-hero-caption">
                 <span>RESET Clinic · Львів</span>
                 <strong>{intentLabel(landing)}</strong>
@@ -316,7 +323,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
             <div className="seo-doctor-grid">
               {doctors.map((doctor) => (
                 <Link className="seo-doctor-card" href={doctorPath(doctor)} key={doctor.slug}>
-                  <div className="seo-doctor-photo"><img src={doctor.image} alt={doctor.name} loading="lazy" decoding="async" /></div>
+                  <div className="seo-doctor-photo"><Image src={doctor.image} alt={`${doctor.name} — ${doctor.role}`} width={296} height={380} sizes="(max-width: 700px) 120px, 148px" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} /></div>
                   <div><span>{doctor.role}</span><strong>{doctor.name}</strong><small>Профіль лікаря →</small></div>
                 </Link>
               ))}
