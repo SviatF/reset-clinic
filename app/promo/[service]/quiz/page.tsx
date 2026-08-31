@@ -14,6 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
   return {
     title: `${config.serviceName}: швидкий підбір | RESÉT clinic`,
     description: config.quizLead,
+    alternates: { canonical: config.canonicalPath },
     robots: { index: false, follow: true },
   };
 }
