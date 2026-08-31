@@ -47,9 +47,10 @@ const updates = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD_VALUE,
   ADMIN_SESSION_SECRET: process.env.ADMIN_SESSION_SECRET_VALUE,
 };
+const quote = (value = '') => JSON.stringify(value);
 let text = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
 for (const [key, value] of Object.entries(updates)) {
-  const line = `${key}=${value}`;
+  const line = `${key}=${quote(value)}`;
   const re = new RegExp(`^${key}=.*$`, 'm');
   if (re.test(text)) text = text.replace(re, line);
   else text += `${text && !text.endsWith('\n') ? '\n' : ''}${line}\n`;
