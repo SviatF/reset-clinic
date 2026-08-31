@@ -122,8 +122,8 @@ export const ALL_SEO_LANDINGS = [
   .map(enhanceStructuralLinks)
   .map(applyMarketingCopy)
   .map(applyExtraMarketingCopy)
-  .map(sanitizeSeoLandingPublicCopy)
   .map(applyPrioritySeoEnhancements)
+  .map(sanitizeSeoLandingPublicCopy)
   .map(normalizeHeadingTypography);
 
 export function resolveSeoLanding(path: string) {
