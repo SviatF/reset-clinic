@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { DOCTORS, doctorPath } from "../lib/doctors";
 import { getPublishedPricesForLanding } from "../lib/price-data";
+import { PROMO_DOCTOR_SLUGS } from "../lib/promo-doctor-map";
 import type { PromoServiceConfig } from "../lib/promo-data";
 import PromoCasesSection from "./PromoCasesSection";
 import PromoConversionLayer from "./PromoConversionLayer";
@@ -26,7 +27,10 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
     ...published.map(({ service, price }) => ({ service, price })),
     ...(config.manualPriceRows ?? []),
   ]).slice(0, 8);
-  const doctors = DOCTORS.filter((doctor) => config.doctorSlugs.includes(doctor.slug));
+  const doctors = PROMO_DOCTOR_SLUGS[config.slug].flatMap((slug) => {
+    const doctor = DOCTORS.find((item) => item.slug === slug);
+    return doctor ? [doctor] : [];
+  });
   const conversionDoctor = doctors[0]
     ? { name: doctors[0].name, role: doctors[0].role, image: doctors[0].image }
     : null;
