@@ -1,11 +1,40 @@
 import type { Metadata } from "next";
 import PromoHubClient, { type PromoHubCard } from "../../components/PromoHubClient";
+import { DEFAULT_OG_IMAGE, SITE_NAME } from "../../lib/seo";
+
+const META_TITLE = "Оберіть процедуру за вашим запитом | RESÉT clinic";
+const META_DESCRIPTION = "Навігатор RESÉT clinic у Львові: ботулінотерапія, збільшення губ, IPL, чистка обличчя, БІОПАТИД і нутриціологія. Оберіть запит або пройдіть короткий підбір.";
 
 export const metadata: Metadata = {
-  title: "Оберіть свій запит | RESÉT clinic",
-  description: "Інтерактивний навігатор RESÉT clinic: оберіть, що хочете змінити, і перейдіть до відповідного напряму або короткого квізу.",
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   alternates: { canonical: "/promo/" },
-  robots: { index: false, follow: true },
+  robots: {
+    index: false,
+    follow: true,
+    googleBot: {
+      index: false,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "uk_UA",
+    url: "/promo/",
+    siteName: SITE_NAME,
+    title: META_TITLE,
+    description: META_DESCRIPTION,
+    images: [{ url: DEFAULT_OG_IMAGE, alt: "RESÉT clinic у Львові — вибір процедур" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: META_TITLE,
+    description: META_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
 };
 
 const cards: PromoHubCard[] = [
