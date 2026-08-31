@@ -92,7 +92,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','GTM-THZNMKV3');`}
         </Script>
 
-        <Script id="meta-pixel" strategy="beforeInteractive">
+        <Script id="meta-pixel-general" strategy="beforeInteractive">
           {`!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -101,7 +101,7 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '1027613629595915');
+fbq('init', '1847773375994923');
 fbq('track', 'PageView');`}
         </Script>
       </head>
@@ -120,7 +120,7 @@ fbq('track', 'PageView');`}
             height="1"
             width="1"
             style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=1027613629595915&ev=PageView&noscript=1"
+            src="https://www.facebook.com/tr?id=1847773375994923&ev=PageView&noscript=1"
             alt=""
           />
         </noscript>
