@@ -1,43 +1,92 @@
+import type { Metadata } from "next";
 import type { SeoLanding } from "./seo-pages";
 import { hasMarketingCopy } from "./seo-marketing-copy";
 import { hasExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import {
   buildCompliantLandingJsonLd as baseBuildCompliantLandingJsonLd,
+  buildCompliantLandingMetadata as baseBuildCompliantLandingMetadata,
   supplementalLandingSections as baseSupplementalLandingSections,
 } from "./seo-compliance-core";
-import { SITE_URL } from "./seo";
+import { SITE_NAME, SITE_URL } from "./seo";
+import { seoLandingVisual } from "./seo-visuals";
 
 export {
   isSeoLandingIndexable,
   displayH1ForLanding,
-  buildCompliantLandingMetadata,
   reviewerForLanding,
   priceHrefForLanding,
   blogCategoryForLanding,
 } from "./seo-compliance-core";
+
+export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
+  const base = baseBuildCompliantLandingMetadata(landing);
+  const visual = seoLandingVisual(landing.path);
+
+  return {
+    ...base,
+    openGraph: {
+      ...(base.openGraph ?? {}),
+      type: "website",
+      locale: "uk_UA",
+      url: landing.path,
+      siteName: SITE_NAME,
+      title: landing.title,
+      description: landing.description,
+      images: [{ url: visual.src, alt: visual.alt }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: landing.title,
+      description: landing.description,
+      images: [visual.src],
+    },
+  };
+}
 
 export function buildCompliantLandingJsonLd(landing: SeoLanding) {
   const schema = baseBuildCompliantLandingJsonLd(landing) as {
     "@context": string;
     "@graph": Record<string, unknown>[];
   };
-
-  if (landing.type !== "procedure") return schema;
-
+  const visual = seoLandingVisual(landing.path);
+  const imageUrl = `${SITE_URL}${visual.src}`;
   const url = `${SITE_URL}${landing.path}`;
+
+  const graph = schema["@graph"].map((node) => {
+    if (node["@id"] === `${url}#webpage`) {
+      return {
+        ...node,
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: imageUrl,
+          caption: visual.alt,
+        },
+      };
+    }
+
+    if (node["@id"] === `${url}#procedure` || node["@id"] === `${url}#service`) {
+      return { ...node, image: imageUrl };
+    }
+
+    return node;
+  });
+
+  if (landing.type !== "procedure") return { ...schema, "@graph": graph };
+
   const serviceId = `${url}#service`;
-  if (schema["@graph"].some((node) => node["@id"] === serviceId)) return schema;
+  if (graph.some((node) => node["@id"] === serviceId)) return { ...schema, "@graph": graph };
 
   return {
     ...schema,
     "@graph": [
-      ...schema["@graph"],
+      ...graph,
       {
         "@type": "Service",
         "@id": serviceId,
         name: landing.h1,
         description: landing.description,
         url,
+        image: imageUrl,
         provider: { "@id": `${SITE_URL}/#clinic` },
         areaServed: { "@type": "City", name: "Львів" },
         serviceType: landing.h1,
