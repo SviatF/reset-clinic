@@ -2,6 +2,11 @@ import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { saveLead, updateLead, type Lead } from "../../../lib/admin-data";
 import { crmErrorMessage, dispatchLeadToCrm, isCrmEnabled } from "../../../lib/crm-dispatch";
+import {
+  dispatchLeadToTelegram,
+  isTelegramLeadNotificationsEnabled,
+  telegramErrorMessage,
+} from "../../../lib/telegram-leads";
 
 type LeadPayload = {
   name?: string;
@@ -60,7 +65,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
   }
 
-  const crmEnabled = await isCrmEnabled();
+  const [crmEnabled, telegramEnabled] = await Promise.all([
+    isCrmEnabled(),
+    Promise.resolve(isTelegramLeadNotificationsEnabled()),
+  ]);
   const now = new Date().toISOString();
   const lead: Lead = {
     id: randomUUID(),
@@ -86,7 +94,13 @@ export async function POST(request: NextRequest) {
     ttclid: text(payload.ttclid, 500),
     ip_hash: ipHash(request),
     user_agent: text(request.headers.get("user-agent"), 1000),
-    payload: payload.fields ?? {},
+    payload: {
+      ...(payload.fields ?? {}),
+      telegram_status: telegramEnabled ? "pending" : "disabled",
+      telegram_error: null,
+      telegram_message_id: null,
+      telegram_sent_at: null,
+    },
     crm_status: crmEnabled ? "pending" : "disabled",
     crm_error: null,
     crm_external_id: null,
@@ -97,9 +111,38 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error(
       "lead_save_failed",
-      error instanceof Error ? error.message : "Unknown Blob storage error",
+      error instanceof Error ? error.message : "Unknown lead storage error",
     );
     return NextResponse.json({ ok: false, error: "lead_save_failed" }, { status: 502 });
+  }
+
+  // Notification happens only after the lead has been persisted. A Telegram outage
+  // must never lose or reject a valid lead.
+  if (telegramEnabled) {
+    try {
+      const result = await dispatchLeadToTelegram(lead);
+      await updateLead(lead.id, {
+        payload: {
+          ...lead.payload,
+          telegram_status: result.status,
+          telegram_error: null,
+          telegram_message_id: result.messageId,
+          telegram_sent_at: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      const message = telegramErrorMessage(error);
+      console.error("lead_telegram_failed", lead.id, message);
+      await updateLead(lead.id, {
+        payload: {
+          ...lead.payload,
+          telegram_status: "failed",
+          telegram_error: message,
+          telegram_message_id: null,
+          telegram_sent_at: null,
+        },
+      });
+    }
   }
 
   if (crmEnabled) {
