@@ -7,8 +7,23 @@ import {
   verifyAdminCredentials,
 } from "../../../../lib/admin-auth";
 
-function loginUrl(request: NextRequest, error?: string) {
-  const url = new URL("/admin/login/", request.url);
+function firstForwardedValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || "";
+}
+
+function requestOrigin(request: NextRequest) {
+  const forwardedHost = firstForwardedValue(request.headers.get("x-forwarded-host"));
+  const host = forwardedHost || request.headers.get("host")?.trim();
+  const forwardedProto = firstForwardedValue(request.headers.get("x-forwarded-proto"));
+  const fallbackProto = request.nextUrl.protocol.replace(":", "");
+  const proto = forwardedProto === "http" || forwardedProto === "https" ? forwardedProto : fallbackProto;
+
+  if (host) return `${proto}://${host}`;
+  return request.nextUrl.origin;
+}
+
+function adminUrl(request: NextRequest, pathname: string, error?: string) {
+  const url = new URL(pathname, `${requestOrigin(request)}/`);
   if (error) url.searchParams.set("error", error);
   return url;
 }
@@ -19,16 +34,16 @@ export async function POST(request: NextRequest) {
   const password = String(form.get("password") ?? "");
 
   if (!username || !password) {
-    return NextResponse.redirect(loginUrl(request, "missing_credentials"), 303);
+    return NextResponse.redirect(adminUrl(request, "/admin/login/", "missing_credentials"), 303);
   }
   if (!isAdminConfigured()) {
-    return NextResponse.redirect(loginUrl(request, "not_configured"), 303);
+    return NextResponse.redirect(adminUrl(request, "/admin/login/", "not_configured"), 303);
   }
   if (!verifyAdminCredentials(username, password)) {
-    return NextResponse.redirect(loginUrl(request, "invalid_credentials"), 303);
+    return NextResponse.redirect(adminUrl(request, "/admin/login/", "invalid_credentials"), 303);
   }
 
-  const response = NextResponse.redirect(new URL("/admin/", request.url), 303);
+  const response = NextResponse.redirect(adminUrl(request, "/admin/"), 303);
   response.cookies.set(SESSION_COOKIE, createAdminSessionToken(username), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
