@@ -9,6 +9,7 @@ import "../components/PremiumMotion.css";
 import "../components/PromoPages.css";
 import "../components/PromoWow.css";
 import "../components/PromoConversionLayer.css";
+import "../components/PromoQuizMobile.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
 import PremiumMotion from "../components/PremiumMotion";
