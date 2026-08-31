@@ -40,6 +40,29 @@ const CONSULTATION_VISUAL: SeoLandingVisual = {
   alt: "Консультація лікаря з пацієнткою в RESET Clinic",
 };
 
+const PRIORITY_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
+  "/cosmetology/injection/lip-contouring/": {
+    src: "/assets/img-landings/lips.webp",
+    alt: "Збільшення та контурна пластика губ у RESET Clinic у Львові",
+  },
+  "/nutrition/medical-weight-loss/": {
+    src: "/assets/img-landings/biobatud.webp",
+    alt: "Медична програма контролю ваги БІОПАТИД у RESET Clinic у Львові",
+  },
+  "/nutrition/nutritionist-lviv/": {
+    src: "/assets/img-landings/nutriciology.webp",
+    alt: "Консультація нутриціолога у RESET Clinic у Львові",
+  },
+  "/cosmetology/hardware/aquapure/": {
+    src: "/assets/img-landings/chystka-face.webp",
+    alt: "Чистка обличчя та AquaPure у RESET Clinic у Львові",
+  },
+  "/cosmetology/hardware/ipl/": {
+    src: "/assets/img-landings/irl.webp",
+    alt: "IPL обличчя у RESET Clinic у Львові",
+  },
+};
+
 const CONSULTATION_PATHS = new Set([
   "/dermatology/dermatologist-lviv/",
   "/dermatology/trichologist-lviv/",
@@ -53,6 +76,8 @@ const HOME_CARE_PATHS = new Set([
 ]);
 
 export function seoLandingVisual(path: string): SeoLandingVisual {
+  const priority = PRIORITY_VISUALS[path];
+  if (priority) return priority;
   if (path === "/cosmetology/") return COSMETOLOGY_INTERIOR_VISUAL;
   if (path.startsWith("/cosmetology/injection/")) return INJECTION_VISUAL;
   if (path.startsWith("/cosmetology/hardware/")) return HARDWARE_VISUAL;
