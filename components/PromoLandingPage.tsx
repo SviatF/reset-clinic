@@ -155,7 +155,7 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
       </section>
 
       <footer className="promo-footer">
-        <div className="promo-shell"><Link className="promo-brand promo-brand-footer" href="/"><Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} /></Link><div><span>Львів, вул. Кульпарківська, 93/2</span><a href="tel:+380932828888">+380 93 282 88 88</a></div><nav><Link href="/">Головна</Link><Link href="/price/">Ціни</Link><Link href="/doctors/">Лікарі</Link><Link href="/contacts/">Контакти</Link></nav></div>
+        <div className="promo-shell"><Link className="promo-brand promo-brand-footer" href="/"><Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} /></Link><div><span>Львів, вул. Кульпарківська, 93/2</span><a href="tel:+380932828888">+380 93 282 88 88</a></div><nav><Link href="/promo/">Усі напрямки</Link><Link href={config.canonicalPath}>Детально про {config.serviceName}</Link><Link href="/price/">Ціни</Link><Link href="/doctors/">Лікарі</Link><Link href="/contacts/">Контакти</Link></nav></div>
       </footer>
 
       <div className="promo-mobile-bar"><a href="#promo-form">Записатися</a><Link href={`/promo/${config.slug}/quiz/`}>3 питання →</Link></div>
