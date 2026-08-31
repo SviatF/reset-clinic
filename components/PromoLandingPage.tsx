@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DOCTORS, doctorPath } from "../lib/doctors";
 import { getPublishedPricesForLanding } from "../lib/price-data";
 import type { PromoServiceConfig } from "../lib/promo-data";
+import PromoConversionLayer from "./PromoConversionLayer";
 import PromoLeadForm from "./PromoLeadForm";
 
 function uniqPrices(rows: { service: string; price: string }[]) {
@@ -25,6 +26,9 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
     ...(config.manualPriceRows ?? []),
   ]).slice(0, 8);
   const doctors = DOCTORS.filter((doctor) => config.doctorSlugs.includes(doctor.slug));
+  const conversionDoctor = doctors[0]
+    ? { name: doctors[0].name, role: doctors[0].role, image: doctors[0].image }
+    : null;
 
   return (
     <main className={`promo-site promo-landing promo-theme-${config.slug}`}>
@@ -63,6 +67,8 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
           <div><span>03</span><strong>Контроль</strong><p>Пояснюємо очікуваний результат, відновлення та наступні кроки.</p></div>
         </div>
       </section>
+
+      <PromoConversionLayer config={config} doctor={conversionDoctor} />
 
       <section className="promo-pain-section">
         <div className="promo-shell">
