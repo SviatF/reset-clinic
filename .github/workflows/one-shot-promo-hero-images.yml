@@ -1,0 +1,56 @@
+name: One-shot promo hero image updater
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-promo-hero-images.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Update five promo hero images
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('lib/promo-data.ts')
+          text = path.read_text()
+
+          replacements = {
+              'lips': '/assets/img-landings/lips.webp',
+              'biopatid': '/assets/img-landings/biobatud.webp',
+              'nutrition': '/assets/img-landings/nutriciology.webp',
+              'facial-cleaning': '/assets/img-landings/chystka-face.webp',
+              'ipl-face': '/assets/img-landings/irl.webp',
+          }
+
+          for slug, image in replacements.items():
+              pattern = rf'(\n\s*(?:"?{re.escape(slug)}"?):\s*\{{.*?\n\s*heroImage:\s*")[^"]+("[,])'
+              text, count = re.subn(pattern, rf'\1{image}\2', text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f'Could not update heroImage for {slug}: {count}')
+
+          path.write_text(text)
+          PY
+      - name: Commit change
+        run: |
+          if git diff --quiet -- lib/promo-data.ts; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'SviatF'
+          git config user.email '85065470+SviatF@users.noreply.github.com'
+          git add lib/promo-data.ts
+          git commit -m 'Use dedicated hero imagery across promo funnels'
+          git push
