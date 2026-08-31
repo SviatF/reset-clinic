@@ -299,7 +299,7 @@ export default function PromoConversionLayer({ config, doctor }: { config: Promo
         </aside>
       ) : null}
 
-      {!overlay ? (
+      {!overlay && !nudgeVisible ? (
         <button className="promo-helper-fab" type="button" onClick={() => openQuiz("floating_helper")}>
           <span>?</span><b>Не знаю, що обрати</b>
         </button>
