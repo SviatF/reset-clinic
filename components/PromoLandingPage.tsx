@@ -68,7 +68,7 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
       <section className="promo-proof-strip" aria-label="Переваги RESÉT clinic">
         <div className="promo-shell promo-proof-grid">
           <div><span>01</span><strong>Лікарський підхід</strong><p>Рішення приймається після оцінки вашого запиту та стану.</p></div>
-          <div><span>02</span><strong>Не шаблон</strong><p>Протокол, параметри або обсяг підбираються індивідуально.</p></div>
+          <div><span>02</span><strong>{config.slug === "biopatid" ? "Індивідуальні рішення" : "Не шаблон"}</strong><p>{config.slug === "biopatid" ? "Протокол, параметри та обсяг визначаються персонально." : "Протокол, параметри або обсяг підбираються індивідуально."}</p></div>
           <div><span>03</span><strong>Контроль</strong><p>Пояснюємо очікуваний результат, відновлення та наступні кроки.</p></div>
         </div>
       </section>
