@@ -1,25 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const legacyPages: Record<string, string> = {
-  "5": "/", "286": "/price/", "295": "/doctors/", "328": "/contacts/",
-  "425": "/about/", "435": "/services/", "1064": "/thank-you/", "1073": "/booking/",
+  "5": "/",
+  "286": "/price/",
+  "295": "/doctors/",
+  "328": "/contacts/",
+  "425": "/about/",
+  "435": "/services/",
+  "1064": "/thank-you/",
+  "1073": "/booking/",
 };
 
 const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
 const NON_CANONICAL_ROBOTS = "noindex, follow";
 const SESSION_COOKIE = "rc_admin_session";
-const MAIN_HOSTS = new Set(["resetclinic.org", "www.resetclinic.org"]);
-const SHOP_HOSTS = new Set(["shop.resetclinic.org"]);
-const CANONICAL_HOSTS = new Set([...MAIN_HOSTS, ...SHOP_HOSTS]);
+const CANONICAL_HOSTS = new Set(["resetclinic.org", "www.resetclinic.org"]);
 
 function isPrivateRoute(pathname: string) {
-  return PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return PRIVATE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 function isProtectedAdmin(pathname: string) {
-  const adminPage = (pathname === "/admin" || pathname.startsWith("/admin/")) && !pathname.startsWith("/admin/login");
-  const adminApi = pathname.startsWith("/api/admin/") && !pathname.startsWith("/api/admin/login") && !pathname.startsWith("/api/admin/logout");
+  const adminPage =
+    (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+    !pathname.startsWith("/admin/login");
+  const adminApi =
+    pathname.startsWith("/api/admin/") &&
+    !pathname.startsWith("/api/admin/login") &&
+    !pathname.startsWith("/api/admin/logout");
   return adminPage || adminApi;
 }
 
@@ -30,13 +41,22 @@ function normalizeHost(value: string | null | undefined) {
   return first.replace(/^https?:\/\//, "").split("/")[0]?.split(":")[0] || null;
 }
 
-function requestHosts(request: NextRequest) {
-  return [request.headers.get("x-forwarded-host"), request.headers.get("x-original-host"), request.headers.get("host"), request.nextUrl.hostname]
-    .map(normalizeHost).filter((host): host is string => Boolean(host));
-}
+function isNonCanonicalHost(request: NextRequest) {
+  // Traditional Node hosts such as CityHost often sit behind a reverse proxy.
+  // In that setup request.nextUrl.hostname can be the internal proxy host/socket
+  // even though the visitor requested resetclinic.org. Trust the original-host
+  // forwarding headers first, then Host, and only then Next's parsed hostname.
+  const candidates = [
+    request.headers.get("x-forwarded-host"),
+    request.headers.get("x-original-host"),
+    request.headers.get("host"),
+    request.nextUrl.hostname,
+  ]
+    .map(normalizeHost)
+    .filter((host): host is string => Boolean(host));
 
-function primaryHost(request: NextRequest) { return requestHosts(request)[0] || null; }
-function isNonCanonicalHost(request: NextRequest) { return !requestHosts(request).some((host) => CANONICAL_HOSTS.has(host)); }
+  return !candidates.some((host) => CANONICAL_HOSTS.has(host));
+}
 
 function applyPrivateHeaders(response: NextResponse) {
   response.headers.set("X-Robots-Tag", PRIVATE_ROBOTS);
@@ -44,7 +64,12 @@ function applyPrivateHeaders(response: NextResponse) {
   response.headers.set("Pragma", "no-cache");
   return response;
 }
-function applyNonCanonicalHeaders(response: NextResponse) { response.headers.set("X-Robots-Tag", NON_CANONICAL_ROBOTS); return response; }
+
+function applyNonCanonicalHeaders(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", NON_CANONICAL_ROBOTS);
+  return response;
+}
+
 function loginRedirect(request: NextRequest) {
   const login = new URL("/admin/login/", request.url);
   const status = request.method === "GET" || request.method === "HEAD" ? 307 : 303;
@@ -52,67 +77,32 @@ function loginRedirect(request: NextRequest) {
 }
 
 export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
-  const host = primaryHost(request);
+  const legacyId =
+    request.nextUrl.searchParams.get("page_id") ?? request.nextUrl.searchParams.get("p");
 
-  // Normalize browser-saved WordPress URLs before Next.js route matching.
-  if (/\/index\.html$/i.test(pathname)) {
-    const clean = request.nextUrl.clone();
-    clean.pathname = pathname.replace(/index\.html$/i, "");
-    return NextResponse.redirect(clean, 308);
-  }
-
-  // The native Next.js category renders the complete category, so collapse old
-  // WooCommerce pagination URLs to the canonical category route.
-  if (pathname.includes("/product-category/") && /\/page\/\d+\/?$/i.test(pathname)) {
-    const clean = request.nextUrl.clone();
-    clean.pathname = pathname.replace(/\/page\/\d+\/?$/i, "/");
-    return NextResponse.redirect(clean, 308);
-  }
-
-  // shop.resetclinic.org and resetclinic.org are one deployment. The shop host
-  // exposes clean URLs, while internally every shop page is a real /shop/*
-  // App Router route. Do not route products/categories through archived HTML:
-  // that copy has no WooCommerce JS/runtime and therefore cannot be functional.
-  if (host && SHOP_HOSTS.has(host)) {
-    if (pathname.startsWith("/shop-media/") || pathname.startsWith("/shop-archive/") || pathname.startsWith("/_next/")) {
-      return NextResponse.next();
-    }
-
-    // Never expose the internal namespace on the shop subdomain.
-    if (pathname === "/shop" || pathname.startsWith("/shop/")) {
-      const clean = request.nextUrl.clone();
-      clean.pathname = pathname === "/shop" ? "/" : pathname.slice(5) || "/";
-      return NextResponse.redirect(clean, 308);
-    }
-
-    const internal = request.nextUrl.clone();
-    internal.pathname = pathname === "/" ? "/shop" : `/shop${pathname}`;
-    return NextResponse.rewrite(internal);
-  }
-
-  // On the main production domain never expose the internal /shop namespace.
-  if (host && MAIN_HOSTS.has(host) && (pathname === "/shop" || pathname.startsWith("/shop/"))) {
-    const target = new URL(request.url);
-    target.hostname = "shop.resetclinic.org";
-    target.pathname = pathname === "/shop" ? "/" : pathname.slice(5) || "/";
-    target.port = "";
-    return NextResponse.redirect(target, 308);
-  }
-
-  const legacyId = request.nextUrl.searchParams.get("page_id") ?? request.nextUrl.searchParams.get("p");
   if (legacyId && legacyPages[legacyId]) {
-    const url = request.nextUrl.clone(); url.pathname = legacyPages[legacyId]; url.search = "";
+    const url = request.nextUrl.clone();
+    url.pathname = legacyPages[legacyId];
+    url.search = "";
     const redirect = NextResponse.redirect(url, 308);
     return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(redirect) : redirect;
   }
 
-  if (isProtectedAdmin(pathname) && !request.cookies.get(SESSION_COOKIE)?.value) return loginRedirect(request);
+  const pathname = request.nextUrl.pathname;
+
+  // Middleware only performs the cheap presence gate. Every protected page/API
+  // verifies the HMAC-signed cookie server-side before reading private data.
+  if (isProtectedAdmin(pathname) && !request.cookies.get(SESSION_COOKIE)?.value) {
+    return loginRedirect(request);
+  }
+
   const response = NextResponse.next();
   if (isPrivateRoute(pathname)) return applyPrivateHeaders(response);
   return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(response) : response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|assets/|shop-media/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|assets/).*)",
+  ],
 };
