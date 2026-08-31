@@ -51,72 +51,41 @@ function loginRedirect(request: NextRequest) {
   return applyPrivateHeaders(NextResponse.redirect(login, status));
 }
 
-function isShopCatalogPath(pathname: string) {
-  return pathname === "/product" || pathname.startsWith("/product/") || pathname === "/product-category" || pathname.startsWith("/product-category/");
-}
-
-function isPreviewShopCatalogPath(pathname: string) {
-  return pathname === "/shop/product" || pathname.startsWith("/shop/product/") || pathname === "/shop/product-category" || pathname.startsWith("/shop/product-category/");
-}
-
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const host = primaryHost(request);
 
-  // Browser-saved pages link to */index.html. Canonicalize those URLs before
-  // route matching. This also prevents "index.html" from becoming a catch-all
-  // slug on Vercel preview deployments.
+  // Normalize browser-saved WordPress URLs before Next.js route matching.
   if (/\/index\.html$/i.test(pathname)) {
     const clean = request.nextUrl.clone();
     clean.pathname = pathname.replace(/index\.html$/i, "");
     return NextResponse.redirect(clean, 308);
   }
 
-  // Saved WooCommerce category archives include /page/1/ and /page/2/ URLs.
+  // The native Next.js category renders the complete category, so collapse old
+  // WooCommerce pagination URLs to the canonical category route.
   if (pathname.includes("/product-category/") && /\/page\/\d+\/?$/i.test(pathname)) {
     const clean = request.nextUrl.clone();
     clean.pathname = pathname.replace(/\/page\/\d+\/?$/i, "/");
     return NextResponse.redirect(clean, 308);
   }
 
-  // Vercel preview: /shop/product/* and /shop/product-category/* can exercise
-  // the same exact archived renderer used by the production shop subdomain.
-  if (isPreviewShopCatalogPath(pathname)) {
-    if (request.nextUrl.searchParams.get("native") === "1") {
-      const native = request.nextUrl.clone();
-      native.searchParams.delete("native");
-      return NextResponse.rewrite(native);
-    }
-    const archived = request.nextUrl.clone();
-    archived.pathname = pathname.replace(/^\/shop/, "/shop-raw");
-    return NextResponse.rewrite(archived);
-  }
-
-  // The shop is one Next.js application but an isolated route tree. Visitors
-  // on shop.resetclinic.org see clean URLs while the application renders /shop/*.
+  // shop.resetclinic.org and resetclinic.org are one deployment. The shop host
+  // exposes clean URLs, while internally every shop page is a real /shop/*
+  // App Router route. Do not route products/categories through archived HTML:
+  // that copy has no WooCommerce JS/runtime and therefore cannot be functional.
   if (host && SHOP_HOSTS.has(host)) {
-    if (pathname.startsWith("/shop-media/") || pathname.startsWith("/shop-archive/")) return NextResponse.next();
-
-    // Product/category pages are rendered from the compact copy of the original
-    // WooCommerce HTML. If that archive is absent, /shop-raw redirects back with
-    // ?native=1 and we intentionally fall back to the current Next.js catalog.
-    if (isShopCatalogPath(pathname)) {
-      if (request.nextUrl.searchParams.get("native") === "1") {
-        const native = request.nextUrl.clone();
-        native.pathname = `/shop${pathname}`;
-        native.searchParams.delete("native");
-        return NextResponse.rewrite(native);
-      }
-      const archived = request.nextUrl.clone();
-      archived.pathname = `/shop-raw${pathname}`;
-      return NextResponse.rewrite(archived);
+    if (pathname.startsWith("/shop-media/") || pathname.startsWith("/shop-archive/") || pathname.startsWith("/_next/")) {
+      return NextResponse.next();
     }
 
+    // Never expose the internal namespace on the shop subdomain.
     if (pathname === "/shop" || pathname.startsWith("/shop/")) {
       const clean = request.nextUrl.clone();
       clean.pathname = pathname === "/shop" ? "/" : pathname.slice(5) || "/";
       return NextResponse.redirect(clean, 308);
     }
+
     const internal = request.nextUrl.clone();
     internal.pathname = pathname === "/" ? "/shop" : `/shop${pathname}`;
     return NextResponse.rewrite(internal);
