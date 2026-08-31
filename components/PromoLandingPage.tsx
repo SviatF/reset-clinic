@@ -3,6 +3,7 @@ import Link from "next/link";
 import { DOCTORS, doctorPath } from "../lib/doctors";
 import { getPublishedPricesForLanding } from "../lib/price-data";
 import type { PromoServiceConfig } from "../lib/promo-data";
+import PromoCasesSection from "./PromoCasesSection";
 import PromoConversionLayer from "./PromoConversionLayer";
 import PromoLeadForm from "./PromoLeadForm";
 
@@ -97,6 +98,8 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
           </div>
         </div>
       </section>
+
+      <PromoCasesSection config={config} />
 
       <section className="promo-process-section">
         <div className="promo-shell">
