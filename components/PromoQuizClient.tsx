@@ -31,36 +31,78 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState("");
+  const [entrySource, setEntrySource] = useState("direct_quiz_url");
+  const [prefilledConcern, setPrefilledConcern] = useState("");
   const startedAt = useRef(Date.now());
+  const initializedFromUrl = useRef(false);
   const total = config.quizQuestions.length;
   const finished = started && step >= total;
   const question = config.quizQuestions[step];
   const progress = useMemo(() => (finished ? 100 : Math.max(8, ((step + 1) / total) * 100)), [finished, step, total]);
 
   useEffect(() => {
-    track("promo_quiz_view", { promo_service: config.slug });
-  }, [config.slug]);
+    if (initializedFromUrl.current) return;
+    initializedFromUrl.current = true;
+
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source") || "direct_quiz_url";
+    const concern = params.get("concern") || "";
+    const first = config.quizQuestions[0];
+    const validConcern = Boolean(first && concern && first.answers.includes(concern));
+
+    setEntrySource(source);
+
+    if (validConcern && first) {
+      setAnswers({ [first.id]: concern });
+      setPrefilledConcern(concern);
+      setStarted(true);
+      setStep(Math.min(1, total));
+      startedAt.current = Date.now();
+      track("promo_quiz_view", {
+        promo_service: config.slug,
+        source,
+        prefilled_concern: concern,
+        dedicated_url: true,
+      });
+      track("promo_quiz_start", {
+        promo_service: config.slug,
+        source,
+        prefilled_first_answer: true,
+      });
+      return;
+    }
+
+    track("promo_quiz_view", {
+      promo_service: config.slug,
+      source,
+      dedicated_url: true,
+    });
+  }, [config.quizQuestions, config.slug, total]);
 
   function start() {
     setStarted(true);
     setStep(0);
+    setAnswers({});
+    setPrefilledConcern("");
     startedAt.current = Date.now();
-    track("promo_quiz_start", { promo_service: config.slug });
+    track("promo_quiz_start", { promo_service: config.slug, source: entrySource });
   }
 
   function choose(answer: string) {
     if (!question) return;
     const next = { ...answers, [question.id]: answer };
     setAnswers(next);
+    if (step === 0) setPrefilledConcern(answer);
     track("promo_quiz_answer", {
       promo_service: config.slug,
       question_id: question.id,
       answer,
       question_number: step + 1,
+      source: entrySource,
     });
     if (step + 1 >= total) {
       setStep(total);
-      track("promo_quiz_contact_view", { promo_service: config.slug });
+      track("promo_quiz_contact_view", { promo_service: config.slug, source: entrySource });
     } else {
       setStep(step + 1);
     }
@@ -82,7 +124,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
     const website = String(data.get("website") || "").trim();
     setSubmitting(true);
     setStatus("");
-    track("promo_quiz_lead_submit", { promo_service: config.slug });
+    track("promo_quiz_lead_submit", { promo_service: config.slug, source: entrySource });
 
     try {
       const response = await fetch("/api/leads", {
@@ -108,13 +150,15 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
           website,
           fields: {
             promo_service: config.slug,
-            promo_surface: "quiz",
+            promo_surface: "dedicated_quiz_url",
+            promo_entry_source: entrySource,
+            prefilled_concern: prefilledConcern || undefined,
             quiz_answers: answers,
           },
         }),
       });
       if (!response.ok) throw new Error(`Lead API ${response.status}`);
-      track("promo_quiz_lead_success", { promo_service: config.slug });
+      track("promo_quiz_lead_success", { promo_service: config.slug, source: entrySource });
       window.location.assign("/thank-you/");
     } catch (error) {
       console.error("Promo quiz submit failed", error);
@@ -148,7 +192,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
             </>
           ) : finished ? (
             <>
-              <p className="promo-kicker">Готово · 3/3</p>
+              <p className="promo-kicker">Готово · {total}/{total}</p>
               <h1>{config.quizFinalTitle}</h1>
               <p className="promo-quiz-lead">{config.quizFinalLead}</p>
               <form className="promo-quiz-form" onSubmit={submit}>
@@ -162,6 +206,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
             </>
           ) : question ? (
             <>
+              {prefilledConcern && step > 0 ? <div className="promo-quiz-prefill">Ваш вибір: <strong>{prefilledConcern}</strong></div> : null}
               <p className="promo-kicker">Питання {step + 1} з {total}</p>
               <h1>{question.title}</h1>
               {question.helper ? <p className="promo-quiz-lead">{question.helper}</p> : null}
