@@ -84,10 +84,19 @@ export function trackPromoCustomEvent(
   if (promo) trackSingleCustom(promo.pixelId, eventName, payload);
 }
 
+export function wasLeadTrackedRecently(maxAgeMs = 120_000) {
+  const value = Number(window.sessionStorage.getItem(LEAD_FIRED_AT_KEY) || 0);
+  return value > 0 && Date.now() - value <= maxAgeMs;
+}
+
 export function trackLeadConversion(
   payload: Record<string, unknown> = {},
   pathname = window.location.pathname,
 ) {
+  // A successful API request and the form component can resolve in the same tick.
+  // Suppress only near-simultaneous duplicates; a later genuine lead can still count.
+  if (wasLeadTrackedRecently(1_500)) return false;
+
   const promo = ensurePromoPixelInitialized(pathname);
   const eventPayload = {
     lead_type: "website_application",
@@ -102,11 +111,7 @@ export function trackLeadConversion(
   if (promo) trackSingle(promo.pixelId, "Lead", eventPayload);
 
   window.sessionStorage.setItem(LEAD_FIRED_AT_KEY, String(Date.now()));
-}
-
-export function wasLeadTrackedRecently(maxAgeMs = 120_000) {
-  const value = Number(window.sessionStorage.getItem(LEAD_FIRED_AT_KEY) || 0);
-  return value > 0 && Date.now() - value <= maxAgeMs;
+  return true;
 }
 
 export function trackContactConversion(
