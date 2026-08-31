@@ -41,6 +41,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
     const concern = params.get("concern") || "";
     const first = config.quizQuestions[0];
     const validConcern = Boolean(first && concern && first.answers.includes(concern));
+    const mobileDirectStart = window.matchMedia("(max-width: 900px)").matches;
 
     setEntrySource(source);
 
@@ -69,6 +70,19 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
       source,
       dedicated_url: true,
     });
+
+    if (mobileDirectStart) {
+      setStarted(true);
+      setStep(0);
+      setAnswers({});
+      setPrefilledConcern("");
+      startedAt.current = Date.now();
+      track("promo_quiz_start", {
+        promo_service: config.slug,
+        source,
+        mobile_direct_start: true,
+      });
+    }
   }, [config.quizQuestions, config.slug, total]);
 
   function start() {
