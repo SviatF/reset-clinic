@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PromoServiceConfig } from "../lib/promo-data";
+import "./PromoCasesSection.css";
 
 type CaseImage = {
   type: "image";
