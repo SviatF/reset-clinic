@@ -5,6 +5,7 @@ import { applyMarketingCopy } from "./seo-marketing-copy";
 import { applyExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { sanitizeSeoLandingPublicCopy } from "./seo-public-copy";
 import { applyPrioritySeoEnhancements } from "./seo-priority-pages";
+import { applyFinalSeoCopyPolish } from "./seo-final-polish";
 import { SEO_LANDINGS, normalizeSeoPath, type SeoLanding } from "./seo-pages";
 
 function normalizeWave2Landing(landing: SeoLanding): SeoLanding {
@@ -124,6 +125,7 @@ export const ALL_SEO_LANDINGS = [
   .map(applyExtraMarketingCopy)
   .map(applyPrioritySeoEnhancements)
   .map(sanitizeSeoLandingPublicCopy)
+  .map(applyFinalSeoCopyPolish)
   .map(normalizeHeadingTypography);
 
 export function resolveSeoLanding(path: string) {
