@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShopHeader } from "../../components/shop/ShopHeader";
 import "./shop.css";
 import "./shop-functional.css";
+import "./shop-audit.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shop.resetclinic.org"),
