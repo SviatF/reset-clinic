@@ -4,7 +4,7 @@ import { getAdminSession } from "../../../lib/admin-auth";
 const errors: Record<string, string> = {
   missing_credentials: "Введіть логін і пароль.",
   invalid_credentials: "Невірний логін або пароль.",
-  not_configured: "RESET Admin ще не має ADMIN_USERNAME / ADMIN_PASSWORD у Vercel.",
+  not_configured: "RESET Admin не налаштований у середовищі сервера: перевірте ADMIN_USERNAME, ADMIN_PASSWORD та ADMIN_SESSION_SECRET.",
 };
 
 type Props = { searchParams: Promise<{ error?: string }> };
