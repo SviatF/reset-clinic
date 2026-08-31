@@ -1,13 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-
-declare global {
-  interface Window {
-    dataLayer?: Array<Record<string, unknown>>;
-    fbq?: (...args: unknown[]) => void;
-  }
-}
+import { trackLeadConversion, trackPromoCustomEvent } from "../lib/marketing-pixels";
 
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
 
@@ -27,9 +21,7 @@ function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
 }
 
 function track(event: string, payload: Record<string, unknown>) {
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ event, ...payload });
-  if (typeof window.fbq === "function") window.fbq("trackCustom", event, payload);
+  trackPromoCustomEvent(event, payload);
 }
 
 export default function PromoLeadForm({
@@ -87,7 +79,14 @@ export default function PromoLeadForm({
         }),
       });
       if (!response.ok) throw new Error(`Lead API ${response.status}`);
+
       track("promo_lead_success", { promo_service: slug, form_id: formId });
+      trackLeadConversion({
+        content_name: service,
+        form_id: formId,
+        conversion_source: "promo_form_success",
+      });
+
       window.location.assign("/thank-you/");
     } catch (error) {
       console.error("Promo lead submit failed", error);
