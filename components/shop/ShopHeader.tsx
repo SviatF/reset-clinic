@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 
 const CART_KEY = "reset_shop_cart";
 const nav = [
-  ["ГОЛОВНА", "/shop/"],
   ["ОБЛИЧЧЯ", "/shop/product-category/face/"],
   ["ТІЛО", "/shop/product-category/body/"],
   ["ВОЛОССЯ", "/shop/product-category/hair/"],
@@ -48,16 +47,19 @@ export function ShopHeader() {
   return (
     <header className="shop-header">
       <div className="shop-header-inner">
-        <Link className="shop-wordmark" href="/shop/" aria-label="RESET Clinic Shop — головна">
+        {/* /shop is currently served by a full-document SSR handler. A normal
+            anchor guarantees a document navigation instead of an RSC request. */}
+        <a className="shop-wordmark" href="/shop/" aria-label="RESET Clinic Shop — головна">
           <span className="shop-wordmark-main">RESĒT</span>
           <span className="shop-wordmark-sub">CLINIC</span>
-        </Link>
+        </a>
         <nav className="shop-nav" aria-label="Каталог RESET Shop">
+          <a href="/shop/">ГОЛОВНА</a>
           {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
         <div className="shop-actions">
           <Link className="shop-icon-link" href="/shop/my-account/" aria-label="Особистий кабінет"><AccountIcon /></Link>
-          <Link className="shop-icon-link" href="/shop/?s=" aria-label="Пошук"><SearchIcon /></Link>
+          <a className="shop-icon-link" href="/shop/?s=" aria-label="Пошук"><SearchIcon /></a>
           <Link className="shop-icon-link shop-bag-link" href="/shop/cart/" aria-label={`Кошик: ${count} товарів`}><BagIcon /><span className="shop-cart-count">{count}</span></Link>
         </div>
       </div>
