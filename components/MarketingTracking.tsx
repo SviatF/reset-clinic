@@ -2,6 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import {
+  trackContactConversion,
+  trackLeadConversion,
+  trackPageView,
+  wasLeadTrackedRecently,
+} from "../lib/marketing-pixels";
 
 declare global {
   interface Window {
@@ -19,9 +25,10 @@ export default function MarketingTracking() {
   useEffect(() => {
     const pagePath = pathname || "/";
 
-    // The inline snippets in the root layout send the initial PageView.
-    // For subsequent Next.js client-side navigations we send a virtual page view
-    // so Meta and GTM still see every page transition.
+    // The root layout sends the first PageView to the general site pixel.
+    // On the initial promo render we only add the service-specific PageView.
+    // On subsequent Next.js navigations we explicitly send the general and,
+    // when applicable, the scoped promo PageView with trackSingle.
     if (initialPageViewHandled.current) {
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
@@ -30,35 +37,40 @@ export default function MarketingTracking() {
         page_location: window.location.href,
         page_title: document.title,
       });
-
-      if (typeof window.fbq === "function") {
-        window.fbq("track", "PageView");
-      }
+      trackPageView(pagePath, true);
     } else {
       initialPageViewHandled.current = true;
+      trackPageView(pagePath, false);
     }
 
     if (!THANK_YOU_PATHS.has(pagePath)) return;
 
-    // Prevent a refresh of the thank-you page from counting the same lead twice
-    // during the same browser session.
-    const conversionKey = "reset_lead_conversion_fired";
-    if (window.sessionStorage.getItem(conversionKey) === "1") return;
+    // Promo and native booking forms fire Lead only after /api/leads succeeds.
+    // Keep the thank-you page as a fallback for any legacy form that redirects
+    // here without using the shared conversion dispatcher.
+    if (wasLeadTrackedRecently()) return;
 
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: "generate_lead",
+    trackLeadConversion({
       lead_type: "website_application",
-      page_path: pagePath,
-      page_location: window.location.href,
-    });
-
-    if (typeof window.fbq === "function") {
-      window.fbq("track", "Lead");
-    }
-
-    window.sessionStorage.setItem(conversionKey, "1");
+      conversion_source: "thank_you_fallback",
+    }, pagePath);
   }, [pathname]);
+
+  useEffect(() => {
+    const handlePhoneClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const link = target?.closest<HTMLAnchorElement>('a[href^="tel:"]');
+      if (!link) return;
+
+      trackContactConversion({
+        contact_source: "phone_link",
+        link_text: link.textContent?.trim() || undefined,
+      }, window.location.pathname);
+    };
+
+    document.addEventListener("click", handlePhoneClick, { capture: true });
+    return () => document.removeEventListener("click", handlePhoneClick, { capture: true });
+  }, []);
 
   return null;
 }
