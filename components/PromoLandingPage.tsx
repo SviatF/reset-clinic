@@ -9,6 +9,15 @@ function uniqPrices(rows: { service: string; price: string }[]) {
   return rows.filter((row, index, list) => list.findIndex((item) => `${item.service}|${item.price}` === `${row.service}|${row.price}`) === index);
 }
 
+const HERO_TITLES: Record<PromoServiceConfig["slug"], string> = {
+  botulinotherapy: "Молодший і свіжіший вигляд без ефекту маски",
+  nutrition: "Схуднення без життя на дієті",
+  "ipl-face": "Рівний тон шкіри без постійного маскування",
+  lips: "Губи, які ідеально пасують вашому обличчю",
+  "facial-cleaning": "Поверніть шкірі чистоту та природне сяйво",
+  biopatid: "Схуднення без постійної боротьби з голодом",
+};
+
 export default function PromoLandingPage({ config }: { config: PromoServiceConfig }) {
   const published = config.priceLandingPaths.flatMap((path) => getPublishedPricesForLanding(path, 8));
   const prices = uniqPrices([
@@ -31,7 +40,7 @@ export default function PromoLandingPage({ config }: { config: PromoServiceConfi
         <div className="promo-shell promo-hero-grid">
           <div className="promo-hero-copy">
             <p className="promo-kicker">{config.eyebrow}</p>
-            <h1>{config.heroTitle}</h1>
+            <h1>{HERO_TITLES[config.slug]}</h1>
             <p className="promo-hero-lead">{config.heroLead}</p>
             {config.heroBadge ? <div className="promo-hero-badge">{config.heroBadge}</div> : null}
             <div className="promo-hero-actions">
