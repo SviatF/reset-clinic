@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const CART_KEY = "reset_shop_cart";
 const nav = [
-  ["ГОЛОВНА", "/shop/"],
   ["ОБЛИЧЧЯ", "/shop/product-category/face/"],
   ["ТІЛО", "/shop/product-category/body/"],
   ["ВОЛОССЯ", "/shop/product-category/hair/"],
   ["СЕРТИФІКАТ", "/shop/product-category/gifts/"],
-  ["ПРО НАС", "/shop/about/"],
+  ["ПРО НАС", "/shop/our-story/"],
   ["КЛІЄНТУ", "/shop/delivery/"],
 ] as const;
 
@@ -23,9 +23,20 @@ function SearchIcon() {
 function BagIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8.5h14l1 12H4l1-12Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>;
 }
+function MenuIcon({ open }: { open: boolean }) {
+  return <span className={`shop-menu-icon${open ? " is-open" : ""}`} aria-hidden="true"><i/><i/><i/></span>;
+}
+
+function normalizedPath(pathname: string) {
+  const clean = pathname.replace(/^\/shop(?=\/|$)/, "") || "/";
+  return clean.endsWith("/") ? clean : `${clean}/`;
+}
 
 export function ShopHeader() {
+  const pathname = usePathname();
   const [count, setCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const current = normalizedPath(pathname || "/");
 
   useEffect(() => {
     const sync = () => {
@@ -45,6 +56,13 @@ export function ShopHeader() {
     };
   }, []);
 
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  const isActive = (href: string) => {
+    const clean = normalizedPath(href);
+    return clean === "/" ? current === "/" : current.startsWith(clean.replace(/\/$/, ""));
+  };
+
   return (
     <header className="shop-header">
       <div className="shop-header-inner">
@@ -53,13 +71,22 @@ export function ShopHeader() {
           <span className="shop-wordmark-sub">CLINIC</span>
         </Link>
         <nav className="shop-nav" aria-label="Каталог RESET Shop">
-          {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
+          <Link className={current === "/" ? "is-active" : ""} href="/shop/">ГОЛОВНА</Link>
+          {nav.map(([label, href]) => <Link className={isActive(href) ? "is-active" : ""} key={href} href={href}>{label}</Link>)}
         </nav>
         <div className="shop-actions">
-          <Link className="shop-icon-link" href="/shop/my-account/" aria-label="Особистий кабінет"><AccountIcon /></Link>
-          <Link className="shop-icon-link" href="/shop/?s=" aria-label="Пошук"><SearchIcon /></Link>
+          <Link className="shop-icon-link shop-account-link" href="/shop/my-account/" aria-label="Замовлення"><AccountIcon /></Link>
+          <Link className="shop-icon-link" href="/shop/search/" aria-label="Пошук"><SearchIcon /></Link>
           <Link className="shop-icon-link shop-bag-link" href="/shop/cart/" aria-label={`Кошик: ${count} товарів`}><BagIcon /><span className="shop-cart-count">{count}</span></Link>
+          <button className="shop-mobile-toggle" type="button" aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}><MenuIcon open={menuOpen} /></button>
         </div>
+      </div>
+      <div className={`shop-mobile-menu${menuOpen ? " is-open" : ""}`}>
+        <Link href="/shop/">Головна</Link>
+        {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
+        <Link href="/shop/search/">Пошук</Link>
+        <Link href="/shop/my-account/">Мої замовлення</Link>
+        <Link href="/shop/cart/">Кошик ({count})</Link>
       </div>
     </header>
   );

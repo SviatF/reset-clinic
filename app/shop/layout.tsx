@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShopHeader } from "../../components/shop/ShopHeader";
 import "./shop.css";
+import "./shop-functional.css";
+import "./shop-audit.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shop.resetclinic.org"),
@@ -30,6 +32,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           <strong>Клієнту</strong>
           <Link href="/shop/delivery/">Доставка</Link>
           <Link href="/shop/faq/">FAQ</Link>
+          <Link href="/shop/my-account/">Мої замовлення</Link>
           <Link href="/shop/cart/">Кошик</Link>
         </div>
       </footer>
