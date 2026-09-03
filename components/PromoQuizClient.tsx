@@ -97,6 +97,15 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
     }
   }, [config.quizQuestions, config.slug, total]);
 
+  useEffect(() => {
+    if (!finished || !window.matchMedia("(max-width: 900px)").matches) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [finished]);
+
   function start() {
     setStarted(true);
     setStep(0);
@@ -226,7 +235,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
   }
 
   return (
-    <main className={`promo-site promo-quiz-site promo-theme-${config.slug}`}>
+    <main className={`promo-site promo-quiz-site promo-theme-${config.slug}${finished ? " promo-quiz-booking-stage" : ""}`}>
       <header className="promo-quiz-header">
         <Link href={`/promo/${config.slug}/`} className="promo-brand" aria-label="RESÉT clinic — назад до сторінки послуги">
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={150} height={46} priority />
