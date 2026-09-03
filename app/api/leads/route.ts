@@ -65,6 +65,16 @@ function bookingSelection(value: unknown): BookingSelection | null {
   };
 }
 
+function legacyBookingSelection(fields?: Record<string, unknown>) {
+  const raw = fields?.booking_json;
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  try {
+    return bookingSelection(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
 function ipHash(request: NextRequest) {
   const salt = process.env.LEAD_IP_SALT;
   if (!salt) return null;
@@ -90,7 +100,7 @@ export async function POST(request: NextRequest) {
   const email = text(payload.email, 200);
   const name = text(payload.name, 200);
   const service = text(payload.service, 300);
-  const booking = bookingSelection(payload.booking);
+  const booking = bookingSelection(payload.booking) || legacyBookingSelection(payload.fields);
   if (!phone && !email) {
     return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
   }
