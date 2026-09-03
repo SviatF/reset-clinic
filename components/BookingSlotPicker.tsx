@@ -82,23 +82,34 @@ function weekLabel(start: Date, currentWeek: Date) {
 
 function groupWeeks(slots: BookingSlot[], generatedAt: string): WeekGroup[] {
   const currentWeek = monday(utcDate(kyivDateFromIso(generatedAt)));
-  const groups = new Map<string, BookingSlot[]>();
+  const slotsByWeek = new Map<string, BookingSlot[]>();
 
   slots.forEach((slot) => {
     const start = monday(utcDate(slot.date));
     const key = dateKey(start);
-    const group = groups.get(key) || [];
+    const group = slotsByWeek.get(key) || [];
     group.push(slot);
-    groups.set(key, group);
+    slotsByWeek.set(key, group);
   });
 
-  return [...groups.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, items]) => ({
+  if (!slots.length) return [];
+
+  const furthestWeek = [...slotsByWeek.keys()].sort().at(-1) || dateKey(currentWeek);
+  const weekDistance = Math.max(
+    0,
+    Math.round((utcDate(furthestWeek).getTime() - currentWeek.getTime()) / 604_800_000),
+  );
+  const visibleWeekCount = Math.min(6, Math.max(2, weekDistance + 1));
+
+  return Array.from({ length: visibleWeekCount }, (_, index) => {
+    const start = addDays(currentWeek, index * 7);
+    const key = dateKey(start);
+    return {
       key,
-      label: weekLabel(utcDate(key), currentWeek),
-      slots: items.sort((a, b) => a.start.localeCompare(b.start)),
-    }));
+      label: weekLabel(start, currentWeek),
+      slots: [...(slotsByWeek.get(key) || [])].sort((a, b) => a.start.localeCompare(b.start)),
+    };
+  });
 }
 
 function dateLabel(date: string) {
@@ -143,9 +154,10 @@ export default function BookingSlotPicker({
     const query = new URLSearchParams();
     if (service) query.set("service", service);
     if (doctor) query.set("doctor", doctor);
+    const queryString = query.toString();
 
     try {
-      const response = await fetch(`/api/booking/slots${query.size ? `?${query.toString()}` : ""}`, {
+      const response = await fetch(`/api/booking/slots${queryString ? `?${queryString}` : ""}`, {
         cache: "no-store",
         headers: { Accept: "application/json" },
       });
@@ -185,11 +197,21 @@ export default function BookingSlotPicker({
       if (value) onChange(null);
       return;
     }
-    const selectedWeek = value?.weekKey && weeks.some((week) => week.key === value.weekKey) ? value.weekKey : "";
-    const nextWeek = selectedWeek || (weeks.some((week) => week.key === activeWeek) ? activeWeek : weeks[0].key);
+
+    const selectableWeeks = weeks.filter((item) => item.slots.length > 0);
+    const selectedWeek = value?.weekKey && selectableWeeks.some((item) => item.key === value.weekKey)
+      ? value.weekKey
+      : "";
+    const preservedWeek = selectableWeeks.some((item) => item.key === activeWeek) ? activeWeek : "";
+    const nextWeek = selectedWeek || preservedWeek || selectableWeeks[0]?.key || "";
     setActiveWeek(nextWeek);
-    const dates = [...new Set((weeks.find((week) => week.key === nextWeek)?.slots || []).map((slot) => slot.date))];
-    const nextDate = value?.date && dates.includes(value.date) ? value.date : dates.includes(activeDate) ? activeDate : dates[0] || "";
+
+    const dates = [...new Set((weeks.find((item) => item.key === nextWeek)?.slots || []).map((slot) => slot.date))];
+    const nextDate = value?.date && dates.includes(value.date)
+      ? value.date
+      : dates.includes(activeDate)
+        ? activeDate
+        : dates[0] || "";
     setActiveDate(nextDate);
   }, [activeDate, activeWeek, onChange, value, weeks]);
 
@@ -210,7 +232,7 @@ export default function BookingSlotPicker({
     });
   }, [error, loading, onAvailabilityChange, payload]);
 
-  const week = weeks.find((item) => item.key === activeWeek) || weeks[0];
+  const week = weeks.find((item) => item.key === activeWeek) || weeks.find((item) => item.slots.length > 0);
   const dates = week ? [...new Set(week.slots.map((slot) => slot.date))] : [];
   const daySlots = week?.slots.filter((slot) => slot.date === activeDate) || [];
 
@@ -218,9 +240,9 @@ export default function BookingSlotPicker({
     <section className={`booking-slot-picker${compact ? " is-compact" : ""}`} aria-labelledby="booking-slot-title">
       <div className="booking-slot-heading">
         <div>
-          <span className="booking-slot-kicker">Онлайн-запис · актуально зараз</span>
+          <span className="booking-slot-kicker">Онлайн-запис · актуальні дані Cliniccards</span>
           <h3 id="booking-slot-title">На коли вам було б зручно записатись?</h3>
-          <p>Показуємо тільки вільні години з Cliniccards. Перед бронюванням обраний слот перевіряється ще раз.</p>
+          <p>Показуємо тільки актуальні майбутні вільні години. Минулі дні та вже зайняті слоти не відображаються.</p>
         </div>
         {!loading && payload?.enabled ? <button type="button" className="booking-slot-refresh" onClick={() => void load()}>Оновити</button> : null}
       </div>
@@ -235,71 +257,90 @@ export default function BookingSlotPicker({
 
       {payload?.enabled && weeks.length ? (
         <>
-          <div className="booking-week-tabs" role="tablist" aria-label="Тиждень запису">
-            {weeks.map((item) => (
-              <button
-                type="button"
-                key={item.key}
-                role="tab"
-                aria-selected={item.key === week?.key}
-                className={item.key === week?.key ? "is-active" : ""}
-                onClick={() => {
-                  setActiveWeek(item.key);
-                  setActiveDate(item.slots[0]?.date || "");
-                  if (value?.weekKey !== item.key) onChange(null);
-                }}
-              >
-                <strong>{item.label}</strong>
-                <small>{item.slots.length} {item.slots.length === 1 ? "час" : "годин"}</small>
-              </button>
-            ))}
+          <div className="booking-slot-step">
+            <div className="booking-slot-step-label"><span>1</span><strong>Оберіть тиждень</strong></div>
+            <div className="booking-week-tabs" role="tablist" aria-label="Тиждень запису">
+              {weeks.map((item) => {
+                const disabled = item.slots.length === 0;
+                return (
+                  <button
+                    type="button"
+                    key={item.key}
+                    role="tab"
+                    disabled={disabled}
+                    aria-disabled={disabled}
+                    aria-selected={!disabled && item.key === week?.key}
+                    className={!disabled && item.key === week?.key ? "is-active" : ""}
+                    onClick={() => {
+                      if (disabled) return;
+                      setActiveWeek(item.key);
+                      setActiveDate(item.slots[0]?.date || "");
+                      if (value?.weekKey !== item.key) onChange(null);
+                    }}
+                  >
+                    <strong>{item.label}</strong>
+                    <small>{disabled ? "Немає вільних" : `${item.slots.length} вільних слотів`}</small>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="booking-day-tabs" role="tablist" aria-label="Дата запису">
-            {dates.map((date) => (
-              <button
-                type="button"
-                key={date}
-                role="tab"
-                aria-selected={date === activeDate}
-                className={date === activeDate ? "is-active" : ""}
-                onClick={() => {
-                  setActiveDate(date);
-                  if (value?.date !== date) onChange(null);
-                }}
-              >
-                {dateLabel(date)}
-              </button>
-            ))}
-          </div>
+          {week ? (
+            <div className="booking-slot-step">
+              <div className="booking-slot-step-label"><span>2</span><strong>Оберіть день</strong></div>
+              <div className="booking-day-tabs" role="tablist" aria-label="Дата запису">
+                {dates.map((date) => (
+                  <button
+                    type="button"
+                    key={date}
+                    role="tab"
+                    aria-selected={date === activeDate}
+                    className={date === activeDate ? "is-active" : ""}
+                    onClick={() => {
+                      setActiveDate(date);
+                      if (value?.date !== date) onChange(null);
+                    }}
+                  >
+                    {dateLabel(date)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
-          <div className="booking-time-grid" aria-label="Вільний час">
-            {daySlots.map((slot) => {
-              const selected = value?.slotId === slot.id || (
-                value?.date === slot.date && value?.time === slot.time && (!value.doctorId || value.doctorId === slot.doctorId)
-              );
-              return (
-                <button
-                  type="button"
-                  key={slot.id}
-                  className={selected ? "is-selected" : ""}
-                  aria-pressed={selected}
-                  onClick={() => week && onChange(selectionFrom(slot, week))}
-                >
-                  <strong>{slot.time}</strong>
-                  {slot.doctorName ? <small>{slot.doctorName}</small> : null}
-                </button>
-              );
-            })}
-          </div>
+          {week && activeDate ? (
+            <div className="booking-slot-step">
+              <div className="booking-slot-step-label"><span>3</span><strong>Оберіть вільний час</strong></div>
+              <div className="booking-time-grid" aria-label="Вільний час">
+                {daySlots.map((slot) => {
+                  const selected = value?.slotId === slot.id || (
+                    value?.date === slot.date && value?.time === slot.time && (!value.doctorId || value.doctorId === slot.doctorId)
+                  );
+                  return (
+                    <button
+                      type="button"
+                      key={slot.id}
+                      className={selected ? "is-selected" : ""}
+                      aria-pressed={selected}
+                      onClick={() => week && onChange(selectionFrom(slot, week))}
+                    >
+                      <strong>{slot.time}</strong>
+                      {slot.doctorName ? <small>{slot.doctorName}</small> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
 
           {value ? (
             <div className="booking-slot-selected" role="status">
               <span>Обрано</span>
-              <strong>{dateLabel(value.date)} · {value.time}</strong>
+              <strong>{value.weekLabel ? `${value.weekLabel} · ` : ""}{dateLabel(value.date)} · {value.time}</strong>
               {value.doctorName ? <small>{value.doctorName}</small> : null}
             </div>
-          ) : <p className="booking-slot-required">Оберіть одну з вільних годин, щоб продовжити.</p>}
+          ) : <p className="booking-slot-required">Оберіть тиждень, день і одну з вільних годин, щоб продовжити.</p>}
         </>
       ) : null}
 
