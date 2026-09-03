@@ -65,6 +65,21 @@ function serviceNameKey(value: string) {
     .trim();
 }
 
+function servicePriority(name: string) {
+  const value = serviceNameKey(name);
+  if (value === "консультація дерматолога") return 0;
+  if (value.includes("консультація косметолога")) return 1;
+  if (value.includes("консультація трихолога")) return 2;
+  if (value === "консультація нутриціолога") return 3;
+  if (value === "комбінована чистка обличчя") return 10;
+  if (value.includes("ботулінотерапія верхня третина комплекс")) return 11;
+  if (value.includes("корекція губ")) return 12;
+  if (value.includes("біоревіталізація")) return 13;
+  if (value === "ipl терапія обличчя") return 14;
+  if (value.includes("мікроголковий rf обличчя")) return 15;
+  return 100;
+}
+
 function apiBase() {
   return (process.env.CLINIC_BOOKING_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
@@ -162,25 +177,25 @@ export async function getCliniccardsBookingOptions(): Promise<CliniccardsBooking
     })
     .filter((item) => item.name && item.doctorIds.length > 0);
 
-  // Cliniccards can contain duplicate price rows with the same patient-facing name.
-  // Merge those rows for the UI while retaining one stable ID for analytics.
+  // Cliniccards can contain duplicated price rows with the same patient-facing title.
+  // Keep the first canonical row so the visible list and slot resolver use the same source item.
   const serviceGroups = new Map<string, CliniccardsBookingServiceOption>();
   for (const service of rawServices) {
     const key = serviceNameKey(service.name);
-    const current = serviceGroups.get(key);
-    if (!current) {
+    if (!serviceGroups.has(key)) {
       serviceGroups.set(key, {
         id: service.id,
         name: service.name,
         doctorIds: [...new Set(service.doctorIds)],
       });
-      continue;
     }
-    current.doctorIds = [...new Set([...current.doctorIds, ...service.doctorIds])];
   }
 
   const services = [...serviceGroups.values()]
-    .sort((a, b) => a.name.localeCompare(b.name, "uk-UA"));
+    .sort((a, b) => {
+      const rank = servicePriority(a.name) - servicePriority(b.name);
+      return rank || a.name.localeCompare(b.name, "uk-UA");
+    });
 
   const serviceCountByDoctor = new Map<string, number>();
   services.forEach((service) => {
