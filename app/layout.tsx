@@ -14,6 +14,7 @@ import "../components/BookingSlotPicker.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
 import PremiumMotion from "../components/PremiumMotion";
+import LegacyLiveBookingBridge from "../components/LegacyLiveBookingBridge";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,
@@ -141,6 +142,7 @@ fbq('track', 'PageView');`}
         <MarketingTracking />
         <SeoComplianceClient />
         <PremiumMotion />
+        <LegacyLiveBookingBridge />
         {children}
       </body>
     </html>
