@@ -55,6 +55,13 @@ function linkHomepageCategoryHeadings(html: string, route: string) {
   );
 }
 
+function fixHomepageCopy(html: string, route: string) {
+  if (route !== "/") return html;
+  return html.replace(/медична\s+експертиза/gi, (match) =>
+    match[0] === match[0]?.toUpperCase() ? "МЕДИЧНА ЕКСПЕРТНІСТЬ" : "медична експертність",
+  );
+}
+
 function repairMobileAssets(html: string, route: string) {
   return (MOBILE_ASSET_REWRITES[route] ?? []).reduce(
     (result, [from, to]) => result.split(from).join(to),
@@ -84,10 +91,15 @@ export default function LegacyPage({
   mobile?: MobilePageData;
   route: string;
 }) {
-  const desktopHtml = stripLegacyAgencyBranding(linkHomepageCategoryHeadings(data.html, route));
+  const desktopHtml = stripLegacyAgencyBranding(
+    fixHomepageCopy(linkHomepageCategoryHeadings(data.html, route), route),
+  );
   const mobileHtml = mobile
     ? stripLegacyAgencyBranding(
-        repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
+        fixHomepageCopy(
+          repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
+          route,
+        ),
       )
     : undefined;
 
