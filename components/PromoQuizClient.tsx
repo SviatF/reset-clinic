@@ -2,11 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { BookingSelection } from "../lib/booking-types";
 import type { PromoServiceConfig } from "../lib/promo-data";
 import { trackLeadConversion, trackPromoCustomEvent } from "../lib/marketing-pixels";
+import BookingSlotPicker from "./BookingSlotPicker";
 
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
+
+type AvailabilityState = {
+  enabled: boolean;
+  loading: boolean;
+  hasSlots: boolean;
+  error?: string;
+};
 
 function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
   const params = new URLSearchParams(window.location.search);
@@ -25,12 +34,15 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
   const [status, setStatus] = useState("");
   const [entrySource, setEntrySource] = useState("direct_quiz_url");
   const [prefilledConcern, setPrefilledConcern] = useState("");
+  const [booking, setBooking] = useState<BookingSelection | null>(null);
+  const [availability, setAvailability] = useState<AvailabilityState>({ enabled: false, loading: true, hasSlots: false });
   const startedAt = useRef(Date.now());
   const initializedFromUrl = useRef(false);
   const total = config.quizQuestions.length;
   const finished = started && step >= total;
   const question = config.quizQuestions[step];
   const progress = useMemo(() => (finished ? 100 : Math.max(8, ((step + 1) / total) * 100)), [finished, step, total]);
+  const updateAvailability = useCallback((next: AvailabilityState) => setAvailability(next), []);
 
   useEffect(() => {
     if (initializedFromUrl.current) return;
@@ -89,6 +101,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
     setStarted(true);
     setStep(0);
     setAnswers({});
+    setBooking(null);
     setPrefilledConcern("");
     startedAt.current = Date.now();
     track("promo_quiz_start", { promo_service: config.slug, source: entrySource });
@@ -124,13 +137,27 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity() || submitting) return;
+    if (availability.loading) {
+      setStatus("Ще оновлюємо вільні години — зачекайте кілька секунд.");
+      return;
+    }
+    if (availability.enabled && availability.hasSlots && !booking) {
+      setStatus("Оберіть зручну дату та вільну годину перед відправкою заявки.");
+      return;
+    }
+
     const data = new FormData(form);
     const name = String(data.get("name") || "").trim();
     const phone = String(data.get("phone") || "").trim();
     const website = String(data.get("website") || "").trim();
     setSubmitting(true);
     setStatus("");
-    track("promo_quiz_lead_submit", { promo_service: config.slug, source: entrySource });
+    track("promo_quiz_lead_submit", {
+      promo_service: config.slug,
+      source: entrySource,
+      booking_date: booking?.date,
+      booking_time: booking?.time,
+    });
 
     try {
       const response = await fetch("/api/leads", {
@@ -140,6 +167,7 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
           name,
           phone,
           service: config.serviceName,
+          booking,
           formId: `promo-quiz-${config.slug}`,
           pageUrl: window.location.href,
           pagePath: window.location.pathname,
@@ -160,12 +188,28 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
             promo_entry_source: entrySource,
             prefilled_concern: prefilledConcern || undefined,
             quiz_answers: answers,
+            booking_selection: booking,
           },
         }),
       });
+      const result = await response.json().catch(() => ({})) as {
+        ok?: boolean;
+        booking?: { status?: string; error?: string };
+      };
+
+      if (response.status === 409 || result.booking?.status === "slot_unavailable") {
+        setBooking(null);
+        setSubmitting(false);
+        setStatus("Цю годину щойно зайняли. Контакт уже збережено — оберіть інший доступний час.");
+        return;
+      }
       if (!response.ok) throw new Error(`Lead API ${response.status}`);
 
-      track("promo_quiz_lead_success", { promo_service: config.slug, source: entrySource });
+      track("promo_quiz_lead_success", {
+        promo_service: config.slug,
+        source: entrySource,
+        booking_status: result.booking?.status,
+      });
       trackLeadConversion({
         content_name: config.serviceName,
         form_id: `promo-quiz-${config.slug}`,
@@ -210,11 +254,17 @@ export default function PromoQuizClient({ config }: { config: PromoServiceConfig
               <h1>{config.quizFinalTitle}</h1>
               <p className="promo-quiz-lead">{config.quizFinalLead}</p>
               <form className="promo-quiz-form" onSubmit={submit}>
+                <BookingSlotPicker
+                  service={config.serviceName}
+                  value={booking}
+                  onChange={setBooking}
+                  onAvailabilityChange={updateAvailability}
+                />
                 <label><span>Ваше ім’я</span><input name="name" autoComplete="name" required maxLength={120} placeholder="Ім’я" /></label>
                 <label><span>Номер телефону</span><input name="phone" type="tel" autoComplete="tel" inputMode="tel" required maxLength={40} placeholder="+380" /></label>
                 <label className="promo-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
-                <button className="promo-primary" type="submit" disabled={submitting}>{submitting ? "Надсилаємо…" : "Отримати консультацію →"}</button>
-                <p>Адміністратор RESÉT clinic зв’яжеться з вами та уточнить деталі запису.</p>
+                <button className="promo-primary" type="submit" disabled={submitting || availability.loading}>{submitting ? "Бронюємо…" : availability.loading ? "Оновлюємо години…" : "Забронювати консультацію →"}</button>
+                <p>Обраний час перевіряється повторно перед створенням запису в Cliniccards.</p>
                 <div className="promo-form-status" role="status" aria-live="polite">{status}</div>
               </form>
             </>

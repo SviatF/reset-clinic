@@ -40,6 +40,24 @@ function quizSummary(payload: Record<string, unknown>) {
     .slice(0, 700);
 }
 
+function bookingSelection(payload: Record<string, unknown>) {
+  const raw = payload.booking_selection;
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+}
+
+function bookingStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    booked: "✅ Заброньовано в Cliniccards",
+    pending: "⏳ Бронювання обробляється",
+    slot_unavailable: "⚠️ Обраний час уже зайняли",
+    failed: "❌ Помилка бронювання",
+    manual_required: "🟠 Потрібне ручне підтвердження",
+    disabled: "🟡 Cliniccards booking не підключений",
+    not_requested: "Без вибору часу",
+  };
+  return labels[status] || status;
+}
+
 function sourceLabel(lead: Lead) {
   const surface = clean(lead.payload?.promo_surface, 120);
   if (surface === "dedicated_quiz_url") return "Окремий quiz URL";
@@ -74,6 +92,25 @@ function buildLeadMessage(lead: Lead) {
   if (lead.phone) lines.push(`Телефон: ${lead.phone}`);
   if (lead.email) lines.push(`Email: ${lead.email}`);
   if (lead.message) lines.push(`Повідомлення: ${clean(lead.message, 700)}`);
+
+  const selection = bookingSelection(lead.payload || {});
+  const bookingStatus = clean(lead.payload?.booking_status, 80);
+  if (selection || (bookingStatus && bookingStatus !== "not_requested")) {
+    lines.push("");
+    lines.push("📅 ЗАПИС");
+    if (bookingStatus) lines.push(`Статус: ${bookingStatusLabel(bookingStatus)}`);
+    const date = clean(selection?.date, 30);
+    const time = clean(selection?.time, 20);
+    if (date || time) lines.push(`Коли: ${[date, time].filter(Boolean).join(" · ")}`);
+    const doctor = clean(selection?.doctorName, 250);
+    if (doctor) lines.push(`Спеціаліст: ${doctor}`);
+    const cabinet = clean(selection?.cabinetName, 180);
+    if (cabinet) lines.push(`Кабінет: ${cabinet}`);
+    const visitId = clean(lead.payload?.cliniccards_visit_id, 120);
+    if (visitId) lines.push(`Cliniccards visit: ${visitId}`);
+    const bookingError = clean(lead.payload?.booking_error, 500);
+    if (bookingError) lines.push(`Booking note: ${bookingError}`);
+  }
 
   lines.push("");
   lines.push(`Джерело: ${sourceLabel(lead)}`);

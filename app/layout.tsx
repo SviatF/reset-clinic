@@ -10,9 +10,11 @@ import "../components/PromoPages.css";
 import "../components/PromoWow.css";
 import "../components/PromoConversionLayer.css";
 import "../components/PromoQuizMobile.css";
+import "../components/BookingSlotPicker.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
 import PremiumMotion from "../components/PremiumMotion";
+import LegacyLiveBookingBridge from "../components/LegacyLiveBookingBridge";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,
@@ -140,6 +142,7 @@ fbq('track', 'PageView');`}
         <MarketingTracking />
         <SeoComplianceClient />
         <PremiumMotion />
+        <LegacyLiveBookingBridge />
         {children}
       </body>
     </html>

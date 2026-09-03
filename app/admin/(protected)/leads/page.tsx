@@ -17,9 +17,20 @@ const telegramMessages: Record<string, { text: string; good: boolean }> = {
   missing: { text: "Заявку для повторної Telegram-відправки не знайдено.", good: false },
 };
 
-function telegramValue(payload: Record<string, unknown>, key: string) {
+function payloadString(payload: Record<string, unknown>, key: string) {
   const value = payload?.[key];
   return typeof value === "string" ? value : "";
+}
+
+function bookingSelection(payload: Record<string, unknown>) {
+  const value = payload?.booking_selection;
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function bookingBadge(status: string) {
+  if (status === "booked") return "good";
+  if (status === "failed" || status === "slot_unavailable") return "bad";
+  return "warn";
 }
 
 export default async function AdminLeadsPage({ searchParams }: Props) {
@@ -33,7 +44,7 @@ export default async function AdminLeadsPage({ searchParams }: Props) {
       <header className="admin-topbar">
         <div>
           <h1>Заявки</h1>
-          <div className="admin-subtitle">Усі форми сайту з UTM, click IDs, сторінкою входу, Telegram та статусом CRM.</div>
+          <div className="admin-subtitle">Усі форми сайту з вибраним часом запису, UTM, click IDs, Telegram та статусом CRM.</div>
         </div>
         <div className="admin-label">{leads.length} записів</div>
       </header>
@@ -44,20 +55,34 @@ export default async function AdminLeadsPage({ searchParams }: Props) {
       <div className="admin-table-wrap admin-section">
         {leads.length ? (
           <table className="admin-table">
-            <thead><tr><th>Дата</th><th>Контакт</th><th>Послуга / сторінка</th><th>Атрибуція</th><th>Статус</th><th>Telegram</th><th>CRM</th></tr></thead>
+            <thead><tr><th>Дата</th><th>Контакт</th><th>Послуга / сторінка</th><th>Запис</th><th>Атрибуція</th><th>Статус</th><th>Telegram</th><th>CRM</th></tr></thead>
             <tbody>
               {leads.map((lead) => {
-                const telegramStatus = telegramValue(lead.payload, "telegram_status") || "legacy";
-                const telegramError = telegramValue(lead.payload, "telegram_error");
-                const telegramSentAt = telegramValue(lead.payload, "telegram_sent_at");
+                const telegramStatus = payloadString(lead.payload, "telegram_status") || "legacy";
+                const telegramError = payloadString(lead.payload, "telegram_error");
+                const telegramSentAt = payloadString(lead.payload, "telegram_sent_at");
                 const telegramGood = telegramStatus === "sent";
                 const telegramBad = telegramStatus === "failed";
+                const selected = bookingSelection(lead.payload);
+                const selectedDate = selected ? payloadString(selected, "date") : "";
+                const selectedTime = selected ? payloadString(selected, "time") : "";
+                const selectedDoctor = selected ? payloadString(selected, "doctorName") : "";
+                const bookingStatus = payloadString(lead.payload, "booking_status") || "legacy";
+                const bookingError = payloadString(lead.payload, "booking_error");
+                const visitId = payloadString(lead.payload, "cliniccards_visit_id");
 
                 return (
                   <tr key={lead.id}>
                     <td>{new Date(lead.created_at).toLocaleString("uk-UA")}</td>
                     <td><strong>{lead.name || "Без імені"}</strong><br />{lead.phone || ""}{lead.phone && lead.email ? <br /> : null}{lead.email || ""}</td>
                     <td>{lead.service || "—"}<br /><span className="admin-code">{lead.page_path || "/"}</span>{lead.form_id ? <><br /><span className="admin-kpi-note">{lead.form_id}</span></> : null}</td>
+                    <td>
+                      <span className={`admin-badge ${bookingBadge(bookingStatus)}`}>{bookingStatus}</span>
+                      {selectedDate || selectedTime ? <><br /><strong>{selectedDate}{selectedDate && selectedTime ? " · " : ""}{selectedTime}</strong></> : null}
+                      {selectedDoctor ? <><br /><span className="admin-kpi-note">{selectedDoctor}</span></> : null}
+                      {visitId ? <><br /><span className="admin-code">visit {visitId}</span></> : null}
+                      {bookingError ? <><br /><span className="admin-kpi-note">{bookingError}</span></> : null}
+                    </td>
                     <td>{lead.utm_source || "direct"}{lead.utm_medium ? ` / ${lead.utm_medium}` : ""}{lead.utm_campaign ? <><br />{lead.utm_campaign}</> : null}</td>
                     <td>
                       <form action={`/api/admin/leads/${lead.id}`} method="post" className="admin-form">

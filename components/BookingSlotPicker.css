@@ -1,0 +1,47 @@
+.booking-slot-picker{--booking-ink:#29201b;--booking-muted:#756b64;--booking-line:rgba(41,32,27,.13);--booking-soft:#f6f1e9;--booking-accent:#8a6d3b;display:grid;gap:18px;border:1px solid var(--booking-line);border-radius:24px;background:linear-gradient(180deg,#fffdfa 0%,#fbf7f0 100%);padding:22px;color:var(--booking-ink);box-shadow:0 18px 50px rgba(41,32,27,.06)}
+.booking-slot-picker.is-compact{padding:18px;border-radius:20px;gap:16px}
+.booking-slot-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.booking-slot-heading>div{display:grid;gap:5px}
+.booking-slot-kicker{font-size:11px;line-height:1.2;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--booking-accent)}
+.booking-slot-heading h3{margin:0;font-size:clamp(20px,2vw,28px);line-height:1.12;font-weight:560;letter-spacing:-.025em}
+.booking-slot-heading p{margin:0;max-width:650px;font-size:13px;line-height:1.55;color:var(--booking-muted)}
+.booking-slot-refresh{appearance:none;border:0;background:transparent;color:var(--booking-accent);font:inherit;font-size:12px;font-weight:650;cursor:pointer;padding:4px 0;white-space:nowrap}
+.booking-slot-refresh:hover{text-decoration:underline}
+.booking-slot-loading,.booking-slot-fallback,.booking-slot-error{border:1px solid var(--booking-line);border-radius:14px;padding:13px 14px;font-size:13px;line-height:1.5;color:var(--booking-muted);background:rgba(255,255,255,.72)}
+.booking-slot-loading{display:flex;align-items:center;gap:10px}
+.booking-slot-loading span{width:16px;height:16px;border:2px solid rgba(138,109,59,.18);border-top-color:var(--booking-accent);border-radius:999px;animation:booking-spin .8s linear infinite}
+@keyframes booking-spin{to{transform:rotate(360deg)}}
+.booking-slot-error{color:#8a392e;border-color:rgba(138,57,46,.2);background:#fff8f6}
+.booking-slot-error button{appearance:none;border:0;background:transparent;color:inherit;text-decoration:underline;font:inherit;font-weight:650;cursor:pointer;padding:0 0 0 4px}
+.booking-slot-step{display:grid;gap:9px}
+.booking-slot-step-label{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.25;color:var(--booking-ink)}
+.booking-slot-step-label span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;background:var(--booking-ink);color:#fff;font-size:11px;font-weight:750}
+.booking-slot-step-label strong{font-size:12px;font-weight:700;letter-spacing:.01em}
+.booking-week-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.booking-week-tabs button{appearance:none;min-height:66px;border:1px solid var(--booking-line);border-radius:14px;background:rgba(255,255,255,.8);padding:11px 13px;text-align:left;color:var(--booking-ink);font:inherit;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,opacity .18s ease}
+.booking-week-tabs button:hover:not(:disabled){border-color:rgba(138,109,59,.5);transform:translateY(-1px)}
+.booking-week-tabs button.is-active{border-color:var(--booking-accent);background:#fff;box-shadow:0 0 0 1px rgba(138,109,59,.08)}
+.booking-week-tabs button:disabled{cursor:not-allowed;opacity:.43;background:rgba(246,241,233,.7)}
+.booking-week-tabs strong,.booking-week-tabs small{display:block}
+.booking-week-tabs strong{font-size:13px;line-height:1.3;font-weight:650}
+.booking-week-tabs small{margin-top:4px;font-size:11px;color:var(--booking-muted)}
+.booking-day-tabs{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 4px;scrollbar-width:thin}
+.booking-day-tabs button{appearance:none;flex:0 0 auto;border:1px solid var(--booking-line);border-radius:999px;background:transparent;color:var(--booking-muted);padding:8px 12px;font:inherit;font-size:12px;line-height:1.2;cursor:pointer;transition:all .18s ease}
+.booking-day-tabs button:hover,.booking-day-tabs button.is-active{border-color:var(--booking-accent);color:var(--booking-ink);background:#fff}
+.booking-day-tabs button.is-active{font-weight:650}
+.booking-time-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.booking-time-grid button{appearance:none;min-height:58px;border:1px solid var(--booking-line);border-radius:13px;background:#fff;color:var(--booking-ink);padding:9px 10px;font:inherit;text-align:center;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,box-shadow .18s ease}
+.booking-time-grid button:hover{border-color:rgba(138,109,59,.55);transform:translateY(-1px)}
+.booking-time-grid button.is-selected{border-color:var(--booking-accent);background:var(--booking-ink);color:#fff;box-shadow:0 10px 24px rgba(41,32,27,.14)}
+.booking-time-grid strong,.booking-time-grid small{display:block}
+.booking-time-grid strong{font-size:15px;line-height:1.15;font-weight:700}
+.booking-time-grid small{margin-top:4px;font-size:9.5px;line-height:1.25;opacity:.68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.booking-slot-selected{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:12px;background:rgba(138,109,59,.08);padding:10px 12px;font-size:12px}
+.booking-slot-selected span{color:var(--booking-muted)}
+.booking-slot-selected strong{font-weight:700}
+.booking-slot-selected small{color:var(--booking-muted)}
+.booking-slot-required{margin:0;font-size:12px;line-height:1.4;color:#8a392e}
+.legacy-live-booking{margin:0 0 4px}
+@media(max-width:767px){.booking-slot-picker{padding:17px;border-radius:19px;gap:15px}.booking-slot-heading{display:grid;gap:4px}.booking-slot-refresh{justify-self:start}.booking-week-tabs{display:flex;overflow-x:auto;grid-template-columns:none;padding-bottom:3px}.booking-week-tabs button{flex:0 0 154px}.booking-time-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.booking-time-grid button{min-height:54px;padding:8px 6px}.booking-slot-heading h3{font-size:21px}.booking-slot-heading p{font-size:12px}.booking-day-tabs button{font-size:11px;padding:8px 10px}}
+@media(max-width:380px){.booking-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.booking-slot-loading span{animation:none}.booking-week-tabs button,.booking-time-grid button{transition:none}}
