@@ -9,7 +9,7 @@ import styles from "./booking.module.css";
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
 
 type Mode = "service" | "doctor" | "help";
-type Step = "mode" | "choice" | "slot" | "details";
+type Step = "mode" | "choice" | "doctorService" | "slot" | "details";
 
 type DoctorOption = {
   id: string;
@@ -43,6 +43,13 @@ const INITIAL_AVAILABILITY: AvailabilityState = {
   hasSlots: false,
 };
 
+const BOOKING_DATE = new Intl.DateTimeFormat("uk-UA", {
+  weekday: "short",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
 function trackingValue(key: (typeof TRACKING_KEYS)[number]) {
   const params = new URLSearchParams(window.location.search);
   return params.get(key) ?? sessionStorage.getItem(`reset_${key}`) ?? undefined;
@@ -55,6 +62,16 @@ function normalizedSearch(value: string) {
 function validPhone(value: string) {
   const digits = value.replace(/\D/g, "");
   return digits.length >= 9 && digits.length <= 15;
+}
+
+function formatBookingDate(value: string) {
+  const date = new Date(`${value}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return BOOKING_DATE.format(date).replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function doctorWord(count: number) {
+  return count === 1 ? "лікар" : count >= 2 && count <= 4 ? "лікарі" : "лікарів";
 }
 
 function Icon({ type }: { type: Mode }) {
@@ -126,19 +143,47 @@ export default function BookingExperience() {
     void loadOptions();
   }, [loadOptions]);
 
-  const choiceItems = useMemo(() => {
-    const query = normalizedSearch(search);
-    const source = mode === "doctor" ? (options?.doctors || []) : (options?.services || []);
-    const filtered = query
-      ? source.filter((item) => normalizedSearch(item.name).includes(query))
-      : source;
-    return showAll || query ? filtered : filtered.slice(0, 18);
-  }, [mode, options, search, showAll]);
+  const choiceKind: "doctor" | "service" = step === "doctorService" ? "service" : mode === "doctor" ? "doctor" : "service";
 
-  const totalChoices = mode === "doctor" ? (options?.doctors.length || 0) : (options?.services.length || 0);
+  const allChoiceItems = useMemo<Array<DoctorOption | ServiceOption>>(() => {
+    if (step === "doctorService") {
+      if (!selectedDoctor) return [];
+      return (options?.services || []).filter((service) => service.doctorIds.includes(selectedDoctor.id));
+    }
+    if (mode === "doctor") return options?.doctors || [];
+    return options?.services || [];
+  }, [mode, options, selectedDoctor, step]);
+
+  const choiceItems = useMemo<Array<DoctorOption | ServiceOption>>(() => {
+    const query = normalizedSearch(search);
+    const filtered = query
+      ? allChoiceItems.filter((item) => normalizedSearch(item.name).includes(query))
+      : allChoiceItems;
+    return showAll || query ? filtered : filtered.slice(0, 18);
+  }, [allChoiceItems, search, showAll]);
+
+  const totalChoices = allChoiceItems.length;
   const selectedLabel = selectedService?.name || selectedDoctor?.name || "";
-  const currentNumber = step === "mode" ? 1 : step === "choice" ? 2 : step === "slot" ? 3 : mode === "help" ? 2 : 4;
-  const totalSteps = mode === "help" ? 2 : 4;
+  const totalSteps = mode === "help" ? 2 : mode === "doctor" ? 5 : 4;
+  const currentNumber = step === "mode"
+    ? 1
+    : step === "choice"
+      ? 2
+      : step === "doctorService"
+        ? 3
+        : step === "slot"
+          ? mode === "doctor" ? 4 : 3
+          : mode === "help" ? 2 : mode === "doctor" ? 5 : 4;
+
+  const progressTitle = step === "mode"
+    ? "Почнемо з вашого запиту"
+    : step === "choice"
+      ? mode === "doctor" ? "Оберіть лікаря" : "Оберіть послугу"
+      : step === "doctorService"
+        ? "Оберіть послугу"
+        : step === "slot"
+          ? "Оберіть вільний час"
+          : "Підтвердіть контакт";
 
   function resetSelection(nextMode?: Mode) {
     setSelectedService(null);
@@ -160,15 +205,33 @@ export default function BookingExperience() {
   function selectChoice(item: DoctorOption | ServiceOption) {
     setBooking(null);
     setStatus("");
-    if (mode === "doctor") {
-      setSelectedDoctor(item as DoctorOption);
-      setSelectedService(null);
-      trackPromoCustomEvent("booking_doctor_selected", { doctor_name: item.name });
-    } else {
-      setSelectedService(item as ServiceOption);
-      setSelectedDoctor(null);
-      trackPromoCustomEvent("booking_service_selected", { service_name: item.name });
+    setSearch("");
+    setShowAll(false);
+
+    if (step === "doctorService") {
+      const service = item as ServiceOption;
+      setSelectedService(service);
+      trackPromoCustomEvent("booking_service_selected", {
+        service_name: service.name,
+        doctor_name: selectedDoctor?.name,
+      });
+      setStep("slot");
+      return;
     }
+
+    if (mode === "doctor") {
+      const doctor = item as DoctorOption;
+      setSelectedDoctor(doctor);
+      setSelectedService(null);
+      trackPromoCustomEvent("booking_doctor_selected", { doctor_name: doctor.name });
+      setStep("doctorService");
+      return;
+    }
+
+    const service = item as ServiceOption;
+    setSelectedService(service);
+    setSelectedDoctor(null);
+    trackPromoCustomEvent("booking_service_selected", { service_name: service.name });
     setStep("slot");
   }
 
@@ -185,6 +248,13 @@ export default function BookingExperience() {
     }
     if (step === "slot") {
       setBooking(null);
+      setStep(mode === "doctor" ? "doctorService" : "choice");
+      return;
+    }
+    if (step === "doctorService") {
+      setSelectedService(null);
+      setSearch("");
+      setShowAll(false);
       setStep("choice");
       return;
     }
@@ -210,26 +280,24 @@ export default function BookingExperience() {
       setStatus("Перевірте номер телефону — має бути щонайменше 9 цифр.");
       return;
     }
-    if (mode !== "help" && !booking) {
-      setStatus("Спочатку оберіть актуальну вільну годину.");
-      setStep("slot");
+    if (mode !== "help" && (!selectedService || !booking)) {
+      setStatus("Спочатку оберіть послугу та актуальну вільну годину.");
+      setStep(selectedService ? "slot" : mode === "doctor" ? "doctorService" : "choice");
       return;
     }
 
-    const service = mode === "service"
-      ? selectedService?.name || "Онлайн-запис"
-      : mode === "doctor"
-        ? `Запис до лікаря ${selectedDoctor?.name || "RESET Clinic"}`
-        : comment
-          ? `Потрібна допомога з вибором: ${comment}`
-          : "Потрібна допомога з вибором послуги";
+    const service = mode === "help"
+      ? comment
+        ? `Потрібна допомога з вибором: ${comment}`
+        : "Потрібна допомога з вибором послуги"
+      : selectedService?.name || "Онлайн-запис";
 
     setSubmitting(true);
     setStatus("");
     trackPromoCustomEvent("booking_submit", {
       booking_mode: mode,
       booking_service: selectedService?.name,
-      booking_doctor: selectedDoctor?.name,
+      booking_doctor: selectedDoctor?.name || booking?.doctorName,
       booking_date: booking?.date,
       booking_time: booking?.time,
     });
@@ -261,8 +329,8 @@ export default function BookingExperience() {
             booking_mode: mode,
             booking_service: selectedService?.name,
             booking_service_id: selectedService?.id,
-            booking_doctor: selectedDoctor?.name,
-            booking_doctor_id: selectedDoctor?.id,
+            booking_doctor: selectedDoctor?.name || booking?.doctorName,
+            booking_doctor_id: selectedDoctor?.id || booking?.doctorId,
             patient_comment: comment || undefined,
             booking_selection: booking,
             source_surface: "booking-page-v2",
@@ -322,8 +390,8 @@ export default function BookingExperience() {
             <p>Оберіть послугу або лікаря, побачте тільки актуальні вільні години та підтвердьте запис за кілька кроків.</p>
             <div className={styles.trustList}>
               <div><span>01</span><strong>Живий розклад Cliniccards</strong><small>Зайняті та минулі години не показуємо.</small></div>
-              <div><span>02</span><strong>Без передоплати онлайн</strong><small>Ви просто резервуєте зручний час.</small></div>
-              <div><span>03</span><strong>Ми поруч, якщо є сумніви</strong><small>Адміністратор допоможе підібрати напрямок.</small></div>
+              <div><span>02</span><strong>Точна тривалість процедури</strong><small>Час розраховується за реальною послугою та лікарем.</small></div>
+              <div><span>03</span><strong>Ми поруч, якщо є сумніви</strong><small>Адміністратор допоможе підібрати правильний напрямок.</small></div>
             </div>
           </div>
           <div className={styles.storyFooter}>
@@ -343,7 +411,7 @@ export default function BookingExperience() {
             <div className={styles.progressRow}>
               <div className={styles.progressCopy}>
                 <span>Крок {currentNumber} з {totalSteps}</span>
-                <strong>{step === "mode" ? "Почнемо з вашого запиту" : step === "choice" ? (mode === "doctor" ? "Оберіть лікаря" : "Оберіть послугу") : step === "slot" ? "Оберіть вільний час" : "Підтвердіть контакт"}</strong>
+                <strong>{progressTitle}</strong>
               </div>
               <div className={styles.progressTrack} aria-hidden="true"><span style={{ width: `${(currentNumber / totalSteps) * 100}%` }} /></div>
             </div>
@@ -359,7 +427,7 @@ export default function BookingExperience() {
                 <div className={styles.heading}>
                   <span className={styles.kicker}>Як вам зручніше?</span>
                   <h2>Оберіть найпростіший шлях до запису</h2>
-                  <p>Якщо не знаєте точну назву процедури — це нормально. Ми залишили окремий швидкий варіант.</p>
+                  <p>Якщо не знаєте точну назву процедури — це нормально. Для цього є швидкий варіант із допомогою адміністратора.</p>
                 </div>
                 <div className={styles.modeGrid}>
                   <button type="button" className={`${styles.modeCard} ${styles.recommended}`} onClick={() => selectMode("service")}>
@@ -372,7 +440,7 @@ export default function BookingExperience() {
                   <button type="button" className={styles.modeCard} onClick={() => selectMode("doctor")}>
                     <span className={styles.modeIcon}><Icon type="doctor" /></span>
                     <strong>Хочу до конкретного лікаря</strong>
-                    <small>Оберу спеціаліста → перегляну його актуальний графік.</small>
+                    <small>Оберу спеціаліста та послугу → побачу його реальний графік.</small>
                     <span className={styles.modeArrow}>→</span>
                   </button>
                   <button type="button" className={styles.modeCard} onClick={() => selectMode("help")}>
@@ -385,12 +453,26 @@ export default function BookingExperience() {
               </div>
             ) : null}
 
-            {step === "choice" ? (
+            {step === "choice" || step === "doctorService" ? (
               <div className={styles.stepBody}>
                 <div className={styles.heading}>
-                  <span className={styles.kicker}>{mode === "doctor" ? "Спеціалісти RESET" : "Послуги RESET"}</span>
-                  <h2>{mode === "doctor" ? "До кого хочете записатись?" : "Що вас цікавить?"}</h2>
-                  <p>{mode === "doctor" ? "Показуємо лише активних спеціалістів із доступними послугами." : "Почніть вводити назву — список відфільтрується автоматично."}</p>
+                  <span className={styles.kicker}>
+                    {step === "doctorService" ? selectedDoctor?.name : choiceKind === "doctor" ? "Спеціалісти RESET" : "Послуги RESET"}
+                  </span>
+                  <h2>
+                    {step === "doctorService"
+                      ? "Яка послуга вам потрібна?"
+                      : choiceKind === "doctor"
+                        ? "До кого хочете записатись?"
+                        : "Що вас цікавить?"}
+                  </h2>
+                  <p>
+                    {step === "doctorService"
+                      ? "Показуємо тільки ті послуги, які доступні для обраного лікаря. Це потрібно, щоб коректно забронювати тривалість в Cliniccards."
+                      : choiceKind === "doctor"
+                        ? "Показуємо лише активних спеціалістів із доступними послугами."
+                        : "Почніть вводити назву — список відфільтрується автоматично."}
+                  </p>
                 </div>
 
                 {optionsLoading ? (
@@ -408,23 +490,35 @@ export default function BookingExperience() {
                       <input
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        placeholder={mode === "doctor" ? "Ім’я лікаря" : "Наприклад: консультація, ботулінотерапія…"}
-                        autoFocus
+                        placeholder={choiceKind === "doctor" ? "Ім’я лікаря" : "Наприклад: консультація, ботулінотерапія…"}
+                        autoComplete="off"
                       />
                       {search ? <button type="button" onClick={() => setSearch("")} aria-label="Очистити пошук">×</button> : null}
                     </label>
 
                     <div className={styles.choiceList}>
-                      {choiceItems.map((item) => (
-                        <button type="button" key={`${mode}-${item.id}`} className={styles.choiceItem} onClick={() => selectChoice(item)}>
-                          <span className={styles.choiceAvatar}>{mode === "doctor" ? item.name.slice(0, 1).toUpperCase() : "·"}</span>
-                          <span className={styles.choiceCopy}>
-                            <strong>{item.name}</strong>
-                            <small>{mode === "doctor" ? `${(item as DoctorOption).serviceCount} послуг у розкладі` : `${(item as ServiceOption).doctorIds.length} ${(item as ServiceOption).doctorIds.length === 1 ? "лікар" : "лікарі"} доступні`}</small>
-                          </span>
-                          <span className={styles.choiceArrow}>→</span>
-                        </button>
-                      ))}
+                      {choiceItems.map((item) => {
+                        const doctorItem = choiceKind === "doctor" ? item as DoctorOption : null;
+                        const serviceItem = choiceKind === "service" ? item as ServiceOption : null;
+                        return (
+                          <button type="button" key={`${choiceKind}-${item.id}`} className={styles.choiceItem} onClick={() => selectChoice(item)}>
+                            <span className={styles.choiceAvatar}>{choiceKind === "doctor" ? item.name.slice(0, 1).toUpperCase() : "·"}</span>
+                            <span className={styles.choiceCopy}>
+                              <strong>{item.name}</strong>
+                              <small>
+                                {doctorItem
+                                  ? `${doctorItem.serviceCount} послуг у розкладі`
+                                  : serviceItem
+                                    ? step === "doctorService"
+                                      ? `Доступно у ${selectedDoctor?.name || "лікаря"}`
+                                      : `${serviceItem.doctorIds.length} ${doctorWord(serviceItem.doctorIds.length)} доступно`
+                                    : ""}
+                              </small>
+                            </span>
+                            <span className={styles.choiceArrow}>→</span>
+                          </button>
+                        );
+                      })}
                       {!choiceItems.length ? <div className={styles.emptyChoice}>Нічого не знайшли. Спробуйте коротший запит або скористайтесь допомогою адміністратора.</div> : null}
                     </div>
 
@@ -447,18 +541,18 @@ export default function BookingExperience() {
                 <div className={styles.heading}>
                   <span className={styles.kicker}>Актуальні вільні години</span>
                   <h2>Коли вам зручно?</h2>
-                  <p>Слот перевіряється повторно в момент підтвердження, тому випадковий подвійний запис не пройде.</p>
+                  <p>Показуємо майбутні вільні години. Перед створенням запису слот автоматично перевіряється ще раз.</p>
                 </div>
                 <div className={styles.selectedChoice}>
-                  <span>{mode === "doctor" ? "Лікар" : "Послуга"}</span>
-                  <strong>{selectedLabel}</strong>
-                  <button type="button" onClick={() => setStep("choice")}>Змінити</button>
+                  <span>{mode === "doctor" ? `Лікар · ${selectedDoctor?.name || ""}` : "Послуга"}</span>
+                  <strong>{selectedService?.name || selectedLabel}</strong>
+                  <button type="button" onClick={() => setStep(mode === "doctor" ? "doctorService" : "choice")}>Змінити</button>
                 </div>
 
                 <div className={styles.slotPickerWrap}>
                   <BookingSlotPicker
-                    service={mode === "service" ? selectedService?.name : undefined}
-                    doctor={mode === "doctor" ? selectedDoctor?.name : undefined}
+                    service={selectedService?.name}
+                    doctor={selectedDoctor?.id}
                     value={booking}
                     onChange={(value) => {
                       setBooking(value);
@@ -501,8 +595,8 @@ export default function BookingExperience() {
                     <span className={styles.summaryCheck}>✓</span>
                     <div>
                       <small>Ваш вибір</small>
-                      <strong>{booking.date} · {booking.time}</strong>
-                      <span>{booking.doctorName || selectedLabel}</span>
+                      <strong>{formatBookingDate(booking.date)} · {booking.time}</strong>
+                      <span>{selectedService?.name}{booking.doctorName ? ` · ${booking.doctorName}` : ""}</span>
                     </div>
                     <button type="button" onClick={() => setStep("slot")}>Змінити</button>
                   </div>
@@ -527,7 +621,7 @@ export default function BookingExperience() {
                   <button type="submit" className={styles.primaryAction} disabled={submitting}>
                     {submitting ? (mode === "help" ? "Надсилаємо…" : "Бронюємо…") : mode === "help" ? "Отримати допомогу →" : "Підтвердити запис →"}
                   </button>
-                  <p className={styles.formNote}>Натискаючи кнопку, ви погоджуєтесь на обробку контактних даних для організації запису. Жодних рекламних розсилок.</p>
+                  <p className={styles.formNote}>Контактні дані використовуються для організації та підтвердження вашого запису.</p>
                 </form>
               </div>
             ) : null}
