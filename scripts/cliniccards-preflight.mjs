@@ -50,17 +50,21 @@ function summarizeJson(value) {
   return summary;
 }
 
+async function requestJson(path) {
+  const response = await fetch(`${base}${path}`, {
+    headers: { Accept: "application/json", Token: token },
+    cache: "no-store",
+  });
+  const text = await response.text();
+  let json = null;
+  try { json = text ? JSON.parse(text) : null; } catch {}
+  return { response, text, json };
+}
+
 async function probe(name, path) {
   const started = Date.now();
   try {
-    const response = await fetch(`${base}${path}`, {
-      headers: { Accept: "application/json", Token: token },
-      cache: "no-store",
-    });
-    const text = await response.text();
-    let json = null;
-    try { json = text ? JSON.parse(text) : null; } catch {}
-
+    const { response, text, json } = await requestJson(path);
     const result = {
       name,
       ok: response.ok,
@@ -99,6 +103,26 @@ const from = kyivDate(0);
 const to = kyivDate(7);
 const range = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 console.log(`[cliniccards-preflight] ${JSON.stringify({ configured: true, baseHost: new URL(base).host, from, to })}`);
+
+try {
+  const { response, json } = await requestJson("/booking-settings");
+  const data = response.ok && json && typeof json === "object" && !Array.isArray(json) && json.data && typeof json.data === "object" ? json.data : null;
+  if (data) {
+    const rawLink = typeof data.booking_link === "string" ? data.booking_link.trim() : "";
+    let bookingLink = rawLink;
+    try {
+      const parsed = new URL(rawLink);
+      bookingLink = `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
+    } catch {}
+    console.log(`[cliniccards-booking-public] ${JSON.stringify({
+      booking_status: data.booking_status,
+      booking_interval: data.booking_interval,
+      booking_link: bookingLink,
+    })}`);
+  }
+} catch (error) {
+  console.log(`[cliniccards-booking-public] ${JSON.stringify({ error: error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200) })}`);
+}
 
 await Promise.all([
   probe("booking-settings", "/booking-settings"),
