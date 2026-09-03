@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLead } from "../../../../../lib/admin-data";
-import { getCliniccardsAvailability } from "../../../../../lib/cliniccards-booking";
-import { POST as createLead } from "../../../leads/route";
+import { getLead } from "../../../../lib/admin-data";
+import { getCliniccardsAvailability } from "../../../../lib/cliniccards-booking";
+import { POST as createLead } from "../../leads/route";
 
 export const dynamic = "force-dynamic";
 
