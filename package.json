@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/cliniccards-preflight.mjs && next build",
+    "build": "node scripts/cliniccards-preflight.mjs && node scripts/cliniccards-booking-js-inspect.mjs && next build",
     "start": "node ./server.js"
   },
   "engines": {
