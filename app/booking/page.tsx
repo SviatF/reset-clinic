@@ -57,7 +57,7 @@ export default function BookingPage() {
           max-width: 980px !important;
           min-height: calc(100dvh - 76px) !important;
           margin: 0 auto !important;
-          padding: clamp(28px, 4vw, 56px) 20px 48px !important;
+          padding: clamp(20px, 3vw, 36px) 20px 48px !important;
           box-sizing: border-box !important;
           display: flex !important;
           flex-direction: column !important;
@@ -71,6 +71,15 @@ export default function BookingPage() {
           border-radius: 28px !important;
         }
 
+        /* The old mobile layout made this row sticky. In the standalone booking
+           flow it must stay in normal document flow, otherwise it creates a large
+           empty gap above the first question. */
+        main > header + div > section > div:nth-child(2) > div:first-child {
+          position: relative !important;
+          top: auto !important;
+          margin: 0 !important;
+        }
+
         @media (max-width: 820px) {
           main > header + div {
             padding-top: 62px !important;
@@ -78,7 +87,7 @@ export default function BookingPage() {
 
           main > header + div > section {
             min-height: calc(100dvh - 62px) !important;
-            padding: 14px 10px 28px !important;
+            padding: 8px 10px 28px !important;
           }
 
           main > header + div > section > div:nth-child(2) {
@@ -87,11 +96,24 @@ export default function BookingPage() {
             box-shadow: 0 18px 46px rgba(53, 39, 31, 0.07) !important;
             overflow: hidden !important;
           }
+
+          main > header + div > section > div:nth-child(2) > div:first-child {
+            position: relative !important;
+            top: auto !important;
+            z-index: 1 !important;
+            padding-top: 13px !important;
+            padding-bottom: 13px !important;
+          }
+
+          main > header + div > section > div:nth-child(2) > div:first-child + div,
+          main > header + div > section > div:nth-child(2) > div:first-child + button + div {
+            margin-top: 0 !important;
+          }
         }
 
         @media (max-width: 430px) {
           main > header + div > section {
-            padding: 8px 6px 22px !important;
+            padding: 6px 6px 22px !important;
           }
 
           main > header + div > section > div:nth-child(2) {
