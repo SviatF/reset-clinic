@@ -41,7 +41,8 @@
 .booking-slot-selected strong{font-weight:700}
 .booking-slot-selected small{color:var(--booking-muted)}
 .booking-slot-required{margin:0;font-size:12px;line-height:1.4;color:#8a392e}
-.legacy-live-booking{margin:0 0 4px}
+.legacy-live-booking{position:relative!important;z-index:2!important;height:auto!important;max-height:none!important;overflow:visible!important;margin:0 0 18px!important}
+.legacy-page form:has(.legacy-live-booking),.legacy-page .elementor-form-fields-wrapper:has(.legacy-live-booking),.ccb-widget form:has(.legacy-live-booking){height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important}
 @media(max-width:767px){.booking-slot-picker{padding:17px;border-radius:19px;gap:15px}.booking-slot-heading{display:grid;gap:4px}.booking-slot-refresh{justify-self:start}.booking-week-tabs{display:flex;overflow-x:auto;grid-template-columns:none;padding-bottom:3px}.booking-week-tabs button{flex:0 0 154px}.booking-time-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.booking-time-grid button{min-height:54px;padding:8px 6px}.booking-slot-heading h3{font-size:21px}.booking-slot-heading p{font-size:12px}.booking-day-tabs button{font-size:11px;padding:8px 10px}}
 @media(max-width:380px){.booking-time-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.booking-slot-loading span{animation:none}.booking-week-tabs button,.booking-time-grid button{transition:none}}
