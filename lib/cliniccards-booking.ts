@@ -23,18 +23,58 @@ type CliniccardsBookingResult = {
   slot?: BookingSlot;
 };
 
-type IntervalRecord = {
-  date: string;
-  start: string;
-  end: string;
-  doctorId?: string;
-  doctorName?: string;
-  cabinetId?: string;
-  cabinetName?: string;
-  serviceId?: string;
-  serviceName?: string;
-  explicitlyAvailable: boolean;
+type CliniccardsMember = {
+  id?: string | number;
+  name?: string;
+  state?: boolean;
 };
+
+type CliniccardsPriceItem = {
+  id?: string | number;
+  name?: string;
+  alias?: string;
+  items?: Record<string, number | string>;
+};
+
+type CliniccardsDateValue = {
+  date?: string;
+  timezone?: string;
+  timezone_type?: number;
+};
+
+type CliniccardsInterval = {
+  start?: CliniccardsDateValue | string;
+  end?: CliniccardsDateValue | string;
+  duration?: number | string;
+};
+
+type CliniccardsShift = {
+  schedule_cabinets_id?: string | number;
+  clinics_members_id?: string | number;
+  shift_start?: string;
+  shift_end?: string;
+  intervals?: CliniccardsInterval[] | Record<string, CliniccardsInterval>;
+  isCurrentDoctorsShift?: boolean;
+};
+
+type CliniccardsFilterData = {
+  members?: CliniccardsMember[];
+  priceItems?: CliniccardsPriceItem[];
+  scheduleShifts?: Record<string, Record<string, CliniccardsShift[]>>;
+  doctorsShiftsIntervalRemainingTime?: Record<string, unknown>;
+  doctorsServicesExecutionTime?: Record<string, unknown>;
+  doctorMinServiceTime?: Record<string, number | string>;
+};
+
+class CliniccardsHttpError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "CliniccardsHttpError";
+    this.status = status;
+  }
+}
 
 function clean(value: unknown) {
   if (value === null || value === undefined) return "";
@@ -71,7 +111,7 @@ export function cliniccardsBookingHorizonDays() {
   return envInt("CLINIC_BOOKING_HORIZON_DAYS", DEFAULT_HORIZON_DAYS, 7, 90);
 }
 
-function slotMinutes() {
+function fallbackSlotMinutes() {
   return envInt("CLINIC_BOOKING_SLOT_MINUTES", DEFAULT_SLOT_MINUTES, 10, 180);
 }
 
@@ -83,13 +123,18 @@ function responseError(payload: unknown, fallback: string) {
   const record = asRecord(payload);
   if (!record) return fallback;
   const nested = asRecord(record.error);
-  return (
-    clean(record.message) ||
-    clean(record.error) ||
-    clean(nested?.message) ||
-    clean(nested?.description) ||
-    fallback
-  );
+  const scalarError = typeof record.error === "string" || typeof record.error === "number" ? clean(record.error) : "";
+  return clean(record.message) || clean(nested?.message) || clean(nested?.description) || scalarError || fallback;
+}
+
+async function parseResponse(response: Response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return { message: text.slice(0, 1000) };
+  }
 }
 
 async function cliniccardsRequest(path: string, init?: RequestInit) {
@@ -107,22 +152,29 @@ async function cliniccardsRequest(path: string, init?: RequestInit) {
     },
   });
 
-  const text = await response.text();
-  let payload: unknown = null;
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = { message: text.slice(0, 1000) };
-    }
-  }
-
+  const payload = await parseResponse(response);
   const record = asRecord(payload);
   const logicalFailure = clean(record?.result).toLowerCase() === "fail" || record?.success === false;
   if (!response.ok || logicalFailure) {
-    throw new Error(responseError(payload, `Cliniccards API ${response.status}`));
+    throw new CliniccardsHttpError(responseError(payload, `Cliniccards API ${response.status}`), response.status);
   }
+  return payload;
+}
 
+async function publicBookingRequest(url: string, body: unknown) {
+  const response = await fetch(url, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const payload = await parseResponse(response);
+  if (!response.ok) {
+    throw new CliniccardsHttpError(responseError(payload, `Cliniccards booking ${response.status}`), response.status);
+  }
   return payload;
 }
 
@@ -153,47 +205,58 @@ function addDays(date: string, days: number) {
   return value.toISOString().slice(0, 10);
 }
 
+function normalizeDate(value: unknown) {
+  const raw = clean(value);
+  const match = raw.match(/(20\d{2})-(\d{2})-(\d{2})/);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : "";
+}
+
 function normalizeTime(value: unknown) {
   const raw = clean(value);
-  if (!raw) return "";
   const match = raw.match(/(?:^|[T\s])(\d{1,2}):(\d{2})/);
   if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
   const short = raw.match(/^(\d{1,2}):(\d{2})/);
   return short ? `${short[1].padStart(2, "0")}:${short[2]}` : "";
 }
 
-function normalizeDate(value: unknown) {
-  const raw = clean(value);
-  if (!raw) return "";
-  const direct = raw.match(/(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})/);
-  if (direct) return `${direct[1]}-${direct[2].padStart(2, "0")}-${direct[3].padStart(2, "0")}`;
-
-  const parsed = new Date(raw);
-  if (!Number.isNaN(parsed.getTime())) return dateParts(parsed).date;
-  return "";
+function cliniccardsDateValue(value: CliniccardsDateValue | string | undefined) {
+  if (typeof value === "string") return value;
+  return value?.date || "";
 }
 
-function localDateTime(record: JsonRecord, start: boolean) {
-  const dateKeys = ["date", "schedule_date", "visit_date", "day", "work_date"];
-  const timeKeys = start
-    ? ["time_start", "start_time", "visit_start", "start", "datetime", "date_start", "from"]
-    : ["time_end", "end_time", "visit_end", "end", "date_end", "to"];
+function minutes(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return Number.NaN;
+  return hour * 60 + minute;
+}
 
-  let date = "";
-  for (const key of dateKeys) {
-    date = normalizeDate(record[key]);
-    if (date) break;
-  }
+function timeFromMinutes(value: number) {
+  const hour = Math.floor(value / 60);
+  const minute = value % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
 
-  let time = "";
-  for (const key of timeKeys) {
-    const raw = record[key];
-    time = normalizeTime(raw);
-    if (!date) date = normalizeDate(raw);
-    if (time) break;
-  }
+function lower(value: unknown) {
+  return clean(value).toLocaleLowerCase("uk-UA");
+}
 
-  return date && time ? { date, time } : null;
+function normalizedWords(value: unknown) {
+  return lower(value)
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .split(/\s+/)
+    .filter((item) => item.length >= 3);
+}
+
+function fuzzyMatch(leftValue: unknown, rightValue: unknown) {
+  const left = lower(leftValue);
+  const right = lower(rightValue);
+  if (!left || !right) return false;
+  if (left.includes(right) || right.includes(left)) return true;
+  const leftWords = new Set(normalizedWords(left));
+  const rightWords = normalizedWords(right);
+  if (!leftWords.size || !rightWords.length) return false;
+  const overlap = rightWords.filter((word) => leftWords.has(word)).length;
+  return overlap >= Math.min(2, rightWords.length);
 }
 
 function firstString(record: JsonRecord, keys: string[]) {
@@ -202,53 +265,6 @@ function firstString(record: JsonRecord, keys: string[]) {
     if (value) return value;
   }
   return undefined;
-}
-
-function lower(value: unknown) {
-  return clean(value).toLowerCase();
-}
-
-function isExplicitlyUnavailable(record: JsonRecord, path: string) {
-  if (record.available === false || record.is_available === false || record.free === false || record.is_free === false) return true;
-  const state = [record.status, record.state, record.type, record.kind, record.event_type]
-    .map(lower)
-    .filter(Boolean)
-    .join(" ");
-  const context = `${path} ${state}`;
-  return /(break|pause|busy|blocked|unavailable|vacation|holiday|day.?off|not.?working|cancelled|canceled|moved|deleted)/i.test(context);
-}
-
-function isExplicitlyAvailable(record: JsonRecord, path: string) {
-  if (record.available === true || record.is_available === true || record.free === true || record.is_free === true) return true;
-  const state = [record.status, record.state, record.type, record.kind, record.event_type]
-    .map(lower)
-    .filter(Boolean)
-    .join(" ");
-  return /(free|available|slot)/i.test(`${path} ${state}`) && !isExplicitlyUnavailable(record, path);
-}
-
-function recordDoctorId(record: JsonRecord) {
-  return firstString(record, ["doctor_id", "staff_id", "specialist_id", "employee_id", "user_id"]);
-}
-
-function recordCabinetId(record: JsonRecord) {
-  return firstString(record, ["cabinet_id", "room_id", "office_id"]);
-}
-
-function recordServiceId(record: JsonRecord) {
-  return firstString(record, ["service_id", "price_id", "manipulation_id", "procedure_id"]);
-}
-
-function recordDoctorName(record: JsonRecord) {
-  return firstString(record, ["doctor_name", "staff_name", "specialist_name", "employee_name", "full_name", "name"]);
-}
-
-function recordCabinetName(record: JsonRecord) {
-  return firstString(record, ["cabinet_name", "room_name", "office_name"]);
-}
-
-function recordServiceName(record: JsonRecord) {
-  return firstString(record, ["service_name", "price_name", "manipulation_name", "procedure_name"]);
 }
 
 function walkRecords(value: unknown, visitor: (record: JsonRecord, path: string) => void, path = "root") {
@@ -264,196 +280,182 @@ function walkRecords(value: unknown, visitor: (record: JsonRecord, path: string)
   });
 }
 
-function staffNames(payload: unknown) {
-  const names = new Map<string, string>();
-  walkRecords(payload, (record, path) => {
-    if (!/(staff|doctor|specialist|employee)/i.test(path)) return;
-    const id = firstString(record, ["staff_id", "doctor_id", "specialist_id", "employee_id", "id"]);
-    if (!id) return;
-    const first = firstString(record, ["firstname", "first_name", "name"]);
-    const last = firstString(record, ["lastname", "last_name", "surname"]);
-    const full = firstString(record, ["full_name", "doctor_name", "staff_name"]) || [last, first].filter(Boolean).join(" ");
-    if (full) names.set(id, full);
+function bookingSettings(payload: unknown) {
+  const root = asRecord(payload);
+  return asRecord(root?.data) || root;
+}
+
+function bookingLinkFromSettings(payload: unknown) {
+  return clean(bookingSettings(payload)?.booking_link);
+}
+
+function bookingIntervalFromSettings(payload: unknown) {
+  const value = Number(bookingSettings(payload)?.booking_interval);
+  return Number.isFinite(value) && value >= 5 && value <= 180 ? Math.round(value) : fallbackSlotMinutes();
+}
+
+function bookingIsActive(payload: unknown) {
+  const status = lower(bookingSettings(payload)?.booking_status);
+  return !status || status === "active" || status === "enabled" || status === "on" || status === "1";
+}
+
+function bookingTokenFromLink(link: string) {
+  try {
+    const url = new URL(link);
+    return url.pathname.split("/").filter(Boolean).at(-1) || "";
+  } catch {
+    return "";
+  }
+}
+
+async function getFilterData(settingsPayload: unknown): Promise<CliniccardsFilterData> {
+  const link = bookingLinkFromSettings(settingsPayload);
+  const token = bookingTokenFromLink(link);
+  if (!link || !token) throw new Error("Cliniccards booking_link is missing or invalid");
+
+  const origin = new URL(link).origin;
+  const payload = await publicBookingRequest(`${origin}/booking/filter-data/${encodeURIComponent(token)}?sid=0`, {
+    doctor: {},
+    service: {},
+    time: null,
   });
-  return names;
+  const record = asRecord(payload);
+  if (!record) throw new Error("Cliniccards booking filter-data returned invalid JSON");
+  return record as CliniccardsFilterData;
 }
 
-function scheduleIntervals(payload: unknown, doctorNames: Map<string, string>) {
-  const intervals: IntervalRecord[] = [];
-  walkRecords(payload, (record, path) => {
-    const start = localDateTime(record, true);
-    const end = localDateTime(record, false);
-    if (!start || !end || start.date !== end.date || isExplicitlyUnavailable(record, path)) return;
-
-    const doctorId = recordDoctorId(record);
-    const pathSuggestsSchedule = /(schedule|shift|working|worktime|calendar|slot|available|free)/i.test(path);
-    const looksLikeVisit = /(visit|appointment|patient|reservation)/i.test(path) || Boolean(firstString(record, ["visit_id", "patient_id"]));
-    if (!pathSuggestsSchedule && looksLikeVisit && !isExplicitlyAvailable(record, path)) return;
-
-    intervals.push({
-      date: start.date,
-      start: start.time,
-      end: end.time,
-      doctorId,
-      doctorName: recordDoctorName(record) || (doctorId ? doctorNames.get(doctorId) : undefined),
-      cabinetId: recordCabinetId(record),
-      cabinetName: recordCabinetName(record),
-      serviceId: recordServiceId(record),
-      serviceName: recordServiceName(record),
-      explicitlyAvailable: isExplicitlyAvailable(record, path),
-    });
-  });
-  return intervals;
+function memberMap(data: CliniccardsFilterData) {
+  const map = new Map<string, CliniccardsMember>();
+  for (const member of Array.isArray(data.members) ? data.members : []) {
+    const id = clean(member.id);
+    if (id) map.set(id, member);
+  }
+  return map;
 }
 
-function busyIntervals(payload: unknown) {
-  const intervals: IntervalRecord[] = [];
-  walkRecords(payload, (record, path) => {
-    const start = localDateTime(record, true);
-    const end = localDateTime(record, false);
-    if (!start || !end || start.date !== end.date) return;
-    const state = [record.status, record.state].map(lower).join(" ");
-    if (/(cancelled|canceled|moved|deleted|declined)/i.test(state)) return;
-    if (!/(visit|appointment|patient|reservation)/i.test(path) && !firstString(record, ["visit_id", "patient_id"])) return;
-    intervals.push({
-      date: start.date,
-      start: start.time,
-      end: end.time,
-      doctorId: recordDoctorId(record),
-      cabinetId: recordCabinetId(record),
-      explicitlyAvailable: false,
-    });
-  });
-  return intervals;
+function matchingService(data: CliniccardsFilterData, service?: string) {
+  if (!service) return undefined;
+  const services = Array.isArray(data.priceItems) ? data.priceItems : [];
+  return services.find((item) => fuzzyMatch(item.name, service) || fuzzyMatch(item.alias, service));
 }
 
-function minutes(value: string) {
-  const [hour, minute] = value.split(":").map(Number);
-  return hour * 60 + minute;
+function serviceDuration(item: CliniccardsPriceItem | undefined, doctorId: string, fallback: number) {
+  if (!item?.items) return fallback;
+  const value = Number(item.items[doctorId]);
+  return Number.isFinite(value) && value > 0 && value <= 360 ? Math.round(value) : fallback;
 }
 
-function timeFromMinutes(value: number) {
-  const hour = Math.floor(value / 60);
-  const minute = value % 60;
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+function serviceAvailableForDoctor(item: CliniccardsPriceItem | undefined, doctorId: string) {
+  if (!item) return true;
+  const value = Number(item.items?.[doctorId]);
+  return Number.isFinite(value) && value > 0;
 }
 
-function overlaps(start: string, end: string, busyStart: string, busyEnd: string) {
-  return minutes(start) < minutes(busyEnd) && minutes(end) > minutes(busyStart);
+function intervalList(shift: CliniccardsShift) {
+  if (Array.isArray(shift.intervals)) return shift.intervals;
+  if (shift.intervals && typeof shift.intervals === "object") return Object.values(shift.intervals);
+  return [];
 }
 
-function sameResource(slot: IntervalRecord, busy: IntervalRecord) {
-  if (slot.doctorId && busy.doctorId) return slot.doctorId === busy.doctorId;
-  if (slot.cabinetId && busy.cabinetId) return slot.cabinetId === busy.cabinetId;
-  return true;
+function dateInRange(date: string, from: string, to: string) {
+  return date >= from && date <= to;
 }
 
-function durationFromSettings(payload: unknown, service?: string) {
-  const wanted = lower(service);
-  let exact: number | undefined;
-  let general: number | undefined;
-  walkRecords(payload, (record) => {
-    const durationValue = ["duration", "duration_minutes", "minutes", "visit_duration", "interval"]
-      .map((key) => Number(record[key]))
-      .find((value) => Number.isFinite(value) && value >= 10 && value <= 240);
-    if (!durationValue) return;
-    const name = lower(firstString(record, ["service_name", "price_name", "name", "title"]));
-    if (wanted && name && (name.includes(wanted) || wanted.includes(name))) exact = durationValue;
-    else if (!general) general = durationValue;
-  });
-  return exact || general || slotMinutes();
+function doctorMatches(member: CliniccardsMember | undefined, doctorId: string, doctor?: string) {
+  if (!doctor) return true;
+  return fuzzyMatch(member?.name, doctor) || clean(doctor) === doctorId;
 }
 
-function matchesFilter(value: string | undefined, filter: string | undefined) {
-  if (!filter) return true;
-  if (!value) return true;
-  const left = lower(value);
-  const right = lower(filter);
-  return left.includes(right) || right.includes(left);
-}
-
-function buildSlots(
-  schedulePayload: unknown,
-  visitsPayload: unknown,
-  staffPayload: unknown,
+function buildSlotsFromFilterData(
+  data: CliniccardsFilterData,
   settingsPayload: unknown,
   options: AvailabilityOptions,
 ) {
-  const names = staffNames(staffPayload);
-  const schedule = scheduleIntervals(schedulePayload, names);
-  const busy = busyIntervals(visitsPayload);
-  const duration = durationFromSettings(settingsPayload, options.service);
+  const from = options.from || todayKyiv();
+  const to = options.to || addDays(from, cliniccardsBookingHorizonDays() - 1);
+  const step = bookingIntervalFromSettings(settingsPayload);
+  const matchedService = matchingService(data, options.service);
+  const members = memberMap(data);
   const threshold = dateParts(new Date(Date.now() + minLeadMinutes() * 60_000));
   const thresholdKey = `${threshold.date}T${threshold.time}`;
-  const unique = new Map<string, BookingSlot>();
+  const slots = new Map<string, BookingSlot>();
+  const scheduleShifts = data.scheduleShifts || {};
 
-  for (const interval of schedule) {
-    if (options.from && interval.date < options.from) continue;
-    if (options.to && interval.date > options.to) continue;
-    if (!matchesFilter(interval.doctorName, options.doctor)) continue;
-    if (!matchesFilter(interval.serviceName, options.service)) continue;
+  for (const days of Object.values(scheduleShifts)) {
+    if (!days || typeof days !== "object") continue;
 
-    const startMinutes = minutes(interval.start);
-    const endMinutes = minutes(interval.end);
-    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) continue;
+    for (const [dayKey, shifts] of Object.entries(days)) {
+      if (!Array.isArray(shifts)) continue;
 
-    const step = interval.explicitlyAvailable && endMinutes - startMinutes <= duration ? endMinutes - startMinutes : duration;
-    if (step < 10) continue;
+      for (const shift of shifts) {
+        if (!shift || typeof shift !== "object") continue;
+        if (shift.isCurrentDoctorsShift === false) continue;
 
-    for (let cursor = startMinutes; cursor + duration <= endMinutes; cursor += step) {
-      const start = timeFromMinutes(cursor);
-      const end = timeFromMinutes(cursor + duration);
-      const slotKey = `${interval.date}T${start}`;
-      if (slotKey <= thresholdKey) continue;
+        const doctorId = clean(shift.clinics_members_id);
+        const cabinetId = clean(shift.schedule_cabinets_id);
+        if (!doctorId || !cabinetId) continue;
 
-      const occupied = busy.some(
-        (item) => item.date === interval.date && sameResource(interval, item) && overlaps(start, end, item.start, item.end),
-      );
-      if (occupied) continue;
+        const member = members.get(doctorId);
+        if (member?.state === false) continue;
+        if (!doctorMatches(member, doctorId, options.doctor)) continue;
+        if (!serviceAvailableForDoctor(matchedService, doctorId)) continue;
 
-      const id = [interval.doctorId || "any", interval.cabinetId || "any", interval.date, start, end].join("|");
-      unique.set(id, {
-        id,
-        date: interval.date,
-        time: start,
-        start: `${interval.date}T${start}:00`,
-        end: `${interval.date}T${end}:00`,
-        doctorId: interval.doctorId,
-        doctorName: interval.doctorName,
-        cabinetId: interval.cabinetId,
-        cabinetName: interval.cabinetName,
-        serviceId: interval.serviceId,
-        serviceName: interval.serviceName,
-      });
+        const serviceId = matchedService ? clean(matchedService.id) || undefined : undefined;
+        const serviceName = matchedService ? clean(matchedService.alias) || clean(matchedService.name) || undefined : undefined;
+        const duration = serviceDuration(matchedService, doctorId, step);
+
+        for (const interval of intervalList(shift)) {
+          const rawStart = cliniccardsDateValue(interval?.start);
+          const rawEnd = cliniccardsDateValue(interval?.end);
+          const date = normalizeDate(rawStart) || normalizeDate(shift.shift_start) || normalizeDate(`${dayKey}`);
+          const endDate = normalizeDate(rawEnd) || normalizeDate(shift.shift_end) || date;
+          const startTime = normalizeTime(rawStart);
+          const endTime = normalizeTime(rawEnd);
+          if (!date || date !== endDate || !startTime || !endTime || !dateInRange(date, from, to)) continue;
+
+          const startMinute = minutes(startTime);
+          const endMinute = minutes(endTime);
+          if (!Number.isFinite(startMinute) || !Number.isFinite(endMinute) || endMinute <= startMinute) continue;
+
+          const firstMinute = Math.ceil(startMinute / step) * step;
+          for (let cursor = firstMinute; cursor + duration <= endMinute; cursor += step) {
+            const time = timeFromMinutes(cursor);
+            const end = timeFromMinutes(cursor + duration);
+            if (`${date}T${time}` < thresholdKey) continue;
+
+            const id = ["cliniccards", date, time, doctorId, cabinetId, serviceId || "consult"].join(":");
+            slots.set(id, {
+              id,
+              date,
+              time,
+              start: `${date}T${time}:00`,
+              end: `${date}T${end}:00`,
+              doctorId,
+              doctorName: clean(member?.name) || undefined,
+              cabinetId,
+              serviceId,
+              serviceName,
+            });
+          }
+        }
+      }
     }
   }
 
-  return [...unique.values()].sort((a, b) => a.start.localeCompare(b.start));
-}
-
-async function optionalRequest(path: string) {
-  try {
-    return await cliniccardsRequest(path);
-  } catch {
-    return null;
-  }
+  return [...slots.values()].sort((a, b) => {
+    const byStart = a.start.localeCompare(b.start);
+    if (byStart) return byStart;
+    return (a.doctorName || a.doctorId || "").localeCompare(b.doctorName || b.doctorId || "", "uk");
+  });
 }
 
 export async function getCliniccardsAvailability(options: AvailabilityOptions = {}) {
   if (!isCliniccardsBookingEnabled()) return [] as BookingSlot[];
 
-  const from = options.from || todayKyiv();
-  const to = options.to || addDays(from, cliniccardsBookingHorizonDays() - 1);
-  const query = new URLSearchParams({ from, to });
-
-  const [schedule, visits, staff, settings] = await Promise.all([
-    cliniccardsRequest(`/schedule?${query.toString()}`),
-    optionalRequest(`/visits?${query.toString()}`),
-    optionalRequest("/staff"),
-    optionalRequest("/booking-settings"),
-  ]);
-
-  return buildSlots(schedule, visits, staff, settings, { ...options, from, to });
+  const settings = await cliniccardsRequest("/booking-settings");
+  if (!bookingIsActive(settings)) return [] as BookingSlot[];
+  const data = await getFilterData(settings);
+  return buildSlotsFromFilterData(data, settings, options);
 }
 
 function sameSelectedSlot(slot: BookingSlot, selection: BookingSelection) {
@@ -509,18 +511,12 @@ function extractId(payload: unknown, keys: string[]) {
 }
 
 async function writeWithMethodFallback(path: string, body: JsonRecord) {
-  let firstError: unknown;
-  for (const method of ["POST", "PUT"] as const) {
-    try {
-      return await cliniccardsRequest(path, { method, body: JSON.stringify(body) });
-    } catch (error) {
-      firstError ||= error;
-      const message = error instanceof Error ? error.message : String(error);
-      if (method === "POST" && /(405|method|not allowed)/i.test(message)) continue;
-      throw error;
-    }
+  try {
+    return await cliniccardsRequest(path, { method: "POST", body: JSON.stringify(body) });
+  } catch (error) {
+    if (!(error instanceof CliniccardsHttpError) || error.status !== 405) throw error;
+    return cliniccardsRequest(path, { method: "PUT", body: JSON.stringify(body) });
   }
-  throw firstError instanceof Error ? firstError : new Error("Cliniccards write failed");
 }
 
 async function createPatient(name: string, phone: string) {
@@ -587,7 +583,7 @@ export async function bookCliniccardsSelection(args: {
       return {
         status: "manual_required",
         slot,
-        error: "Cliniccards schedule did not provide doctor_id/cabinet_id for safe automatic booking",
+        error: "Cliniccards availability did not provide doctor_id/cabinet_id for safe automatic booking",
       };
     }
 
