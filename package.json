@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node --experimental-strip-types scripts/cliniccards-e2e-once.mjs && next build",
+    "build": "next build",
     "start": "node ./server.js"
   },
   "engines": {
