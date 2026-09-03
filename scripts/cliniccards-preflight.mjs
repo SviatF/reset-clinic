@@ -94,6 +94,50 @@ async function probe(name, path) {
   }
 }
 
+function extractScriptSources(html, pageUrl) {
+  const found = new Set();
+  for (const match of html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/gi)) {
+    try { found.add(new URL(match[1], pageUrl).toString()); } catch {}
+  }
+  return [...found].slice(0, 20);
+}
+
+function extractBookingRoutes(text) {
+  const found = new Set();
+  const regex = /["'`](https?:\/\/cliniccards\.com\/[^"'`\\\s]{1,180}|\/(?:api|booking|cabinet)\/[^"'`\\\s]{1,180})["'`]/g;
+  for (const match of text.matchAll(regex)) {
+    const route = match[1];
+    if (/(book|sched|slot|avail|visit|doctor|service|procedure|time|calendar)/i.test(route)) found.add(route.slice(0, 220));
+    if (found.size >= 80) break;
+  }
+  return [...found];
+}
+
+async function inspectPublicBookingPage(bookingLink) {
+  try {
+    const response = await fetch(bookingLink, { headers: { Accept: "text/html" }, cache: "no-store", redirect: "follow" });
+    const html = await response.text();
+    const scripts = extractScriptSources(html, response.url || bookingLink);
+    const htmlRoutes = extractBookingRoutes(html);
+    console.log(`[cliniccards-booking-page] ${JSON.stringify({ status: response.status, finalUrl: response.url, bodyBytes: Buffer.byteLength(html), scriptCount: scripts.length, scripts, routes: htmlRoutes })}`);
+
+    for (const scriptUrl of scripts.slice(0, 12)) {
+      try {
+        const scriptResponse = await fetch(scriptUrl, { cache: "no-store" });
+        const js = await scriptResponse.text();
+        const routes = extractBookingRoutes(js);
+        if (routes.length) {
+          console.log(`[cliniccards-booking-js] ${JSON.stringify({ script: new URL(scriptUrl).pathname, status: scriptResponse.status, bodyBytes: Buffer.byteLength(js), routes })}`);
+        }
+      } catch (error) {
+        console.log(`[cliniccards-booking-js] ${JSON.stringify({ script: scriptUrl, error: error instanceof Error ? error.message.slice(0, 180) : String(error).slice(0, 180) })}`);
+      }
+    }
+  } catch (error) {
+    console.log(`[cliniccards-booking-page] ${JSON.stringify({ error: error instanceof Error ? error.message.slice(0, 220) : String(error).slice(0, 220) })}`);
+  }
+}
+
 if (!token) {
   console.log('[cliniccards-preflight] {"configured":false,"reason":"CLINIC_BOOKING_API_KEY missing in this deployment environment"}');
   process.exit(0);
@@ -104,6 +148,7 @@ const to = kyivDate(7);
 const range = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
 console.log(`[cliniccards-preflight] ${JSON.stringify({ configured: true, baseHost: new URL(base).host, from, to })}`);
 
+let publicBookingLink = "";
 try {
   const { response, json } = await requestJson("/booking-settings");
   const data = response.ok && json && typeof json === "object" && !Array.isArray(json) && json.data && typeof json.data === "object" ? json.data : null;
@@ -114,6 +159,7 @@ try {
       const parsed = new URL(rawLink);
       bookingLink = `${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
     } catch {}
+    publicBookingLink = bookingLink;
     console.log(`[cliniccards-booking-public] ${JSON.stringify({
       booking_status: data.booking_status,
       booking_interval: data.booking_interval,
@@ -123,6 +169,8 @@ try {
 } catch (error) {
   console.log(`[cliniccards-booking-public] ${JSON.stringify({ error: error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200) })}`);
 }
+
+if (publicBookingLink) await inspectPublicBookingPage(publicBookingLink);
 
 await Promise.all([
   probe("booking-settings", "/booking-settings"),
