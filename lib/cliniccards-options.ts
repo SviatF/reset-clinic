@@ -57,6 +57,14 @@ function cleanText(value: unknown) {
     .trim();
 }
 
+function serviceNameKey(value: string) {
+  return value
+    .toLocaleLowerCase("uk-UA")
+    .replace(/[’ʼ`]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function apiBase() {
   return (process.env.CLINIC_BOOKING_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
 }
@@ -146,7 +154,7 @@ export async function getCliniccardsBookingOptions(): Promise<CliniccardsBooking
   const settings = await cliniccardsRequest("/booking-settings");
   const data = await publicFilterData(settings);
 
-  const services = (Array.isArray(data.priceItems) ? data.priceItems : [])
+  const rawServices = (Array.isArray(data.priceItems) ? data.priceItems : [])
     .map((item, index) => {
       const name = cleanText(item.alias) || cleanText(item.name);
       const id = clean(item.id) || `service-${index}`;
@@ -154,11 +162,28 @@ export async function getCliniccardsBookingOptions(): Promise<CliniccardsBooking
     })
     .filter((item) => item.name && item.doctorIds.length > 0);
 
-  const dedupedServices = [...new Map(services.map((item) => [`${item.id}:${item.name}`, item])).values()]
+  // Cliniccards can contain duplicate price rows with the same patient-facing name.
+  // Merge those rows for the UI while retaining one stable ID for analytics.
+  const serviceGroups = new Map<string, CliniccardsBookingServiceOption>();
+  for (const service of rawServices) {
+    const key = serviceNameKey(service.name);
+    const current = serviceGroups.get(key);
+    if (!current) {
+      serviceGroups.set(key, {
+        id: service.id,
+        name: service.name,
+        doctorIds: [...new Set(service.doctorIds)],
+      });
+      continue;
+    }
+    current.doctorIds = [...new Set([...current.doctorIds, ...service.doctorIds])];
+  }
+
+  const services = [...serviceGroups.values()]
     .sort((a, b) => a.name.localeCompare(b.name, "uk-UA"));
 
   const serviceCountByDoctor = new Map<string, number>();
-  dedupedServices.forEach((service) => {
+  services.forEach((service) => {
     service.doctorIds.forEach((doctorId) => {
       serviceCountByDoctor.set(doctorId, (serviceCountByDoctor.get(doctorId) || 0) + 1);
     });
@@ -177,5 +202,5 @@ export async function getCliniccardsBookingOptions(): Promise<CliniccardsBooking
     .filter((doctor) => doctor.id && doctor.name && doctor.serviceCount > 0)
     .sort((a, b) => a.name.localeCompare(b.name, "uk-UA"));
 
-  return { doctors, services: dedupedServices };
+  return { doctors, services };
 }
