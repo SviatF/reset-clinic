@@ -1,5 +1,38 @@
+.promo-quiz-site.promo-quiz-booking-stage {
+  height: auto !important;
+  min-height: 100dvh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.promo-quiz-site.promo-quiz-booking-stage .promo-quiz-stage {
+  height: auto !important;
+  min-height: 100dvh !important;
+  align-items: stretch !important;
+}
+
+.promo-quiz-site.promo-quiz-booking-stage .promo-quiz-copy {
+  max-width: 940px !important;
+  min-height: 100dvh !important;
+  justify-content: flex-start !important;
+  padding-top: 132px !important;
+  padding-bottom: 96px !important;
+}
+
+.promo-quiz-site.promo-quiz-booking-stage .promo-quiz-form {
+  width: min(720px, 100%) !important;
+  max-width: 720px !important;
+}
+
+.promo-quiz-site.promo-quiz-booking-stage .promo-quiz-visual {
+  position: sticky !important;
+  top: 82px !important;
+  align-self: start !important;
+  height: calc(100dvh - 82px) !important;
+  min-height: calc(100dvh - 82px) !important;
+}
+
 @media (max-width: 900px) {
-  /* Dedicated quiz URLs: conversion UI first, visual second. */
   .promo-quiz-site .promo-quiz-stage {
     display: flex !important;
     flex-direction: column !important;
@@ -31,21 +64,99 @@
     min-height: 60px !important;
   }
 
-  /* Drawer quiz: the image costs valuable viewport space on mobile. */
-  .promo-drawer-overlay .promo-quiz-drawer {
-    max-height: 100dvh !important;
+  /* Dedicated quiz: after the last answer, booking becomes a real fullscreen sheet. */
+  .promo-quiz-site.promo-quiz-booking-stage {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-stage {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+    padding-top: 68px !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-copy {
+    position: fixed !important;
+    inset: 68px 0 0 !important;
+    z-index: 18 !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
     height: auto !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 28px 16px calc(42px + env(safe-area-inset-bottom)) !important;
+    background: var(--promo-cream, #f6f6ee) !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-copy h1 {
+    font-size: clamp(38px, 10vw, 52px) !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-lead {
+    margin-top: 16px !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-form {
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: 22px !important;
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-visual {
+    display: none !important;
+  }
+
+  /* Landing quiz drawer: use the whole phone screen and let the booking step scroll itself. */
+  .promo-drawer-overlay {
+    align-items: stretch !important;
+    padding: 0 !important;
+  }
+
+  .promo-drawer-overlay .promo-quiz-drawer {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .promo-drawer-overlay .promo-drawer-header {
+    min-height: 68px !important;
+    padding: 12px 14px !important;
   }
 
   .promo-drawer-overlay .promo-drawer-body {
     display: block !important;
     grid-template-columns: 1fr !important;
+    height: calc(100dvh - 68px) !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   .promo-drawer-overlay .promo-drawer-copy {
     width: 100% !important;
     min-width: 0 !important;
+    overflow: visible !important;
+    padding: 28px 16px calc(42px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .promo-drawer-overlay .promo-drawer-form-wrap {
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .promo-drawer-overlay .promo-drawer-visual {
@@ -73,5 +184,9 @@
 
   .promo-quiz-site .promo-answer-grid button {
     min-height: 58px !important;
+  }
+
+  .promo-quiz-site.promo-quiz-booking-stage .promo-quiz-copy {
+    padding: 24px 12px calc(38px + env(safe-area-inset-bottom)) !important;
   }
 }
