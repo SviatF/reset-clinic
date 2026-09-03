@@ -15,11 +15,11 @@ type FormState = {
   activeWeek: string;
   activeDate: string;
   requestVersion: number;
-  cleanups: Array<() => void>;
 };
 
 type Week = { key: string; label: string; slots: BookingSlot[] };
 
+const BOOKING_FIELD_PREFIX = "__RESET_BOOKING__:";
 const states = new WeakMap<HTMLFormElement, FormState>();
 const UK_DATE = new Intl.DateTimeFormat("uk-UA", { weekday: "short", day: "numeric", month: "long", timeZone: "UTC" });
 const UK_SHORT = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -56,6 +56,13 @@ function kyivDate(value: string) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+function weekLabel(start: Date, current: Date) {
+  const diff = Math.round((start.getTime() - current.getTime()) / 604_800_000);
+  if (diff === 0) return "Цей тиждень";
+  if (diff === 1) return "Наступний тиждень";
+  return `${UK_SHORT.format(start)} — ${UK_SHORT.format(addDays(start, 6))}`;
+}
+
 function groupWeeks(slots: BookingSlot[], generatedAt: string): Week[] {
   const current = monday(utcDate(kyivDate(generatedAt)));
   const map = new Map<string, BookingSlot[]>();
@@ -63,11 +70,20 @@ function groupWeeks(slots: BookingSlot[], generatedAt: string): Week[] {
     const weekKey = key(monday(utcDate(slot.date)));
     map.set(weekKey, [...(map.get(weekKey) || []), slot]);
   });
-  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([weekKey, items]) => {
-    const start = utcDate(weekKey);
-    const diff = Math.round((start.getTime() - current.getTime()) / 604_800_000);
-    const label = diff === 0 ? "Цей тиждень" : diff === 1 ? "Наступний тиждень" : `${UK_SHORT.format(start)} — ${UK_SHORT.format(addDays(start, 6))}`;
-    return { key: weekKey, label, slots: items.sort((a, b) => a.start.localeCompare(b.start)) };
+  if (!slots.length) return [];
+
+  const furthest = [...map.keys()].sort().at(-1) || key(current);
+  const distance = Math.max(0, Math.round((utcDate(furthest).getTime() - current.getTime()) / 604_800_000));
+  const count = Math.min(6, Math.max(2, distance + 1));
+
+  return Array.from({ length: count }, (_, index) => {
+    const start = addDays(current, index * 7);
+    const weekKey = key(start);
+    return {
+      key: weekKey,
+      label: weekLabel(start, current),
+      slots: [...(map.get(weekKey) || [])].sort((a, b) => a.start.localeCompare(b.start)),
+    };
   });
 }
 
@@ -77,6 +93,19 @@ function dateLabel(date: string) {
 
 function clean(value: string | null | undefined) {
   return (value || "").trim();
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character];
+  });
 }
 
 function filters(form: HTMLFormElement) {
@@ -106,7 +135,23 @@ function button(text: string, className: string, click: () => void) {
 
 function setSelection(state: FormState, selection: BookingSelection | null) {
   state.selection = selection;
-  state.hidden.value = selection ? JSON.stringify(selection) : "";
+  const json = selection ? JSON.stringify(selection) : "";
+  state.hidden.value = json;
+
+  const form = state.host.closest<HTMLFormElement>("form");
+  const legacyTime = form?.querySelector<HTMLInputElement>('input[name="preferredTime"]');
+  if (legacyTime) legacyTime.value = json ? `${BOOKING_FIELD_PREFIX}${json}` : "";
+}
+
+function appendStepLabel(host: HTMLElement, number: string, label: string) {
+  const stepLabel = document.createElement("div");
+  stepLabel.className = "booking-slot-step-label";
+  const badge = document.createElement("span");
+  badge.textContent = number;
+  const title = document.createElement("strong");
+  title.textContent = label;
+  stepLabel.append(badge, title);
+  host.appendChild(stepLabel);
 }
 
 function render(form: HTMLFormElement) {
@@ -119,7 +164,7 @@ function render(form: HTMLFormElement) {
   const heading = document.createElement("div");
   heading.className = "booking-slot-heading";
   const copy = document.createElement("div");
-  copy.innerHTML = '<span class="booking-slot-kicker">Онлайн-запис · актуально зараз</span><h3>На коли вам було б зручно записатись?</h3><p>Вільні години синхронізуються з Cliniccards. Минулі години автоматично не показуються.</p>';
+  copy.innerHTML = '<span class="booking-slot-kicker">Онлайн-запис · актуальні дані Cliniccards</span><h3>На коли вам було б зручно записатись?</h3><p>Показуємо тільки актуальні майбутні вільні години. Минулі дні та зайняті слоти не відображаються.</p>';
   heading.appendChild(copy);
   host.appendChild(heading);
 
@@ -148,25 +193,41 @@ function render(form: HTMLFormElement) {
     return;
   }
 
-  const currentWeek = weeks.find((week) => week.key === state.activeWeek) || weeks[0];
+  const selectableWeeks = weeks.filter((week) => week.slots.length > 0);
+  const currentWeek = selectableWeeks.find((week) => week.key === state.activeWeek) || selectableWeeks[0];
+  if (!currentWeek) return;
   state.activeWeek = currentWeek.key;
   const dates = [...new Set(currentWeek.slots.map((slot) => slot.date))];
-  if (!dates.includes(state.activeDate)) state.activeDate = state.selection?.date && dates.includes(state.selection.date) ? state.selection.date : dates[0];
+  if (!dates.includes(state.activeDate)) {
+    state.activeDate = state.selection?.date && dates.includes(state.selection.date) ? state.selection.date : dates[0];
+  }
 
+  const weekStep = document.createElement("div");
+  weekStep.className = "booking-slot-step";
+  appendStepLabel(weekStep, "1", "Оберіть тиждень");
   const weekTabs = document.createElement("div");
   weekTabs.className = "booking-week-tabs";
   weeks.forEach((week) => {
-    const item = button("", week.key === currentWeek.key ? "is-active" : "", () => {
+    const disabled = week.slots.length === 0;
+    const item = button("", !disabled && week.key === currentWeek.key ? "is-active" : "", () => {
+      if (disabled) return;
       state.activeWeek = week.key;
       state.activeDate = week.slots[0]?.date || "";
       if (state.selection?.weekKey !== week.key) setSelection(state, null);
       render(form);
     });
-    item.innerHTML = `<strong>${week.label}</strong><small>${week.slots.length} вільних</small>`;
+    item.disabled = disabled;
+    item.setAttribute("aria-disabled", String(disabled));
+    const count = disabled ? "Немає вільних" : `${week.slots.length} вільних слотів`;
+    item.innerHTML = `<strong>${escapeHtml(week.label)}</strong><small>${escapeHtml(count)}</small>`;
     weekTabs.appendChild(item);
   });
-  host.appendChild(weekTabs);
+  weekStep.appendChild(weekTabs);
+  host.appendChild(weekStep);
 
+  const dayStep = document.createElement("div");
+  dayStep.className = "booking-slot-step";
+  appendStepLabel(dayStep, "2", "Оберіть день");
   const dayTabs = document.createElement("div");
   dayTabs.className = "booking-day-tabs";
   dates.forEach((date) => {
@@ -176,8 +237,12 @@ function render(form: HTMLFormElement) {
       render(form);
     }));
   });
-  host.appendChild(dayTabs);
+  dayStep.appendChild(dayTabs);
+  host.appendChild(dayStep);
 
+  const timeStep = document.createElement("div");
+  timeStep.className = "booking-slot-step";
+  appendStepLabel(timeStep, "3", "Оберіть вільний час");
   const timeGrid = document.createElement("div");
   timeGrid.className = "booking-time-grid";
   currentWeek.slots.filter((slot) => slot.date === state.activeDate).forEach((slot) => {
@@ -200,20 +265,23 @@ function render(form: HTMLFormElement) {
       });
       render(form);
     });
-    item.innerHTML = `<strong>${slot.time}</strong>${slot.doctorName ? `<small>${slot.doctorName}</small>` : ""}`;
+    const doctor = slot.doctorName ? `<small>${escapeHtml(slot.doctorName)}</small>` : "";
+    item.innerHTML = `<strong>${escapeHtml(slot.time)}</strong>${doctor}`;
     timeGrid.appendChild(item);
   });
-  host.appendChild(timeGrid);
+  timeStep.appendChild(timeGrid);
+  host.appendChild(timeStep);
 
   if (state.selection) {
     const selected = document.createElement("div");
     selected.className = "booking-slot-selected";
-    selected.innerHTML = `<span>Обрано</span><strong>${dateLabel(state.selection.date)} · ${state.selection.time}</strong>${state.selection.doctorName ? `<small>${state.selection.doctorName}</small>` : ""}`;
+    const doctor = state.selection.doctorName ? `<small>${escapeHtml(state.selection.doctorName)}</small>` : "";
+    selected.innerHTML = `<span>Обрано</span><strong>${escapeHtml(state.selection.weekLabel || "")} · ${escapeHtml(dateLabel(state.selection.date))} · ${escapeHtml(state.selection.time)}</strong>${doctor}`;
     host.appendChild(selected);
   } else {
     const required = document.createElement("p");
     required.className = "booking-slot-required";
-    required.textContent = "Оберіть одну з вільних годин, щоб продовжити.";
+    required.textContent = "Оберіть тиждень, день і одну з вільних годин, щоб продовжити.";
     host.appendChild(required);
   }
 }
@@ -228,9 +296,10 @@ async function load(form: HTMLFormElement) {
   const current = filters(form);
   if (current.service) query.set("service", current.service);
   if (current.doctor) query.set("doctor", current.doctor);
+  const queryString = query.toString();
 
   try {
-    const response = await fetch(`/api/booking/slots${query.size ? `?${query.toString()}` : ""}`, { cache: "no-store" });
+    const response = await fetch(`/api/booking/slots${queryString ? `?${queryString}` : ""}`, { cache: "no-store" });
     const payload = await response.json() as BookingAvailabilityResponse;
     if (requestVersion !== state.requestVersion) return;
     state.enabled = payload.enabled;
@@ -266,8 +335,8 @@ function enhance(form: HTMLFormElement) {
   const hidden = document.createElement("input");
   hidden.type = "hidden";
   hidden.name = "booking_json";
-  const submit = form.querySelector('button[type="submit"], input[type="submit"]');
-  form.insertBefore(host, submit || null);
+  const firstField = form.querySelector<HTMLElement>(".ccb-native-field, label, input, select, textarea");
+  form.insertBefore(host, firstField || form.firstChild);
   form.appendChild(hidden);
   hidePreferredTime(form);
 
@@ -283,7 +352,6 @@ function enhance(form: HTMLFormElement) {
     activeWeek: "",
     activeDate: "",
     requestVersion: 0,
-    cleanups: [],
   };
   states.set(form, state);
 
@@ -294,7 +362,6 @@ function enhance(form: HTMLFormElement) {
     void load(form);
   };
   form.addEventListener("change", onChange);
-  state.cleanups.push(() => form.removeEventListener("change", onChange));
   void load(form);
 }
 
@@ -314,7 +381,7 @@ export default function LegacyLiveBookingBridge() {
         event.preventDefault();
         event.stopImmediatePropagation();
         const status = form.querySelector<HTMLElement>("[data-ccb-status], .elementor-message");
-        if (status) status.textContent = state.loading ? "Оновлюємо вільні години — зачекайте кілька секунд." : "Оберіть зручну дату та вільну годину.";
+        if (status) status.textContent = state.loading ? "Оновлюємо вільні години — зачекайте кілька секунд." : "Оберіть тиждень, день і зручну вільну годину.";
         state.host.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     };
