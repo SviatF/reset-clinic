@@ -21,11 +21,7 @@ function summarizeJson(value) {
     topLevelLength: Array.isArray(value) ? value.length : undefined,
     objectCount: 0,
     arrayCount: 0,
-    dateLikeFields: 0,
-    timeLikeFields: 0,
-    doctorLikeFields: 0,
-    cabinetLikeFields: 0,
-    availabilityLikeFields: 0,
+    keyPaths: [],
   };
 
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -33,26 +29,24 @@ function summarizeJson(value) {
   }
 
   const seen = new Set();
-  const walk = (node, depth = 0) => {
-    if (!node || typeof node !== "object" || depth > 8 || seen.has(node)) return;
+  const paths = new Set();
+  const walk = (node, path = "root", depth = 0) => {
+    if (!node || typeof node !== "object" || depth > 5 || seen.has(node)) return;
     seen.add(node);
     if (Array.isArray(node)) {
       summary.arrayCount += 1;
-      for (const item of node.slice(0, 2000)) walk(item, depth + 1);
+      for (const item of node.slice(0, 100)) walk(item, `${path}[]`, depth + 1);
       return;
     }
     summary.objectCount += 1;
     for (const [key, child] of Object.entries(node)) {
-      const lower = key.toLowerCase();
-      if (/(^|_)(date|day)(_|$)/.test(lower)) summary.dateLikeFields += 1;
-      if (/(time|start|end|from|to)/.test(lower)) summary.timeLikeFields += 1;
-      if (/(doctor|staff|specialist|employee)/.test(lower)) summary.doctorLikeFields += 1;
-      if (/(cabinet|room)/.test(lower)) summary.cabinetLikeFields += 1;
-      if (/(available|free|busy|status|slot|schedule)/.test(lower)) summary.availabilityLikeFields += 1;
-      walk(child, depth + 1);
+      const next = `${path}.${key}`;
+      if (paths.size < 100) paths.add(next);
+      walk(child, next, depth + 1);
     }
   };
   walk(value);
+  summary.keyPaths = [...paths];
   return summary;
 }
 
@@ -101,9 +95,21 @@ if (!token) {
   process.exit(0);
 }
 
-console.log(`[cliniccards-preflight] ${JSON.stringify({ configured: true, baseHost: new URL(base).host, from: kyivDate(0), to: kyivDate(7) })}`);
+const from = kyivDate(0);
+const to = kyivDate(7);
+const range = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+console.log(`[cliniccards-preflight] ${JSON.stringify({ configured: true, baseHost: new URL(base).host, from, to })}`);
+
 await Promise.all([
-  probe("schedule", `/schedule?from=${encodeURIComponent(kyivDate(0))}&to=${encodeURIComponent(kyivDate(7))}`),
   probe("booking-settings", "/booking-settings"),
   probe("staff", "/staff"),
+  probe("visits", `/visits?${range}`),
+  probe("schedule", `/schedule?${range}`),
+  probe("schedules", `/schedules?${range}`),
+  probe("appointments", `/appointments?${range}`),
+  probe("slots", `/slots?${range}`),
+  probe("booking-slots", `/booking-slots?${range}`),
+  probe("available-slots", `/available-slots?${range}`),
+  probe("schedule-data", `/schedule-data?${range}`),
+  probe("online-booking-slots", `/online-booking/slots?${range}`),
 ]);
