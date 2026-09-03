@@ -63,7 +63,7 @@ async function getBookingLink() {
 }
 
 function possibleSubclinicIds(html) {
-  const found = new Set([""]);
+  const found = new Set(["0"]);
   const patterns = [
     /subclinicId\s*=\s*["']([^"']*)["']/gi,
     /subclinicId\s*=\s*(\d+)/gi,
@@ -71,19 +71,18 @@ function possibleSubclinicIds(html) {
     /[?&]sid=(\d+)/gi,
   ];
   for (const pattern of patterns) {
-    for (const match of html.matchAll(pattern)) found.add(match[1] || "");
+    for (const match of html.matchAll(pattern)) found.add(match[1] || "0");
   }
   return [...found].slice(0, 8);
 }
 
 function safeShiftSample(json) {
-  const data = json && typeof json === "object" ? json.data ?? json : null;
-  const shifts = data && typeof data === "object" ? data.scheduleShifts : null;
+  const shifts = json && typeof json === "object" ? json.scheduleShifts : null;
   const samples = [];
   const walk = (node, path = "scheduleShifts", depth = 0) => {
-    if (samples.length >= 8 || node == null || depth > 5) return;
+    if (samples.length >= 10 || node == null || depth > 6) return;
     if (Array.isArray(node)) {
-      for (const item of node.slice(0, 20)) walk(item, `${path}[]`, depth + 1);
+      for (const item of node.slice(0, 30)) walk(item, `${path}[]`, depth + 1);
       return;
     }
     if (typeof node !== "object") return;
@@ -119,16 +118,21 @@ try {
   if (!bookingLink) throw new Error("booking_link missing");
   const pageResponse = await fetch(bookingLink, { cache: "no-store", redirect: "follow" });
   const html = await pageResponse.text();
-  const pageContexts = contexts(html, ["subclinicId", "bookingToken", "subclinic", "sid="], 260, 420);
   const ids = possibleSubclinicIds(html);
   const token = new URL(bookingLink).pathname.split("/").filter(Boolean).at(-1) || "";
-  console.log(`[cliniccards-booking-page-vars] ${JSON.stringify({ status: pageResponse.status, tokenPresent: Boolean(token), subclinicCandidates: ids, contexts: pageContexts })}`);
+  console.log(`[cliniccards-booking-page-vars] ${JSON.stringify({ status: pageResponse.status, tokenPresent: Boolean(token), subclinicCandidates: ids })}`);
 
   const origin = new URL(bookingLink).origin;
+  const selectedData = { doctor: {}, service: {}, time: null };
   for (const sid of ids) {
     const endpoint = `${origin}/booking/filter-data/${encodeURIComponent(token)}?sid=${encodeURIComponent(sid)}`;
     try {
-      const response = await fetch(endpoint, { headers: { Accept: "application/json" }, cache: "no-store" });
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify(selectedData),
+        cache: "no-store",
+      });
       const text = await response.text();
       let json = null;
       try { json = text ? JSON.parse(text) : null; } catch {}
@@ -137,7 +141,13 @@ try {
         status: response.status,
         contentType: response.headers.get("content-type") || "",
         bodyBytes: Buffer.byteLength(text),
-        ...(json ? { shape: summarizeJson(json), shiftSamples: safeShiftSample(json) } : { nonJson: true }),
+        ...(json ? {
+          shape: summarizeJson(json),
+          membersCount: Array.isArray(json.members) ? json.members.length : null,
+          priceItemsCount: Array.isArray(json.priceItems) ? json.priceItems.length : null,
+          scheduleShiftYears: json.scheduleShifts && typeof json.scheduleShifts === "object" ? Object.keys(json.scheduleShifts).slice(0, 10) : [],
+          shiftSamples: safeShiftSample(json),
+        } : { nonJson: true }),
       })}`);
     } catch (error) {
       console.log(`[cliniccards-filter-data] ${JSON.stringify({ sid, error: error instanceof Error ? error.message.slice(0, 220) : String(error).slice(0, 220) })}`);
