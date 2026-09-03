@@ -62,6 +62,19 @@ function repairMobileAssets(html: string, route: string) {
   );
 }
 
+function stripLegacyAgencyBranding(html: string) {
+  return html
+    .replace(
+      /<a\b[^>]*>\s*<img\b[^>]*desktop-753a672ef96753a806c9c12d76d5bfe8077a44e6\.svg[^>]*>\s*<\/a>/gi,
+      "",
+    )
+    .replace(
+      /<img\b[^>]*desktop-753a672ef96753a806c9c12d76d5bfe8077a44e6\.svg[^>]*>/gi,
+      "",
+    )
+    .replace(/розробка(?:\s|&nbsp;)+сайту/gi, "");
+}
+
 export default function LegacyPage({
   data,
   mobile,
@@ -71,9 +84,11 @@ export default function LegacyPage({
   mobile?: MobilePageData;
   route: string;
 }) {
-  const desktopHtml = linkHomepageCategoryHeadings(data.html, route);
+  const desktopHtml = stripLegacyAgencyBranding(linkHomepageCategoryHeadings(data.html, route));
   const mobileHtml = mobile
-    ? repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route)
+    ? stripLegacyAgencyBranding(
+        repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
+      )
     : undefined;
 
   return (
@@ -90,6 +105,18 @@ export default function LegacyPage({
       {data.inlineStyles.map((css, index) => (
         <style key={index} dangerouslySetInnerHTML={{ __html: css }} />
       ))}
+
+      <style>{`
+        .legacy-page footer .legacy-live-booking,
+        .legacy-page [data-elementor-type="footer"] .legacy-live-booking,
+        .legacy-page .elementor-location-footer .legacy-live-booking,
+        .legacy-page [class*="footer"] .legacy-live-booking {
+          display: none !important;
+        }
+        .legacy-page img[src*="desktop-753a672ef96753a806c9c12d76d5bfe8077a44e6.svg"] {
+          display: none !important;
+        }
+      `}</style>
 
       {route === "/" ? (
         <style>{`
