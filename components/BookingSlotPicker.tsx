@@ -73,6 +73,14 @@ function kyivDateFromIso(value: string) {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+function cleanDisplayText(value?: string) {
+  return (value || "")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function weekLabel(start: Date, currentWeek: Date) {
   const diff = Math.round((start.getTime() - currentWeek.getTime()) / 604_800_000);
   if (diff === 0) return "Цей тиждень";
@@ -117,6 +125,7 @@ function dateLabel(date: string) {
 }
 
 function selectionFrom(slot: BookingSlot, week: WeekGroup): BookingSelection {
+  const doctorName = cleanDisplayText(slot.doctorName);
   return {
     slotId: slot.id,
     date: slot.date,
@@ -124,7 +133,7 @@ function selectionFrom(slot: BookingSlot, week: WeekGroup): BookingSelection {
     start: slot.start,
     end: slot.end,
     doctorId: slot.doctorId,
-    doctorName: slot.doctorName,
+    doctorName: doctorName || undefined,
     cabinetId: slot.cabinetId,
     cabinetName: slot.cabinetName,
     serviceId: slot.serviceId,
@@ -317,6 +326,7 @@ export default function BookingSlotPicker({
                   const selected = value?.slotId === slot.id || (
                     value?.date === slot.date && value?.time === slot.time && (!value.doctorId || value.doctorId === slot.doctorId)
                   );
+                  const doctorName = cleanDisplayText(slot.doctorName);
                   return (
                     <button
                       type="button"
@@ -326,7 +336,7 @@ export default function BookingSlotPicker({
                       onClick={() => week && onChange(selectionFrom(slot, week))}
                     >
                       <strong>{slot.time}</strong>
-                      {slot.doctorName ? <small>{slot.doctorName}</small> : null}
+                      {doctorName ? <small>{doctorName}</small> : null}
                     </button>
                   );
                 })}
@@ -338,7 +348,7 @@ export default function BookingSlotPicker({
             <div className="booking-slot-selected" role="status">
               <span>Обрано</span>
               <strong>{value.weekLabel ? `${value.weekLabel} · ` : ""}{dateLabel(value.date)} · {value.time}</strong>
-              {value.doctorName ? <small>{value.doctorName}</small> : null}
+              {value.doctorName ? <small>{cleanDisplayText(value.doctorName)}</small> : null}
             </div>
           ) : <p className="booking-slot-required">Оберіть тиждень, день і одну з вільних годин, щоб продовжити.</p>}
         </>
