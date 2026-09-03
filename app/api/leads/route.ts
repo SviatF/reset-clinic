@@ -10,6 +10,8 @@ import {
   telegramErrorMessage,
 } from "../../../lib/telegram-leads";
 
+const LEGACY_BOOKING_PREFIX = "__RESET_BOOKING__:";
+
 type LeadPayload = {
   name?: string;
   phone?: string;
@@ -66,13 +68,30 @@ function bookingSelection(value: unknown): BookingSelection | null {
 }
 
 function legacyBookingSelection(fields?: Record<string, unknown>) {
-  const raw = fields?.booking_json;
-  if (typeof raw !== "string" || !raw.trim()) return null;
+  const direct = fields?.booking_json;
+  const preferred = fields?.preferred_time;
+  const raw = typeof direct === "string" && direct.trim()
+    ? direct.trim()
+    : typeof preferred === "string" && preferred.startsWith(LEGACY_BOOKING_PREFIX)
+      ? preferred.slice(LEGACY_BOOKING_PREFIX.length)
+      : "";
+  if (!raw) return null;
   try {
     return bookingSelection(JSON.parse(raw));
   } catch {
     return null;
   }
+}
+
+function cleanLeadFields(fields: Record<string, unknown> | undefined, booking: BookingSelection | null) {
+  const result = { ...(fields ?? {}) };
+  if (typeof result.preferred_time === "string" && result.preferred_time.startsWith(LEGACY_BOOKING_PREFIX)) {
+    result.preferred_time = booking
+      ? [booking.weekLabel, booking.date, booking.time].filter(Boolean).join(" · ")
+      : undefined;
+  }
+  if (result.booking_json) delete result.booking_json;
+  return result;
 }
 
 function ipHash(request: NextRequest) {
@@ -101,6 +120,7 @@ export async function POST(request: NextRequest) {
   const name = text(payload.name, 200);
   const service = text(payload.service, 300);
   const booking = bookingSelection(payload.booking) || legacyBookingSelection(payload.fields);
+  const leadFields = cleanLeadFields(payload.fields, booking);
   if (!phone && !email) {
     return NextResponse.json({ ok: false, error: "contact_required" }, { status: 400 });
   }
@@ -135,7 +155,7 @@ export async function POST(request: NextRequest) {
     ip_hash: ipHash(request),
     user_agent: text(request.headers.get("user-agent"), 1000),
     payload: {
-      ...(payload.fields ?? {}),
+      ...leadFields,
       booking_selection: booking,
       booking_status: booking ? "pending" : "not_requested",
       booking_error: null,
