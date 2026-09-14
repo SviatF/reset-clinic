@@ -8,15 +8,10 @@ import {
   type SeoLanding,
 } from "./seo-pages";
 
-const UNVERIFIED_MEDICAL_PATHS = new Set([
-  "/dermatology/perioral-dermatitis-treatment/",
-  "/dermatology/psoriasis-treatment/",
-  "/dermatology/folliculitis-treatment/",
-  "/dermatology/skin-infections-treatment/",
-  "/dermatology/melasma-treatment/",
-  "/nutrition/medical-weight-loss/",
-  "/nutrition/insulin-resistance/",
-]);
+// Add a path here only while that exact medical page is awaiting explicit
+// RESET Clinic medical review. All currently published medical SEO landings
+// have been reviewed, so none are held from indexation at this time.
+const UNVERIFIED_MEDICAL_PATHS = new Set<string>();
 
 // Add path -> doctor slug only after RESET Clinic explicitly confirms that
 // the doctor reviewed that exact published page.
