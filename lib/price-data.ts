@@ -68,7 +68,13 @@ function parsePublishedPrices(html: string): PublishedPriceRow[] {
   });
 }
 
-const PUBLISHED_PRICES = parsePublishedPrices(PRICE_HTML);
+function isRetiredPublishedPrice(row: PublishedPriceRow) {
+  return normalize(row.service).includes("biopatid");
+}
+
+const PUBLISHED_PRICES = parsePublishedPrices(PRICE_HTML).filter(
+  (row) => !isRetiredPublishedPrice(row),
+);
 
 function termsForLanding(path: string): string[] {
   if (path.includes("botulinum-therapy")) return ["ботулінотерап"];
