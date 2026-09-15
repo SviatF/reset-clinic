@@ -82,6 +82,24 @@ function stripLegacyAgencyBranding(html: string) {
     .replace(/розробка(?:\s|&nbsp;)+сайту/gi, "");
 }
 
+function stripRetiredWeightLossContent(html: string, route: string) {
+  if (route !== "/price/") return html;
+
+  return html
+    .replace(
+      /<h2\b[^>]*>\s*Ін(?:ʼ|’|')єкційна\s+терапія\s+контролю\s+ваги\s*<\/h2>/gi,
+      "",
+    )
+    .replace(
+      /<div\s+class=["'][^"']*\bprice-row\b[^"']*["'][^>]*>\s*<div\s+class=["'][^"']*\bservice-name\b[^"']*["'][^>]*>\s*Biopatid\b[\s\S]*?<\/div>\s*<div\s+class=["'][^"']*\bservice-price\b[^"']*["'][^>]*>[\s\S]*?<\/div>\s*<\/div>/gi,
+      "",
+    )
+    .replace(
+      /<div\s+class=["'][^"']*\bprice-table\b[^"']*["'][^>]*>\s*<\/div>/gi,
+      "",
+    );
+}
+
 export default function LegacyPage({
   data,
   mobile,
@@ -91,15 +109,21 @@ export default function LegacyPage({
   mobile?: MobilePageData;
   route: string;
 }) {
-  const desktopHtml = stripLegacyAgencyBranding(
-    fixHomepageCopy(linkHomepageCategoryHeadings(data.html, route), route),
+  const desktopHtml = stripRetiredWeightLossContent(
+    stripLegacyAgencyBranding(
+      fixHomepageCopy(linkHomepageCategoryHeadings(data.html, route), route),
+    ),
+    route,
   );
   const mobileHtml = mobile
-    ? stripLegacyAgencyBranding(
-        fixHomepageCopy(
-          repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
-          route,
+    ? stripRetiredWeightLossContent(
+        stripLegacyAgencyBranding(
+          fixHomepageCopy(
+            repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
+            route,
+          ),
         ),
+        route,
       )
     : undefined;
 
@@ -129,6 +153,20 @@ export default function LegacyPage({
           display: none !important;
         }
       `}</style>
+
+      {route === "/price/" ? (
+        <style>{`
+          .legacy-page [data-id="9e3b686"],
+          .legacy-page [data-id="48976d6"] {
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+          }
+        `}</style>
+      ) : null}
 
       {route === "/" ? (
         <style>{`
