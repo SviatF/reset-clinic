@@ -11,6 +11,11 @@ const legacyPages: Record<string, string> = {
   "1073": "/booking/",
 };
 
+const retiredPages: Record<string, string> = {
+  "/nutrition/medical-weight-loss": "/nutrition/",
+  "/nutrition/medical-weight-loss/": "/nutrition/",
+};
+
 const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
 const NON_CANONICAL_ROBOTS = "noindex, follow";
@@ -89,6 +94,14 @@ export function middleware(request: NextRequest) {
   }
 
   const pathname = request.nextUrl.pathname;
+  const retiredTarget = retiredPages[pathname];
+  if (retiredTarget) {
+    const url = request.nextUrl.clone();
+    url.pathname = retiredTarget;
+    url.search = "";
+    const redirect = NextResponse.redirect(url, 308);
+    return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(redirect) : redirect;
+  }
 
   // Middleware only performs the cheap presence gate. Every protected page/API
   // verifies the HMAC-signed cookie server-side before reading private data.
