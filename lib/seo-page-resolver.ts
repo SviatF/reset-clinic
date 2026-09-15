@@ -8,6 +8,28 @@ import { applyPrioritySeoEnhancements } from "./seo-priority-pages";
 import { applyFinalSeoCopyPolish } from "./seo-final-polish";
 import { SEO_LANDINGS, normalizeSeoPath, type SeoLanding } from "./seo-pages";
 
+const RETIRED_SEO_PATHS = new Set([
+  "/nutrition/medical-weight-loss/",
+]);
+
+function isRetiredSeoPath(path: string) {
+  return RETIRED_SEO_PATHS.has(normalizeSeoPath(path));
+}
+
+function stripRetiredInternalLinks(landing: SeoLanding): SeoLanding {
+  const related = landing.related
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !isRetiredSeoPath(item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return related.length === landing.related.length &&
+    related.every((group, index) => group.items.length === landing.related[index]?.items.length)
+    ? landing
+    : { ...landing, related };
+}
+
 function normalizeWave2Landing(landing: SeoLanding): SeoLanding {
   const description = landing.description.replace(
     " у Львові у RESET Clinic у Львові",
@@ -120,13 +142,15 @@ export const ALL_SEO_LANDINGS = [
   ...NORMALIZED_WAVE2_LANDINGS,
   ...SEO_WAVE3_LANDINGS,
 ]
+  .filter((landing) => !isRetiredSeoPath(landing.path))
   .map(enhanceStructuralLinks)
   .map(applyMarketingCopy)
   .map(applyExtraMarketingCopy)
   .map(applyPrioritySeoEnhancements)
   .map(sanitizeSeoLandingPublicCopy)
   .map(applyFinalSeoCopyPolish)
-  .map(normalizeHeadingTypography);
+  .map(normalizeHeadingTypography)
+  .map(stripRetiredInternalLinks);
 
 export function resolveSeoLanding(path: string) {
   const normalized = normalizeSeoPath(path);
