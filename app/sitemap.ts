@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/price/` },
     { url: `${SITE_URL}/about/` },
     { url: `${SITE_URL}/contacts/` },
+    { url: `${SITE_URL}/booking/` },
     { url: `${SITE_URL}/blog/` },
   ];
 
