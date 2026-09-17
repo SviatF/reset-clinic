@@ -4,7 +4,6 @@ import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 import { blogPostPath, getPublishedPostsByCategory } from "../lib/blog";
 import {
-  BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
   blogCategoryPath,
   getBlogCategory,
   type BlogCategorySlug,
@@ -14,8 +13,7 @@ import { DEFAULT_OG_IMAGE, jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
 const categoryState = cache(async (slug: BlogCategorySlug) => {
   const category = getBlogCategory(slug);
   if (!category) return null;
-  const published = await getPublishedPostsByCategory(slug, 200);
-  const posts = published.filter((post) => post.indexable);
+  const posts = await getPublishedPostsByCategory(slug, 200);
   return { category, posts };
 });
 
@@ -23,16 +21,15 @@ export async function buildBlogCategoryMetadata(slug: BlogCategorySlug): Promise
   const state = await categoryState(slug);
   if (!state) return { title: SITE_NAME };
   const path = blogCategoryPath(slug);
-  const index = state.posts.length >= BLOG_CATEGORY_MIN_INDEXABLE_POSTS;
   return {
     title: state.category.title,
     description: state.category.description,
     alternates: { canonical: path },
     robots: {
-      index,
+      index: true,
       follow: true,
       googleBot: {
-        index,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
@@ -152,7 +149,7 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
                   <p className="reset-blog-eyebrow">Редакція в роботі</p>
                   <h3>Медично перевірені матеріали цього розділу готуються.</h3>
                 </div>
-                <p>Draft-матеріали не показуються тут, доки не пройдуть клінічну перевірку. Профільна сторінка RESET Clinic уже містить інформацію про підхід, пов’язані методи та запис на консультацію.</p>
+                <p>Draft-матеріали не показуються тут, доки не будуть опубліковані. Профільна сторінка RESET Clinic уже містить інформацію про підхід, пов’язані методи та запис на консультацію.</p>
                 <div className="reset-blog-empty-actions">
                   <Link href={state.category.landingPath}>Перейти до напряму</Link>
                   <Link href="/booking/">Записатися</Link>
