@@ -43,6 +43,8 @@ export const DOCTORS: DoctorProfile[] = [
       "/dermatology/folliculitis-treatment/",
       "/dermatology/moles-skin-lesions/",
       "/dermatology/hyperhidrosis-treatment/",
+      "/dermatology/post-acne-treatment/",
+      "/dermatology/post-inflammatory-hyperpigmentation-treatment/",
 
       "/cosmetology/injection/botulinum-therapy/",
       "/cosmetology/injection/lip-contouring/",
@@ -57,6 +59,15 @@ export const DOCTORS: DoctorProfile[] = [
       "/skin-problems/acne/",
       "/skin-problems/rosacea/",
       "/skin-problems/pigmentation/",
+      "/skin-problems/couperose/",
+      "/skin-problems/closed-comedones/",
+      "/skin-problems/oily-skin/",
+      "/skin-problems/dark-spots/",
+      "/skin-problems/acne-scars/",
+      "/skin-problems/spider-veins-face/",
+      "/skin-problems/blackheads/",
+      "/skin-problems/post-acne-red-marks/",
+      "/skin-problems/skin-laxity/",
     ],
   },
   {
@@ -75,6 +86,10 @@ export const DOCTORS: DoctorProfile[] = [
       "/dermatology/hyperhidrosis-treatment/",
       "/dermatology/trichologist-lviv/",
       "/dermatology/trichoscopy/",
+      "/dermatology/hair-loss-diagnostics/",
+      "/dermatology/diffuse-hair-loss-treatment/",
+      "/dermatology/androgenetic-alopecia-treatment/",
+      "/dermatology/scalp-seborrhea-treatment/",
 
       "/cosmetology/injection/botulinum-therapy/",
       "/cosmetology/injection/biorevitalization/",
@@ -87,6 +102,12 @@ export const DOCTORS: DoctorProfile[] = [
       "/cosmetology/hardware/led-therapy/",
       "/cosmetology/hardware/aquapure/",
       "/cosmetology/hardware/needle-free-mesotherapy/",
+
+      "/skin-problems/itchy-scalp/",
+      "/skin-problems/dandruff/",
+      "/skin-problems/oily-scalp/",
+      "/skin-problems/dry-scalp/",
+      "/skin-problems/hair-thinning/",
     ],
   },
   {
@@ -119,6 +140,9 @@ export const DOCTORS: DoctorProfile[] = [
       "/dermatology/hyperhidrosis-treatment/",
       "/dermatology/trichologist-lviv/",
       "/dermatology/trichoscopy/",
+      "/dermatology/eczema-treatment/",
+      "/dermatology/contact-dermatitis-treatment/",
+      "/dermatology/skin-rash-treatment/",
 
       "/cosmetology/injection/botulinum-therapy/",
       "/cosmetology/injection/biorevitalization/",
@@ -131,6 +155,10 @@ export const DOCTORS: DoctorProfile[] = [
       "/cosmetology/hardware/led-therapy/",
       "/cosmetology/hardware/aquapure/",
       "/cosmetology/hardware/needle-free-mesotherapy/",
+
+      "/skin-problems/facial-rash/",
+      "/skin-problems/dehydrated-skin/",
+      "/skin-problems/rash-around-mouth/",
     ],
   },
   {
@@ -174,7 +202,6 @@ export function doctorMetadata(doctor: DoctorProfile) {
   const path = doctorPath(doctor);
   const title = `${doctor.name} — ${doctor.role.toLowerCase()} у Львові | ${SITE_NAME}`;
   const description = `${doctor.name} — ${doctor.role} RESET Clinic у Львові. Напрямки роботи, професійний підхід, пов’язані процедури та запис на консультацію.`;
-  const index = isCompleteDoctorProfile(doctor);
   return {
     title,
     description,
@@ -190,9 +217,9 @@ export function doctorMetadata(doctor: DoctorProfile) {
     },
     twitter: { card: "summary_large_image" as const, title, description, images: [doctor.image || DEFAULT_OG_IMAGE] },
     robots: {
-      index,
+      index: true,
       follow: true,
-      googleBot: { index, follow: true, "max-image-preview": "large" as const, "max-snippet": -1, "max-video-preview": -1 },
+      googleBot: { index: true, follow: true, "max-image-preview": "large" as const, "max-snippet": -1, "max-video-preview": -1 },
     },
   };
 }
