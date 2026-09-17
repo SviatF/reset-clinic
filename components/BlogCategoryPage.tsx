@@ -3,13 +3,19 @@ import Link from "next/link";
 import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 import { blogPostPath, getPublishedPostsByCategory } from "../lib/blog";
-import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "../lib/blog-categories";
+import {
+  BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
+  blogCategoryPath,
+  getBlogCategory,
+  type BlogCategorySlug,
+} from "../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
 
 const categoryState = cache(async (slug: BlogCategorySlug) => {
   const category = getBlogCategory(slug);
   if (!category) return null;
-  const posts = await getPublishedPostsByCategory(slug, 200);
+  const published = await getPublishedPostsByCategory(slug, 200);
+  const posts = published.filter((post) => post.indexable);
   return { category, posts };
 });
 
@@ -17,15 +23,16 @@ export async function buildBlogCategoryMetadata(slug: BlogCategorySlug): Promise
   const state = await categoryState(slug);
   if (!state) return { title: SITE_NAME };
   const path = blogCategoryPath(slug);
+  const index = state.posts.length >= BLOG_CATEGORY_MIN_INDEXABLE_POSTS;
   return {
     title: state.category.title,
     description: state.category.description,
     alternates: { canonical: path },
     robots: {
-      index: true,
+      index,
       follow: true,
       googleBot: {
-        index: true,
+        index,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
@@ -143,9 +150,9 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
               <div className="reset-blog-empty-state reset-blog-empty-state-light">
                 <div>
                   <p className="reset-blog-eyebrow">Редакція в роботі</p>
-                  <h3>Матеріали цього розділу готуються.</h3>
+                  <h3>Медично перевірені матеріали цього розділу готуються.</h3>
                 </div>
-                <p>Поки ми наповнюємо розділ, профільна сторінка RESET Clinic уже містить інформацію про підхід, пов’язані методи та запис на консультацію.</p>
+                <p>Draft-матеріали не показуються тут, доки не пройдуть клінічну перевірку. Профільна сторінка RESET Clinic уже містить інформацію про підхід, пов’язані методи та запис на консультацію.</p>
                 <div className="reset-blog-empty-actions">
                   <Link href={state.category.landingPath}>Перейти до напряму</Link>
                   <Link href="/booking/">Записатися</Link>
