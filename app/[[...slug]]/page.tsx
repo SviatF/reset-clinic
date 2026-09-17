@@ -20,7 +20,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const key = route(slug);
   const data = (pages as Record<string, LegacyPageData>)[key];
-  return data ? buildMetadata(key, data.title) : { title: "RESET Clinic" };
+  if (!data) return { title: "RESET Clinic" };
+
+  const metadata = buildMetadata(key, data.title);
+  return {
+    ...metadata,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
+  };
 }
 
 export default async function Page({ params }: Props) {
