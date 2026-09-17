@@ -4,6 +4,7 @@ import "./globals.css";
 import "../components/SeoLandingPage.css";
 import "../components/SeoLandingPolish.css";
 import "../components/SeoLandingVisualFixes.css";
+import "../components/SeoConversionLayer.css";
 import "../components/DoctorProfileLogo.css";
 import "../components/PremiumMotion.css";
 import "../components/PromoPages.css";
@@ -13,6 +14,7 @@ import "../components/PromoQuizMobile.css";
 import "../components/BookingSlotPicker.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
+import SeoConversionLayer from "../components/SeoConversionLayer";
 import PremiumMotion from "../components/PremiumMotion";
 import LegacyLiveBookingBridge from "../components/LegacyLiveBookingBridge";
 import {
@@ -141,6 +143,7 @@ fbq('track', 'PageView');`}
         />
         <MarketingTracking />
         <SeoComplianceClient />
+        <SeoConversionLayer />
         <PremiumMotion />
         <LegacyLiveBookingBridge />
         {children}
