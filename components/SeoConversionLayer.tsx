@@ -54,17 +54,18 @@ export default function SeoConversionLayer() {
       return;
     }
 
+    const seoRoot = root;
     document.body.classList.add("seo-cro-active");
 
-    const heroBooking = root.querySelector<HTMLAnchorElement>(".seo-hero-actions a[href*='/booking/']");
-    const doctorCard = root.querySelector<HTMLAnchorElement>(".seo-doctor-card");
+    const heroBooking = seoRoot.querySelector<HTMLAnchorElement>(".seo-hero-actions a[href*='/booking/']");
+    const doctorCard = seoRoot.querySelector<HTMLAnchorElement>(".seo-doctor-card");
     const doctorNameFromCard = cleanText(doctorCard?.querySelector("strong")?.textContent);
     const doctorName = doctorFromBookingHref(heroBooking?.getAttribute("href") || "") || doctorNameFromCard;
     const doctorImage = doctorCard?.querySelector<HTMLImageElement>("img")?.currentSrc || doctorCard?.querySelector<HTMLImageElement>("img")?.src;
-    const topic = cleanText(root.querySelector("h1")?.textContent);
+    const topic = cleanText(seoRoot.querySelector("h1")?.textContent);
     const bookingHref = heroBooking?.getAttribute("href") || "/booking/";
 
-    const sections = root.querySelectorAll<HTMLElement>(".seo-article .seo-section");
+    const sections = seoRoot.querySelectorAll<HTMLElement>(".seo-article .seo-section");
     const anchorSection = sections[Math.min(2, Math.max(0, sections.length - 1))];
     let midMount: HTMLDivElement | undefined;
 
@@ -88,7 +89,7 @@ export default function SeoConversionLayer() {
       const anchor = target?.closest<HTMLAnchorElement>("a");
       if (!anchor) return;
 
-      const isSeoAnchor = root.contains(anchor) || Boolean(anchor.dataset.seoCro);
+      const isSeoAnchor = seoRoot.contains(anchor) || Boolean(anchor.dataset.seoCro);
       if (!isSeoAnchor) return;
 
       const href = anchor.getAttribute("href") || "";
