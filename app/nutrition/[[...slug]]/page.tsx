@@ -3,9 +3,17 @@ import { notFound } from "next/navigation";
 import SeoLandingPage from "../../../components/SeoLandingPage";
 import { buildCompliantLandingMetadata } from "../../../lib/seo-compliance";
 import { resolveSeoLanding } from "../../../lib/seo-page-resolver";
+import { seoStaticParams } from "../../../lib/seo-static-params";
+
+export const revalidate = 21600;
+export const dynamicParams = false;
 
 type Props = { params: Promise<{ slug?: string[] }> };
 const pathFor = (slug?: string[]) => `/nutrition/${slug?.length ? `${slug.join("/")}/` : ""}`;
+
+export function generateStaticParams() {
+  return seoStaticParams("/nutrition/");
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
