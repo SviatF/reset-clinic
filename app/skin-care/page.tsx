@@ -8,7 +8,7 @@ const landing = resolveSeoLanding("/skin-care/");
 
 export const metadata: Metadata = landing
   ? buildCompliantLandingMetadata(landing)
-  : { title: "RESET Clinic", robots: { index: false, follow: false } };
+  : { title: "RESET Clinic" };
 
 export default function SkinCarePage() {
   if (!landing) notFound();
