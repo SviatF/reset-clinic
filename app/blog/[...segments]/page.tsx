@@ -49,17 +49,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = post.seo_title || post.title;
   const description = post.seo_description || post.excerpt || `Матеріал ${SITE_NAME}.`;
   const image = post.og_image || DEFAULT_OG_IMAGE;
-  const index = Boolean(post.indexable);
 
   return {
     title,
     description,
     alternates: { canonical },
     robots: {
-      index,
+      index: true,
       follow: true,
       googleBot: {
-        index,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
