@@ -1,6 +1,8 @@
 import { SECONDARY_SEO_LANDINGS } from "./seo-secondary-pages";
 import { SEO_WAVE2_LANDINGS } from "./seo-wave2-pages";
 import { SEO_WAVE3_LANDINGS } from "./seo-wave3-pages";
+import { SEO_WAVE4_LANDINGS } from "./seo-wave4-pages";
+import { SEO_WAVE5_LANDINGS } from "./seo-wave5-pages";
 import { applyMarketingCopy } from "./seo-marketing-copy";
 import { applyExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { sanitizeSeoLandingPublicCopy } from "./seo-public-copy";
@@ -141,6 +143,8 @@ export const ALL_SEO_LANDINGS = [
   ...SECONDARY_SEO_LANDINGS,
   ...NORMALIZED_WAVE2_LANDINGS,
   ...SEO_WAVE3_LANDINGS,
+  ...SEO_WAVE4_LANDINGS,
+  ...SEO_WAVE5_LANDINGS,
 ]
   .filter((landing) => !isRetiredSeoPath(landing.path))
   .map(enhanceStructuralLinks)
