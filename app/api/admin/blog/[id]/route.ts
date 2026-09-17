@@ -80,7 +80,9 @@ export async function POST(request: NextRequest, { params }: Context) {
       faq,
       status,
       published_at: status === "published" ? current.published_at ?? new Date().toISOString() : null,
-      indexable: form.get("indexable") === "on",
+      // Public robots policy is fixed: every explicitly published page is
+      // index, follow. Draft status, not noindex, keeps unfinished work private.
+      indexable: true,
       reviewed_at: reviewedAt,
     });
   } catch {
