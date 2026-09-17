@@ -3,17 +3,20 @@ import Link from "next/link";
 import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "../../components/PublicSiteChrome";
 import { blogPostPath, getPublishedPosts } from "../../lib/blog";
-import { BLOG_CATEGORIES, blogCategoryPath } from "../../lib/blog-categories";
+import { BLOG_CATEGORIES, BLOG_ROOT_MIN_INDEXABLE_POSTS, blogCategoryPath } from "../../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, SITE_URL, jsonLd } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
 const getBlogState = cache(async () => {
-  const posts = await getPublishedPosts(100);
+  const published = await getPublishedPosts(200);
+  const posts = published.filter((post) => post.indexable);
   return { posts };
 });
 
 export async function generateMetadata(): Promise<Metadata> {
+  const { posts } = await getBlogState();
+  const index = posts.length >= BLOG_ROOT_MIN_INDEXABLE_POSTS;
   const title = "Блог RESET Clinic — косметологія, дерматологія та здоров’я шкіри";
   const description = "Доказові матеріали RESET Clinic про косметологію, дерматологію, трихологію та здоров’я шкіри. Пояснення від команди клініки у Львові.";
 
@@ -22,10 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     alternates: { canonical: "/blog/" },
     robots: {
-      index: true,
+      index,
       follow: true,
       googleBot: {
-        index: true,
+        index,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
@@ -154,9 +157,9 @@ export default async function BlogIndexPage() {
               <div className="reset-blog-empty-state">
                 <div>
                   <p className="reset-blog-eyebrow">Редакція в роботі</p>
-                  <h3>Перші матеріали вже готуються.</h3>
+                  <h3>Перші медично перевірені матеріали готуються.</h3>
                 </div>
-                <p>Поки блог наповнюється, ви можете перейти до медичних напрямів RESET Clinic або записатися на консультацію, якщо потрібна персональна оцінка.</p>
+                <p>Draft-матеріали не виходять у публічний authority layer до клінічного review. Поки блог наповнюється, перейдіть до медичних напрямів RESET Clinic або запишіться на консультацію.</p>
                 <div className="reset-blog-empty-actions">
                   <Link href="/dermatology/">Перейти до дерматології</Link>
                   <Link href="/booking/">Записатися на консультацію</Link>
