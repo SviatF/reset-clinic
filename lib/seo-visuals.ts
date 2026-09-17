@@ -81,6 +81,21 @@ const NUTRITION_VISUAL: SeoLandingVisual = {
   alt: "Консультація з нутриціології в RESET Clinic у Львові",
 };
 
+const BOTOX_CASE_VISUAL: SeoLandingVisual = {
+  src: "/assets/img-landings/botox-case1.webp",
+  alt: "Матеріал кейсу ботулінотерапії RESET Clinic",
+};
+
+const LIPS_CASE_VISUAL: SeoLandingVisual = {
+  src: "/assets/img-landings/lips-case1.webp",
+  alt: "Матеріал кейсу контурної пластики губ RESET Clinic",
+};
+
+const FACE_CASE_VISUAL: SeoLandingVisual = {
+  src: "/assets/img-landings/face-case1.webp",
+  alt: "Матеріал кейсу естетичної корекції обличчя RESET Clinic",
+};
+
 const CONSULTATION_POOL = [
   CONSULTATION_VISUAL,
   COSMETOLOGY_INTERIOR_VISUAL,
@@ -129,12 +144,54 @@ const NUTRITION_POOL = [
   CLINIC_VISUAL,
 ] as const;
 
+// These are the highest-intent landing pages. Their hero visuals are curated
+// explicitly instead of being selected from a cluster-level fallback pool.
 const PRIORITY_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
+  "/dermatology/dermatologist-lviv/": CONSULTATION_VISUAL,
+  "/dermatology/acne-treatment/": CARE_VISUAL,
+  "/dermatology/rosacea-treatment/": CLINIC_VISUAL,
+  "/dermatology/pigmentation-treatment/": COSMETOLOGY_INTERIOR_VISUAL,
+  "/dermatology/hair-loss-treatment/": ABOUT_VISUAL,
+  "/dermatology/trichologist-lviv/": CONSULTATION_VISUAL,
+  "/dermatology/post-acne-treatment/": HARDWARE_VISUAL,
+  "/dermatology/hair-loss-diagnostics/": EQUIPMENT_VISUAL,
   "/cosmetology/injection/botulinum-therapy/": BOTOX_VISUAL,
   "/cosmetology/injection/lip-contouring/": LIPS_VISUAL,
-  "/cosmetology/hardware/aquapure/": CLEANING_VISUAL,
+  "/cosmetology/injection/face-contouring/": INJECTION_VISUAL,
+  "/cosmetology/injection/biorevitalization/": COSMETOLOGY_INTERIOR_VISUAL,
   "/cosmetology/hardware/ipl/": IPL_VISUAL,
+  "/cosmetology/hardware/microneedle-rf/": HARDWARE_VISUAL,
+  "/cosmetology/hardware/skin-diagnostics/": EQUIPMENT_VISUAL,
+  "/cosmetology/hardware/aquapure/": CLEANING_VISUAL,
+  "/skin-problems/acne/": HOME_CARE_VISUAL,
+  "/skin-problems/post-acne/": CARE_VISUAL,
+  "/skin-problems/acne-scars/": HARDWARE_VISUAL,
   "/nutrition/nutritionist-lviv/": NUTRITION_VISUAL,
+};
+
+// Supporting visuals are curated separately so long-form pages do not repeat
+// their hero image. Case assets are used only where their filename/context is explicit.
+const PRIORITY_SUPPORTING_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
+  "/dermatology/dermatologist-lviv/": CLINIC_VISUAL,
+  "/dermatology/acne-treatment/": CONSULTATION_VISUAL,
+  "/dermatology/rosacea-treatment/": CONSULTATION_VISUAL,
+  "/dermatology/pigmentation-treatment/": HARDWARE_VISUAL,
+  "/dermatology/hair-loss-treatment/": EQUIPMENT_VISUAL,
+  "/dermatology/trichologist-lviv/": ABOUT_VISUAL,
+  "/dermatology/post-acne-treatment/": CARE_VISUAL,
+  "/dermatology/hair-loss-diagnostics/": CLINIC_VISUAL,
+  "/cosmetology/injection/botulinum-therapy/": BOTOX_CASE_VISUAL,
+  "/cosmetology/injection/lip-contouring/": LIPS_CASE_VISUAL,
+  "/cosmetology/injection/face-contouring/": FACE_CASE_VISUAL,
+  "/cosmetology/injection/biorevitalization/": INJECTION_VISUAL,
+  "/cosmetology/hardware/ipl/": EQUIPMENT_VISUAL,
+  "/cosmetology/hardware/microneedle-rf/": EQUIPMENT_VISUAL,
+  "/cosmetology/hardware/skin-diagnostics/": CONSULTATION_VISUAL,
+  "/cosmetology/hardware/aquapure/": HOME_CARE_VISUAL,
+  "/skin-problems/acne/": CONSULTATION_VISUAL,
+  "/skin-problems/post-acne/": HOME_CARE_VISUAL,
+  "/skin-problems/acne-scars/": CONSULTATION_VISUAL,
+  "/nutrition/nutritionist-lviv/": ABOUT_VISUAL,
 };
 
 function stableIndex(path: string, length: number) {
@@ -241,13 +298,8 @@ export function seoLandingVisual(path: string): SeoLandingVisual {
 }
 
 export function seoLandingSupportingVisual(path: string): SeoLandingVisual {
-  if (path === "/cosmetology/injection/botulinum-therapy/" || path === "/cosmetology/injection/lip-contouring/") {
-    return pick(path, INJECTION_POOL, 1);
-  }
-  if (path === "/cosmetology/hardware/ipl/" || path === "/cosmetology/hardware/aquapure/") {
-    return pick(path, HARDWARE_POOL, 1);
-  }
-  if (path === "/nutrition/nutritionist-lviv/") return pick(path, NUTRITION_POOL, 1);
+  const priority = PRIORITY_SUPPORTING_VISUALS[path];
+  if (priority) return priority;
 
   if (path.startsWith("/cosmetology/injection/")) return pick(path, INJECTION_POOL, 1);
   if (path.startsWith("/cosmetology/hardware/")) return pick(path, HARDWARE_POOL, 1);
