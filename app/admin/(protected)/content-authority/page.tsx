@@ -26,7 +26,7 @@ export default async function ContentAuthorityPage({ searchParams }: Props) {
       <header className="admin-topbar">
         <div>
           <h1>Content Authority</h1>
-          <div className="admin-subtitle">Медичний editorial pipeline: research → draft → doctor review → publish → index.</div>
+          <div className="admin-subtitle">Медичний editorial pipeline: research → draft → doctor review → publish → Google.</div>
         </div>
         <form action="/api/admin/blog/seed-authority-wave1" method="post">
           <button className="admin-btn" type="submit">Імпортувати Wave 1 у CMS</button>
@@ -42,12 +42,12 @@ export default async function ContentAuthorityPage({ searchParams }: Props) {
         <div className="admin-card"><div className="admin-label">Wave 1</div><div className="admin-metric">{AUTHORITY_WAVE1_STATS.total}</div><div className="admin-kpi-note">готових editorial draft specs</div></div>
         <div className="admin-card"><div className="admin-label">У CMS</div><div className="admin-metric">{imported}</div><div className="admin-kpi-note">{AUTHORITY_WAVE1_STATS.total - imported} ще не імпортовано</div></div>
         <div className="admin-card"><div className="admin-label">Medical ready</div><div className="admin-metric">{medicallyReady}</div><div className="admin-kpi-note">author + reviewer + reviewed_at + sources + 450+ words</div></div>
-        <div className="admin-card"><div className="admin-label">Published</div><div className="admin-metric">{published}</div><div className="admin-kpi-note">Index можливий лише після medical gate</div></div>
+        <div className="admin-card"><div className="admin-label">Published</div><div className="admin-metric">{published}</div><div className="admin-kpi-note">published = public index, follow</div></div>
       </section>
 
       <section className="admin-section">
         <div className="admin-alert">
-          <strong>Безпечний workflow.</strong> Seed створює лише <strong>draft + noindex</strong>. Suggested doctor — це редакційний маршрут, а не автоматичне авторство чи медична рецензія. ПІБ лікаря можна ставити в author/reviewer лише після фактичного погодження конкретного матеріалу.
+          <strong>Безпечний workflow.</strong> Seed створює тільки <strong>draft</strong>, тому матеріал взагалі не має публічного URL до публікації. Suggested doctor — це редакційний маршрут, а не автоматичне авторство чи медична рецензія. ПІБ лікаря можна ставити в author/reviewer лише після фактичного погодження конкретного матеріалу. Після явного publish публічна сторінка працює як <strong>index, follow</strong>; noindex зарезервований тільки для admin.
         </div>
       </section>
 
@@ -68,7 +68,7 @@ export default async function ContentAuthorityPage({ searchParams }: Props) {
                     <td>{doctor ? <><Link href={doctorPath(doctor)} target="_blank">{doctor.name} ↗</Link><br /><span className="admin-kpi-note">{doctor.role}</span></> : <span className="admin-badge warn">needs mapping</span>}</td>
                     <td><strong>{blogWordCount(article.body)} words</strong><br /><span className="admin-kpi-note">{article.sources.length} sources · {article.faq.length} FAQ</span></td>
                     <td><Link href={article.moneyPage.href} target="_blank">{article.moneyPage.label} ↗</Link><br /><span className="admin-kpi-note">+ {article.supportingPages.length} supporting</span></td>
-                    <td>{post ? <><span className={`admin-badge ${ready ? "good" : "warn"}`}>{ready ? "SEO READY" : post.status}</span>{!ready ? <><br /><span className="admin-kpi-note">medical gate pending</span></> : null}<br /><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Відкрити</Link></> : <span className="admin-badge">not seeded</span>}</td>
+                    <td>{post ? <><span className={`admin-badge ${ready ? "good" : "warn"}`}>{ready ? "MEDICAL READY" : post.status}</span>{!ready ? <><br /><span className="admin-kpi-note">medical review pending</span></> : null}<br /><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Відкрити</Link></> : <span className="admin-badge">not seeded</span>}</td>
                   </tr>
                 );
               })}
