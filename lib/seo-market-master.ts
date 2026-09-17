@@ -10,8 +10,8 @@ const merged = new Map<string, SeoMarketPage>();
 for (const item of SEO_WAVE5_OPPORTUNITIES) merged.set(item.path, item);
 for (const item of SEO_MARKET_MAP) merged.set(item.path, item);
 
-// Review-gated drafts may be present in ALL_SEO_LANDINGS so the clinic can open them,
-// but they must never be represented as LIVE before explicit medical approval.
+// Medical review is an editorial quality state, not an indexing gate.
+// Public drafts can be indexed while the admin center still tracks review status.
 for (const landing of [...SEO_WAVE4_LANDINGS, ...SEO_WAVE5_LANDINGS]) {
   const current = merged.get(landing.path);
   if (!current) continue;
@@ -20,7 +20,7 @@ for (const landing of [...SEO_WAVE4_LANDINGS, ...SEO_WAVE5_LANDINGS]) {
     title: landing.h1,
     status: "draft-review",
     reviewRequired: true,
-    notes: "Production draft is rendered but noindex and excluded from sitemap until explicit medical review.",
+    notes: "Public and indexable. Medical review remains required as an editorial quality task.",
   });
 }
 
