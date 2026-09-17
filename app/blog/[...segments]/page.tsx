@@ -42,24 +42,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  const { post, canonicalRoute } = await resolveArticle(segments);
-  if (!post) return { title: SITE_NAME, robots: { index: false, follow: false } };
+  const { post } = await resolveArticle(segments);
+  if (!post) return { title: SITE_NAME };
 
   const canonical = `${SITE_URL}${blogPostPath(post)}`;
   const title = post.seo_title || post.title;
   const description = post.seo_description || post.excerpt || `Матеріал ${SITE_NAME}.`;
   const image = post.og_image || DEFAULT_OG_IMAGE;
-  const index = post.indexable && canonicalRoute;
 
   return {
     title,
     description,
     alternates: { canonical },
     robots: {
-      index,
+      index: true,
       follow: true,
       googleBot: {
-        index,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
