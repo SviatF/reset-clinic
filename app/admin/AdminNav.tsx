@@ -8,6 +8,7 @@ const navItems = [
   { href: "/admin/", label: "Dashboard", icon: "dashboard" },
   { href: "/admin/leads/", label: "Заявки", icon: "leads" },
   { href: "/admin/seo/", label: "SEO", icon: "seo" },
+  { href: "/admin/doctors/", label: "Doctor E-E-A-T", icon: "doctors" },
   { href: "/admin/blog/", label: "Блог / CMS", icon: "blog" },
   { href: "/admin/integrations/", label: "Інтеграції", icon: "integrations" },
 ] as const;
@@ -21,6 +22,9 @@ function NavIcon({ name }: { name: (typeof navItems)[number]["icon"] }) {
   }
   if (name === "seo") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4M8.5 12.5l2-2 1.7 1.7 3.3-3.7"/></svg>;
+  }
+  if (name === "doctors") {
+    return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M6 20c.8-4 3.2-6 6-6s5.2 2 6 6M18 4v4M16 6h4"/></svg>;
   }
   if (name === "blog") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h9l3 3v13H6z"/><path d="M14 4v4h4M9 12h6M9 16h6"/></svg>;
