@@ -76,10 +76,8 @@ export default async function AdminBlogPage({ searchParams }: Props) {
             <label>Посада reviewer<input name="reviewer_title" /></label>
             <label>SEO Title<input name="seo_title" defaultValue={selectedPlan?.seoTitle || ""} /></label>
             <label>Meta Description<textarea name="seo_description" rows={3} defaultValue={selectedPlan?.metaDescription || ""} /></label>
-            <div className="admin-form-row">
-              <label>Статус<select name="status" defaultValue="draft"><option value="draft">Draft</option><option value="published">Published</option></select></label>
-              <label style={{ alignContent: "end" }}><span><input type="checkbox" name="indexable" defaultChecked style={{ width: "auto" }} /> Дозволити індексацію</span></label>
-            </div>
+            <input type="hidden" name="indexable" value="on" />
+            <label>Статус<select name="status" defaultValue="draft"><option value="draft">Draft — не публічний</option><option value="published">Published — index, follow</option></select></label>
             <button className="admin-btn" type="submit">Створити матеріал</button>
           </form>
         </div>
@@ -87,7 +85,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         <div className="admin-card">
           <h2>YMYL checklist</h2>
           <p>Для медичного контенту перед публікацією фіксуємо автора, лікаря-рецензента, дату перевірки, джерела та конкретний SEO intent.</p>
-          <div className="admin-alert">Категорія блогу автоматично залишається noindex, доки не матиме щонайменше 4 published + indexable матеріали. Це захищає сайт від thin taxonomy pages.</div>
+          <div className="admin-alert"><strong>Robots policy:</strong> draft не має публічного URL. Published матеріал завжди index, follow. Noindex використовується тільки на admin routes.</div>
           <div className="admin-alert">
             <strong>Контент-кластер:</strong> {SEO_CONTENT_PLAN.length} тем · {p1Count} пріоритету P1 · {planStarted} уже заведено в CMS · {publishedCount} published.
           </div>
@@ -116,7 +114,7 @@ export default async function AdminBlogPage({ searchParams }: Props) {
                     <td>{getBlogCategory(item.category)?.name}<br /><span className="admin-kpi-note">{item.primaryKeyword}</span></td>
                     <td>{intentLabels[item.intent]}<br /><span className="admin-kpi-note">{item.angle}</span></td>
                     <td><Link href={item.moneyPage.href} target="_blank">{item.moneyPage.label} ↗</Link><br /><span className="admin-kpi-note">+ {item.supportingPages.length} supporting links</span></td>
-                    <td>{existing ? <><span className={`admin-badge ${existing.status === "published" ? "good" : "warn"}`}>{existing.status}</span>{!existing.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</> : <span className="admin-badge">planned</span>}</td>
+                    <td>{existing ? <span className={`admin-badge ${existing.status === "published" ? "good" : "warn"}`}>{existing.status}</span> : <span className="admin-badge">planned</span>}</td>
                     <td>{existing ? <Link className="admin-btn secondary" href={`/admin/blog/${existing.id}/`}>Редагувати</Link> : <Link className="admin-btn secondary" href={`/admin/blog/?plan=${item.slug}#new-material`}>Взяти в роботу</Link>}</td>
                   </tr>
                 );
@@ -126,10 +124,10 @@ export default async function AdminBlogPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <section className="admin-section">
+      <section className="admin-section" id="materials">
         <div className="admin-section-header"><h2>Матеріали</h2><span>{publishedCount} published</span></div>
         <div className="admin-table-wrap">
-          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>Категорія / SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">{blogPostPath(post)}</span></td><td>{getBlogCategory(post.category)?.name || "Без категорії"}<br /><span className="admin-kpi-note">{post.target_keyword || "Keyword не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span>{!post.indexable ? <><br /><span className="admin-badge warn">noindex</span></> : null}</td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає. Почни з P1 тем у SEO Content Plan вище.</div>}
+          {posts.length ? <table className="admin-table"><thead><tr><th>Матеріал</th><th>Категорія / SEO target</th><th>Автор / reviewer</th><th>Статус</th><th>Оновлено</th><th></th></tr></thead><tbody>{posts.map((post) => <tr key={post.id}><td><strong>{post.title}</strong><br /><span className="admin-code">{blogPostPath(post)}</span></td><td>{getBlogCategory(post.category)?.name || "Без категорії"}<br /><span className="admin-kpi-note">{post.target_keyword || "Keyword не заданий"}</span></td><td>{post.author_name || "—"}<br /><span className="admin-kpi-note">Reviewer: {post.reviewer_name || "—"}</span></td><td><span className={`admin-badge ${post.status === "published" ? "good" : "warn"}`}>{post.status}</span></td><td>{new Date(post.updated_at).toLocaleString("uk-UA")}</td><td><Link className="admin-btn secondary" href={`/admin/blog/${post.id}/`}>Редагувати</Link></td></tr>)}</tbody></table> : <div className="admin-empty">Матеріалів ще немає. Почни з P1 тем у SEO Content Plan вище.</div>}
         </div>
       </section>
     </>
