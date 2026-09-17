@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import BookingExperience from "./BookingExperience";
+import BookingDoctorPrefill from "./BookingDoctorPrefill";
 import { buildPageJsonLd, jsonLd } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -122,6 +123,10 @@ export default function BookingPage() {
         }
 
         @media (max-width: 430px) {
+          main > header + div {
+            padding-top: 62px !important;
+          }
+
           main > header + div > section {
             padding: 6px 6px 22px !important;
           }
@@ -132,6 +137,7 @@ export default function BookingPage() {
         }
       `}</style>
 
+      <BookingDoctorPrefill />
       <BookingExperience />
     </>
   );
