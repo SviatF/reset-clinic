@@ -1,6 +1,7 @@
 import LegacyBookingEnhancer from "./LegacyBookingEnhancer";
 import LegacyEnhancer from "./LegacyEnhancer";
 import LegacyRouteFixes from "./LegacyRouteFixes";
+import { linkLegacyMoneyPageServices } from "../lib/legacy-internal-links";
 
 export type LegacyPageData = {
   title: string;
@@ -109,19 +110,25 @@ export default function LegacyPage({
   mobile?: MobilePageData;
   route: string;
 }) {
-  const desktopHtml = stripRetiredWeightLossContent(
-    stripLegacyAgencyBranding(
-      fixHomepageCopy(linkHomepageCategoryHeadings(data.html, route), route),
+  const desktopHtml = linkLegacyMoneyPageServices(
+    stripRetiredWeightLossContent(
+      stripLegacyAgencyBranding(
+        fixHomepageCopy(linkHomepageCategoryHeadings(data.html, route), route),
+      ),
+      route,
     ),
     route,
   );
   const mobileHtml = mobile
-    ? stripRetiredWeightLossContent(
-        stripLegacyAgencyBranding(
-          fixHomepageCopy(
-            repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
-            route,
+    ? linkLegacyMoneyPageServices(
+        stripRetiredWeightLossContent(
+          stripLegacyAgencyBranding(
+            fixHomepageCopy(
+              repairMobileAssets(linkHomepageCategoryHeadings(mobile.html, route), route),
+              route,
+            ),
           ),
+          route,
         ),
         route,
       )
@@ -151,6 +158,17 @@ export default function LegacyPage({
         }
         .legacy-page img[src*="desktop-753a672ef96753a806c9c12d76d5bfe8077a44e6.svg"] {
           display: none !important;
+        }
+        .legacy-page .reset-seo-service-link {
+          color: inherit !important;
+          font: inherit !important;
+          letter-spacing: inherit !important;
+          text-decoration: none !important;
+        }
+        .legacy-page .reset-seo-service-link:hover,
+        .legacy-page .reset-seo-service-link:focus-visible {
+          text-decoration: underline !important;
+          text-underline-offset: 0.16em;
         }
       `}</style>
 
