@@ -5,25 +5,42 @@ import { hasExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import {
   buildCompliantLandingJsonLd as baseBuildCompliantLandingJsonLd,
   buildCompliantLandingMetadata as baseBuildCompliantLandingMetadata,
+  isSeoLandingIndexable as coreIsSeoLandingIndexable,
   supplementalLandingSections as baseSupplementalLandingSections,
 } from "./seo-compliance-core";
+import { isSeoLandingApprovedForIndex } from "./seo-review-status";
 import { SITE_NAME, SITE_URL } from "./seo";
 import { seoLandingVisual } from "./seo-visuals";
 
 export {
-  isSeoLandingIndexable,
   displayH1ForLanding,
   reviewerForLanding,
   priceHrefForLanding,
   blogCategoryForLanding,
 } from "./seo-compliance-core";
 
+export function isSeoLandingIndexable(landing: SeoLanding) {
+  return coreIsSeoLandingIndexable(landing) && isSeoLandingApprovedForIndex(landing.path);
+}
+
 export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
   const base = baseBuildCompliantLandingMetadata(landing);
   const visual = seoLandingVisual(landing.path);
+  const index = isSeoLandingIndexable(landing);
 
   return {
     ...base,
+    robots: {
+      index,
+      follow: true,
+      googleBot: {
+        index,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     openGraph: {
       ...(base.openGraph ?? {}),
       type: "website",
