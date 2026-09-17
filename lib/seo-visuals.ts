@@ -45,10 +45,6 @@ const PRIORITY_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
     src: "/assets/img-landings/lips.webp",
     alt: "Збільшення та контурна пластика губ у RESET Clinic у Львові",
   },
-  "/nutrition/medical-weight-loss/": {
-    src: "/assets/img-landings/biobatud.webp",
-    alt: "Медична програма контролю ваги БІОПАТИД у RESET Clinic у Львові",
-  },
   "/nutrition/nutritionist-lviv/": {
     src: "/assets/img-landings/nutriciology.webp",
     alt: "Консультація нутриціолога у RESET Clinic у Львові",
