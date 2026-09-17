@@ -113,7 +113,7 @@ function Brand({ footer = false }: { footer?: boolean }) {
   );
 }
 
-function SiteHeader() {
+function SiteHeader({ bookingHref = "/booking/" }: { bookingHref?: string }) {
   return (
     <header className="seo-header">
       <Brand />
@@ -127,7 +127,7 @@ function SiteHeader() {
             {MAIN_NAV.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
           </div>
         </details>
-        <Link className="seo-header-cta" href="/booking/">Записатися</Link>
+        <Link className="seo-header-cta" href={bookingHref}>Записатися</Link>
       </div>
     </header>
   );
@@ -179,11 +179,12 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
   const family = visualFamily(landing);
   const steps = journeySteps(landing);
   const heroVisual = seoLandingVisual(landing.path);
+  const conversionBookingHref = landing.cta.href.startsWith("/booking/") ? landing.cta.href : "/booking/";
 
   return (
     <main className={`seo-site seo-site-polished seo-template-${landing.type} seo-family-${family}`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(schema) }} />
-      <SiteHeader />
+      <SiteHeader bookingHref={conversionBookingHref} />
 
       <section className="seo-hero">
         <div className="seo-shell">
@@ -202,7 +203,7 @@ export default async function SeoLandingPage({ landing }: { landing: SeoLanding 
               <h1>{displayH1}</h1>
               <p className="seo-lead">{landing.intro}</p>
               <div className="seo-hero-actions">
-                <Link className="seo-button seo-button-dark" href="/booking/">Записатися на прийом</Link>
+                <Link className="seo-button seo-button-dark" href={conversionBookingHref}>Записатися на прийом</Link>
                 <Link className="seo-button" href={priceHref}>Переглянути ціни</Link>
               </div>
               <p className="seo-medical-note">Інформація на сторінці не замінює консультацію лікаря. Тактика визначається індивідуально.</p>
