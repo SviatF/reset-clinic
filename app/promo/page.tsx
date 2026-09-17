@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   description: META_DESCRIPTION,
   alternates: { canonical: "/promo/" },
   robots: {
-    index: false,
+    index: true,
     follow: true,
     googleBot: {
-      index: false,
+      index: true,
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,
