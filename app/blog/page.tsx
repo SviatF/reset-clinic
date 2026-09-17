@@ -3,27 +3,17 @@ import Link from "next/link";
 import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "../../components/PublicSiteChrome";
 import { blogPostPath, getPublishedPosts } from "../../lib/blog";
-import {
-  BLOG_CATEGORIES,
-  BLOG_ROOT_MIN_INDEXABLE_POSTS,
-  blogCategoryPath,
-} from "../../lib/blog-categories";
+import { BLOG_CATEGORIES, blogCategoryPath } from "../../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, SITE_URL, jsonLd } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
 const getBlogState = cache(async () => {
   const posts = await getPublishedPosts(100);
-  const indexablePosts = posts.filter((post) => post.indexable);
-  return {
-    posts,
-    indexablePosts,
-    indexable: indexablePosts.length >= BLOG_ROOT_MIN_INDEXABLE_POSTS,
-  };
+  return { posts };
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { indexable } = await getBlogState();
   const title = "Блог RESET Clinic — косметологія, дерматологія та здоров’я шкіри";
   const description = "Доказові матеріали RESET Clinic про косметологію, дерматологію, трихологію та здоров’я шкіри. Пояснення від команди клініки у Львові.";
 
@@ -32,10 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     alternates: { canonical: "/blog/" },
     robots: {
-      index: indexable,
+      index: true,
       follow: true,
       googleBot: {
-        index: indexable,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
@@ -61,32 +51,30 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function BlogIndexPage() {
-  const { posts, indexablePosts, indexable } = await getBlogState();
-  const collectionSchema = indexable
-    ? {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "@id": `${SITE_URL}/blog/#webpage`,
-        url: `${SITE_URL}/blog/`,
-        name: "Блог RESET Clinic",
-        inLanguage: "uk-UA",
-        isPartOf: { "@id": `${SITE_URL}/#website` },
-        about: { "@id": `${SITE_URL}/#clinic` },
-        mainEntity: {
-          "@type": "ItemList",
-          itemListElement: indexablePosts.slice(0, 20).map((post, index) => ({
-            "@type": "ListItem",
-            position: index + 1,
-            url: `${SITE_URL}${blogPostPath(post)}`,
-            name: post.title,
-          })),
-        },
-      }
-    : null;
+  const { posts } = await getBlogState();
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": `${SITE_URL}/blog/#webpage`,
+    url: `${SITE_URL}/blog/`,
+    name: "Блог RESET Clinic",
+    inLanguage: "uk-UA",
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    about: { "@id": `${SITE_URL}/#clinic` },
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: posts.slice(0, 20).map((post, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${SITE_URL}${blogPostPath(post)}`,
+        name: post.title,
+      })),
+    },
+  };
 
   return (
     <div className="seo-site reset-blog-page reset-blog-home">
-      {collectionSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionSchema) }} /> : null}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionSchema) }} />
       <PublicSiteHeader />
       <main>
         <section className="reset-blog-hero reset-blog-home-hero">
