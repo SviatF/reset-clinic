@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { blogPostPath, getPublishedPostsByCategory, type PublicBlogPost } from "../lib/blog";
 import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "../lib/blog-categories";
+import { DOCTORS, doctorPath, type DoctorProfile } from "../lib/doctors";
 import { getSeoContentPlanItem } from "../lib/seo-content-plan";
 import { isSeoLandingIndexable } from "../lib/seo-compliance";
 import { resolveSeoLanding } from "../lib/seo-page-resolver";
@@ -91,14 +92,44 @@ function uniqueRelatedLinks(items: RelatedLink[]) {
 }
 
 function canPromoteMedicalLink(item: RelatedLink) {
+  const isSeoNamespace = /^\/(dermatology|cosmetology|skin-problems|skin-care|nutrition)\//.test(item.href);
+  if (!isSeoNamespace) return true;
   const landing = resolveSeoLanding(item.href);
-  return !landing || isSeoLandingIndexable(landing);
+  return Boolean(landing && isSeoLandingIndexable(landing));
+}
+
+function normalizeDoctorName(value: string | null | undefined) {
+  return (value || "").trim().toLocaleLowerCase("uk-UA").replace(/\s+/g, " ");
+}
+
+function doctorByPublicName(value: string | null | undefined): DoctorProfile | null {
+  const normalized = normalizeDoctorName(value);
+  if (!normalized) return null;
+  return DOCTORS.find((doctor) => normalizeDoctorName(doctor.name) === normalized) ?? null;
+}
+
+function doctorSchemaRef(doctor: DoctorProfile) {
+  return { "@id": `${SITE_URL}${doctorPath(doctor)}#person` };
+}
+
+function doctorSchemaNode(doctor: DoctorProfile) {
+  return {
+    "@type": "Person",
+    "@id": `${SITE_URL}${doctorPath(doctor)}#person`,
+    name: doctor.name,
+    jobTitle: doctor.role,
+    url: `${SITE_URL}${doctorPath(doctor)}`,
+    image: `${SITE_URL}${doctor.image}`,
+    worksFor: { "@id": `${SITE_URL}/#clinic` },
+  };
 }
 
 export function buildBlogArticleJsonLd(post: PublicBlogPost) {
   const category = getBlogCategory(post.category);
   const url = `${SITE_URL}${blogPostPath(post)}`;
   const sources = normalizeSources(post.sources || []);
+  const authorDoctor = doctorByPublicName(post.author_name);
+  const reviewerDoctor = doctorByPublicName(post.reviewer_name);
   const articleType = post.schema_type === "Article" || post.schema_type === "BlogPosting"
     ? post.schema_type
     : "BlogPosting";
@@ -122,8 +153,16 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
       datePublished: post.published_at || undefined,
       dateModified: post.updated_at,
       inLanguage: "uk-UA",
-      author: post.author_name ? { "@type": "Person", name: post.author_name } : { "@type": "Organization", name: SITE_NAME },
-      reviewedBy: post.reviewer_name ? { "@type": "Person", name: post.reviewer_name, jobTitle: post.reviewer_title || undefined } : { "@id": `${SITE_URL}/#clinic` },
+      author: authorDoctor
+        ? doctorSchemaRef(authorDoctor)
+        : post.author_name
+          ? { "@type": "Person", name: post.author_name }
+          : { "@type": "Organization", "@id": `${SITE_URL}/#clinic`, name: SITE_NAME },
+      reviewedBy: reviewerDoctor
+        ? doctorSchemaRef(reviewerDoctor)
+        : post.reviewer_name
+          ? { "@type": "Person", name: post.reviewer_name, jobTitle: post.reviewer_title || undefined }
+          : { "@id": `${SITE_URL}/#clinic` },
       publisher: { "@id": `${SITE_URL}/#clinic` },
       image: post.og_image || `${SITE_URL}${DEFAULT_OG_IMAGE}`,
       about: post.target_keyword || undefined,
@@ -137,6 +176,15 @@ export function buildBlogArticleJsonLd(post: PublicBlogPost) {
       itemListElement: breadcrumbItems,
     },
   ];
+
+  const linkedDoctors = Array.from(
+    new Map(
+      [authorDoctor, reviewerDoctor]
+        .filter((doctor): doctor is DoctorProfile => Boolean(doctor))
+        .map((doctor) => [doctor.slug, doctor]),
+    ).values(),
+  );
+  graph.push(...linkedDoctors.map(doctorSchemaNode));
 
   return { "@context": "https://schema.org", "@graph": graph };
 }
