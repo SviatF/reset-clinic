@@ -146,8 +146,8 @@ function stableIndex(path: string, length: number) {
   return (hash >>> 0) % length;
 }
 
-function pick(path: string, pool: readonly SeoLandingVisual[]) {
-  return pool[stableIndex(path, pool.length)];
+function pick(path: string, pool: readonly SeoLandingVisual[], offset = 0) {
+  return pool[(stableIndex(path, pool.length) + offset) % pool.length];
 }
 
 function includesAny(path: string, values: readonly string[]) {
@@ -238,4 +238,32 @@ export function seoLandingVisual(path: string): SeoLandingVisual {
   if (path.startsWith("/cosmetology/")) return pick(path, [...HARDWARE_POOL, ...INJECTION_POOL]);
 
   return DEFAULT_VISUAL;
+}
+
+export function seoLandingSupportingVisual(path: string): SeoLandingVisual {
+  if (path === "/cosmetology/injection/botulinum-therapy/" || path === "/cosmetology/injection/lip-contouring/") {
+    return pick(path, INJECTION_POOL, 1);
+  }
+  if (path === "/cosmetology/hardware/ipl/" || path === "/cosmetology/hardware/aquapure/") {
+    return pick(path, HARDWARE_POOL, 1);
+  }
+  if (path === "/nutrition/nutritionist-lviv/") return pick(path, NUTRITION_POOL, 1);
+
+  if (path.startsWith("/cosmetology/injection/")) return pick(path, INJECTION_POOL, 1);
+  if (path.startsWith("/cosmetology/hardware/")) return pick(path, HARDWARE_POOL, 1);
+  if (path.startsWith("/nutrition/")) return pick(path, NUTRITION_POOL, 1);
+
+  if (includesAny(path, HAIR_SCALP_TOKENS)) return pick(path, HAIR_SCALP_POOL, 1);
+  if (includesAny(path, ACNE_CARE_TOKENS)) return pick(path, SKIN_CARE_POOL, 1);
+  if (includesAny(path, VASCULAR_PIGMENT_TOKENS)) return pick(path, VASCULAR_PIGMENT_POOL, 1);
+  if (includesAny(path, DERMATITIS_TOKENS)) return pick(path, CONSULTATION_POOL, 1);
+  if (includesAny(path, DRY_SENSITIVE_TOKENS)) return pick(path, SKIN_CARE_POOL, 1);
+  if (includesAny(path, DIAGNOSTIC_TOKENS)) return pick(path, HARDWARE_POOL, 1);
+  if (includesAny(path, TEXTURE_REJUVENATION_TOKENS)) return pick(path, HARDWARE_POOL, 1);
+
+  if (path.startsWith("/dermatology/")) return pick(path, CONSULTATION_POOL, 1);
+  if (path.startsWith("/skin-problems/")) return pick(path, [...SKIN_CARE_POOL, ...CONSULTATION_POOL], 1);
+  if (path.startsWith("/cosmetology/")) return pick(path, [...HARDWARE_POOL, ...INJECTION_POOL], 1);
+
+  return ABOUT_VISUAL;
 }
