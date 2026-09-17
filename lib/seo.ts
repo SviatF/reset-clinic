@@ -150,16 +150,20 @@ export function buildMetadata(route: string, fallbackTitle = SITE_NAME): Metadat
   };
 }
 
-const serviceNames = [
-  "Дерматологія",
-  "Ін’єкційна косметологія",
-  "Апаратна косметологія",
-  "Доглядова косметологія",
-  "Трихологія",
-  "Сімейна медицина",
-  "Нутриціологія",
-  "Діагностика стану шкіри",
-];
+const serviceCatalog = [
+  { name: "Дерматологія", path: "/dermatology/" },
+  { name: "Консультація дерматолога", path: "/dermatology/dermatologist-lviv/" },
+  { name: "Дерматоскопія", path: "/dermatology/dermoscopy/" },
+  { name: "Трихологія", path: "/dermatology/trichologist-lviv/" },
+  { name: "Косметологія", path: "/cosmetology/" },
+  { name: "Ін’єкційна косметологія", path: "/cosmetology/injection/" },
+  { name: "Апаратна косметологія", path: "/cosmetology/hardware/" },
+  { name: "IPL-терапія", path: "/cosmetology/hardware/ipl/" },
+  { name: "Мікроголковий RF", path: "/cosmetology/hardware/microneedle-rf/" },
+  { name: "Діагностика стану шкіри", path: "/cosmetology/hardware/skin-diagnostics/" },
+  { name: "Нутриціологія", path: "/nutrition/" },
+  { name: "Консультація нутриціолога", path: "/nutrition/nutritionist-lviv/" },
+] as const;
 
 export const clinicJsonLd = {
   "@context": "https://schema.org",
@@ -169,6 +173,7 @@ export const clinicJsonLd = {
   alternateName: "Reset",
   url: SITE_URL,
   image: `${SITE_URL}${DEFAULT_OG_IMAGE}`,
+  logo: `${SITE_URL}/assets/logo-main.png`,
   description:
     "Клініка естетичної медицини у Львові: дерматологія, косметологія, трихологія, нутриціологія та сімейна медицина.",
   telephone: "+380932828888",
@@ -204,9 +209,15 @@ export const clinicJsonLd = {
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "Послуги RESET Clinic",
-    itemListElement: serviceNames.map((name) => ({
-      "@type": "OfferCatalog",
-      name,
+    itemListElement: serviceCatalog.map((service) => ({
+      "@type": "Offer",
+      itemOffered: {
+        "@type": "Service",
+        name: service.name,
+        url: `${SITE_URL}${service.path}`,
+        provider: { "@id": clinicId },
+        areaServed: { "@type": "City", name: "Львів" },
+      },
     })),
   },
 };
@@ -271,12 +282,13 @@ export function buildPageJsonLd(route: string) {
   if (route === "/services/") {
     page.mainEntity = {
       "@type": "ItemList",
-      itemListElement: serviceNames.map((name, index) => ({
+      itemListElement: serviceCatalog.map((service, index) => ({
         "@type": "ListItem",
         position: index + 1,
         item: {
           "@type": "Service",
-          name,
+          name: service.name,
+          url: `${SITE_URL}${service.path}`,
           provider: { "@id": clinicId },
           areaServed: { "@type": "City", name: "Львів" },
         },
