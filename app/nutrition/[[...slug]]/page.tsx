@@ -18,7 +18,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const landing = resolveSeoLanding(pathFor(slug));
-  return landing ? buildCompliantLandingMetadata(landing) : { title: "RESET Clinic", robots: { index: false, follow: false } };
+  return landing ? buildCompliantLandingMetadata(landing) : { title: "RESET Clinic" };
 }
 
 export default async function NutritionSeoPage({ params }: Props) {
