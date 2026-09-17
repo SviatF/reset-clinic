@@ -7,12 +7,12 @@ const PENDING_MEDICAL_REVIEW_PATHS = new Set<string>([
 ]);
 
 /**
- * Medical review remains an editorial workflow signal only.
- * Public SEO landing pages are indexable by default; /admin/* is the only
- * public-facing route family that should carry a noindex directive.
+ * Medical/YMYL landing pages remain reviewable in production, but stay
+ * noindex and out of sitemap until their exact path is explicitly removed
+ * from the pending review set after clinical approval.
  */
-export function isSeoLandingApprovedForIndex(_path: string) {
-  return true;
+export function isSeoLandingApprovedForIndex(path: string) {
+  return !PENDING_MEDICAL_REVIEW_PATHS.has(path);
 }
 
 export const PENDING_MEDICAL_REVIEW = [...PENDING_MEDICAL_REVIEW_PATHS];
