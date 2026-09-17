@@ -1,5 +1,6 @@
 import { SEO_MARKET_MAP } from "./seo-market-map";
 import { SEO_WAVE5_OPPORTUNITIES } from "./seo-market-wave5-opportunities";
+import { SEO_WAVE5_LANDINGS } from "./seo-wave5-pages";
 import type { SeoMarketPage, SeoMarketStatus } from "./seo-market-map";
 
 const merged = new Map<string, SeoMarketPage>();
@@ -7,6 +8,20 @@ const merged = new Map<string, SeoMarketPage>();
 // Research inventory goes first; existing live/draft/planned architecture wins on duplicates.
 for (const item of SEO_WAVE5_OPPORTUNITIES) merged.set(item.path, item);
 for (const item of SEO_MARKET_MAP) merged.set(item.path, item);
+
+// Once an opportunity has a complete production draft, it moves into MED REVIEW.
+// This overlay does not make it indexable: seo-review-status.ts remains the launch gate.
+for (const landing of SEO_WAVE5_LANDINGS) {
+  const current = merged.get(landing.path);
+  if (!current) continue;
+  merged.set(landing.path, {
+    ...current,
+    title: landing.h1,
+    status: "draft-review",
+    reviewRequired: true,
+    notes: "Production draft is rendered but noindex and excluded from sitemap until explicit medical review.",
+  });
+}
 
 const priorityOrder = { P0: 0, P1: 1, P2: 2, P3: 3 } as const;
 const statusOrder: Record<SeoMarketStatus, number> = {
@@ -47,6 +62,7 @@ export const SEO_MASTER_PUBLISH_QUEUE = SEO_MASTER_MARKET_MAP.filter(
   (item) =>
     (item.priority === "P0" || item.priority === "P1") &&
     item.status !== "live" &&
+    item.status !== "draft-review" &&
     item.status !== "hold-cannibalization" &&
     item.status !== "confirm-service",
 );
