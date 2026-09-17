@@ -1,11 +1,13 @@
 import { getBlogPosts, type BlogPost } from "./admin-data";
 import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "./blog-categories";
-import { isBlogPostSeoReady } from "./blog-quality";
 
 export type PublicBlogPost = BlogPost;
 
 function withPublicIndexability(post: BlogPost): BlogPost {
-  return { ...post, indexable: isBlogPostSeoReady(post) };
+  // Public robots policy: noindex is reserved for /admin only.
+  // Editorial readiness remains an internal CMS quality signal, but once a
+  // material is explicitly published its public page is always index, follow.
+  return { ...post, indexable: true };
 }
 
 export async function getPublishedPosts(limit = 100) {
