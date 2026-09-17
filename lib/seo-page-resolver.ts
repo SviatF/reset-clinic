@@ -136,16 +136,28 @@ function enhanceStructuralLinks(landing: SeoLanding): SeoLanding {
   return landing;
 }
 
+function dedupeByPath(landings: SeoLanding[]) {
+  const seen = new Set<string>();
+  return landings.filter((landing) => {
+    const path = normalizeSeoPath(landing.path);
+    if (seen.has(path)) return false;
+    seen.add(path);
+    return true;
+  });
+}
+
 const NORMALIZED_WAVE2_LANDINGS = SEO_WAVE2_LANDINGS.map(normalizeWave2Landing);
 
-export const ALL_SEO_LANDINGS = [
+const RAW_SEO_LANDINGS = [
   ...SEO_LANDINGS,
   ...SECONDARY_SEO_LANDINGS,
   ...NORMALIZED_WAVE2_LANDINGS,
   ...SEO_WAVE3_LANDINGS,
   ...SEO_WAVE4_LANDINGS,
   ...SEO_WAVE5_LANDINGS,
-]
+];
+
+export const ALL_SEO_LANDINGS = dedupeByPath(RAW_SEO_LANDINGS)
   .filter((landing) => !isRetiredSeoPath(landing.path))
   .map(enhanceStructuralLinks)
   .map(applyMarketingCopy)
