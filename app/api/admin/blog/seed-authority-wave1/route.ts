@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
         schema_type: "MedicalWebPage",
         status: "draft",
         published_at: null,
-        indexable: false,
+        // Draft status keeps the material non-public. Once explicitly published,
+        // public robots policy is always index, follow; noindex is admin-only.
+        indexable: true,
       });
       existingSlugs.add(article.slug);
       seeded += 1;
