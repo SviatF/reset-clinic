@@ -11,7 +11,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ service: string }> }): Promise<Metadata> {
   const { service } = await params;
   const config = getPromoService(service);
-  if (!config) return { title: "RESÉT clinic", robots: { index: false, follow: false } };
+  if (!config) return { title: "RESÉT clinic" };
 
   const promoPath = `/promo/${config.slug}/`;
   return {
@@ -19,10 +19,10 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
     description: config.metaDescription,
     alternates: { canonical: config.canonicalPath },
     robots: {
-      index: false,
+      index: true,
       follow: true,
       googleBot: {
-        index: false,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
