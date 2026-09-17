@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { trackContactConversion, trackPromoCustomEvent } from "../lib/marketing-pixels";
+import { seoLandingSupportingVisual } from "../lib/seo-visuals";
 
 type ConversionState = {
   active: boolean;
@@ -11,6 +12,8 @@ type ConversionState = {
   doctorName?: string;
   doctorImage?: string;
   topic?: string;
+  supportingImage?: string;
+  supportingAlt?: string;
   midMount?: HTMLElement;
 };
 
@@ -64,6 +67,7 @@ export default function SeoConversionLayer() {
     const doctorImage = doctorCard?.querySelector<HTMLImageElement>("img")?.currentSrc || doctorCard?.querySelector<HTMLImageElement>("img")?.src;
     const topic = cleanText(seoRoot.querySelector("h1")?.textContent);
     const bookingHref = heroBooking?.getAttribute("href") || "/booking/";
+    const supportingVisual = seoLandingSupportingVisual(pathname.endsWith("/") ? pathname : `${pathname}/`);
 
     const sections = seoRoot.querySelectorAll<HTMLElement>(".seo-article .seo-section");
     const anchorSection = sections[Math.min(2, Math.max(0, sections.length - 1))];
@@ -81,6 +85,8 @@ export default function SeoConversionLayer() {
       doctorName,
       doctorImage,
       topic,
+      supportingImage: supportingVisual.src,
+      supportingAlt: supportingVisual.alt,
       midMount,
     });
 
@@ -146,28 +152,67 @@ export default function SeoConversionLayer() {
   const doctorLabel = state.doctorName ? `до ${state.doctorName}` : "на консультацію";
 
   const midContent = state.midMount ? createPortal(
-    <aside className="seo-cro-mid" aria-label="Запис на консультацію">
-      {state.doctorImage ? (
-        <div className="seo-cro-mid-photo" aria-hidden="true">
-          <img src={state.doctorImage} alt="" />
-        </div>
+    <>
+      {state.supportingImage ? (
+        <figure
+          className="seo-cro-supporting-visual"
+          style={{
+            position: "relative",
+            margin: "22px 0 26px",
+            aspectRatio: "16 / 9",
+            overflow: "hidden",
+            borderRadius: "24px",
+            background: "#ece7df",
+          }}
+        >
+          <img
+            src={state.supportingImage}
+            alt={state.supportingAlt || "RESET Clinic у Львові"}
+            loading="lazy"
+            decoding="async"
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+          <figcaption
+            style={{
+              position: "absolute",
+              left: 14,
+              bottom: 14,
+              padding: "8px 12px",
+              borderRadius: 999,
+              background: "rgba(24, 20, 18, 0.74)",
+              color: "#fff",
+              fontSize: 12,
+              lineHeight: 1.2,
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            RESET Clinic · реальні матеріали клініки
+          </figcaption>
+        </figure>
       ) : null}
-      <div className="seo-cro-mid-copy">
-        <span>Наступний крок · RESET Clinic</span>
-        <h3>Не підбирайте рішення навмання — запишіться {doctorLabel}</h3>
-        <p>
-          {state.topic
-            ? `На консультації розберемо ваш запит «${state.topic}», визначимо доцільний маршрут і пояснимо, з чого варто почати саме у вашій ситуації.`
-            : "На консультації лікар оцінить ваш запит, визначить доцільний маршрут і пояснить наступні кроки."}
-        </p>
-      </div>
-      <div className="seo-cro-mid-actions">
-        <a className="seo-cro-primary" data-seo-cro="mid_content" href={state.bookingHref}>
-          {state.doctorName ? "Обрати час до лікаря" : "Обрати час"}
-        </a>
-        <a className="seo-cro-secondary" data-seo-cro="mid_phone" href="tel:+380932828888">Подзвонити</a>
-      </div>
-    </aside>,
+      <aside className="seo-cro-mid" aria-label="Запис на консультацію">
+        {state.doctorImage ? (
+          <div className="seo-cro-mid-photo" aria-hidden="true">
+            <img src={state.doctorImage} alt="" />
+          </div>
+        ) : null}
+        <div className="seo-cro-mid-copy">
+          <span>Наступний крок · RESET Clinic</span>
+          <h3>Не підбирайте рішення навмання — запишіться {doctorLabel}</h3>
+          <p>
+            {state.topic
+              ? `На консультації розберемо ваш запит «${state.topic}», визначимо доцільний маршрут і пояснимо, з чого варто почати саме у вашій ситуації.`
+              : "На консультації лікар оцінить ваш запит, визначить доцільний маршрут і пояснить наступні кроки."}
+          </p>
+        </div>
+        <div className="seo-cro-mid-actions">
+          <a className="seo-cro-primary" data-seo-cro="mid_content" href={state.bookingHref}>
+            {state.doctorName ? "Обрати час до лікаря" : "Обрати час"}
+          </a>
+          <a className="seo-cro-secondary" data-seo-cro="mid_phone" href="tel:+380932828888">Подзвонити</a>
+        </div>
+      </aside>
+    </>,
     state.midMount,
   ) : null;
 
