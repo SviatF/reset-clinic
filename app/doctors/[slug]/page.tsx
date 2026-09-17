@@ -1,35 +1,26 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DoctorProfilePage from "../../../components/DoctorProfilePage";
-import { doctorMetadata, getDoctor } from "../../../lib/doctors";
+import { DOCTORS, getDoctor } from "../../../lib/doctors";
+import { doctorEeatMetadata } from "../../../lib/doctor-eeat";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 21600;
+export const dynamicParams = false;
 
 type Props = { params: Promise<{ slug: string }> };
+
+export function generateStaticParams() {
+  return DOCTORS.map((doctor) => ({ slug: doctor.slug }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const doctor = getDoctor(slug);
-  if (!doctor) return { title: "Лікар не знайдений | RESET Clinic" };
-
-  const metadata = doctorMetadata(doctor);
-  return {
-    ...metadata,
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-image-preview": "large",
-        "max-snippet": -1,
-        "max-video-preview": -1,
-      },
-    },
-  };
+  if (!doctor) return { title: "RESET Clinic" };
+  return doctorEeatMetadata(doctor);
 }
 
-export default async function Page({ params }: Props) {
+export default async function DoctorPage({ params }: Props) {
   const { slug } = await params;
   const doctor = getDoctor(slug);
   if (!doctor) notFound();
