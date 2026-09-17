@@ -16,14 +16,12 @@ const retiredPages: Record<string, string> = {
   "/nutrition/medical-weight-loss/": "/nutrition/",
 };
 
-const PRIVATE_PREFIXES = ["/admin", "/api", "/preview", "/internal"];
+const ADMIN_PREFIXES = ["/admin", "/api/admin"];
 const PRIVATE_ROBOTS = "noindex, nofollow, noarchive, nosnippet, noimageindex";
-const NON_CANONICAL_ROBOTS = "noindex, follow";
 const SESSION_COOKIE = "rc_admin_session";
-const CANONICAL_HOSTS = new Set(["resetclinic.org", "www.resetclinic.org"]);
 
-function isPrivateRoute(pathname: string) {
-  return PRIVATE_PREFIXES.some(
+function isAdminRoute(pathname: string) {
+  return ADMIN_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -46,11 +44,7 @@ function normalizeHost(value: string | null | undefined) {
   return first.replace(/^https?:\/\//, "").split("/")[0]?.split(":")[0] || null;
 }
 
-function isNonCanonicalHost(request: NextRequest) {
-  // Traditional Node hosts such as CityHost often sit behind a reverse proxy.
-  // In that setup request.nextUrl.hostname can be the internal proxy host/socket
-  // even though the visitor requested resetclinic.org. Trust the original-host
-  // forwarding headers first, then Host, and only then Next's parsed hostname.
+function requestHost(request: NextRequest) {
   const candidates = [
     request.headers.get("x-forwarded-host"),
     request.headers.get("x-original-host"),
@@ -59,8 +53,7 @@ function isNonCanonicalHost(request: NextRequest) {
   ]
     .map(normalizeHost)
     .filter((host): host is string => Boolean(host));
-
-  return !candidates.some((host) => CANONICAL_HOSTS.has(host));
+  return candidates[0] ?? null;
 }
 
 function applyPrivateHeaders(response: NextResponse) {
@@ -70,9 +63,14 @@ function applyPrivateHeaders(response: NextResponse) {
   return response;
 }
 
-function applyNonCanonicalHeaders(response: NextResponse) {
-  response.headers.set("X-Robots-Tag", NON_CANONICAL_ROBOTS);
-  return response;
+function redirectWwwToCanonical(request: NextRequest) {
+  const host = requestHost(request);
+  if (host !== "www.resetclinic.org") return null;
+  const url = request.nextUrl.clone();
+  url.protocol = "https:";
+  url.hostname = "resetclinic.org";
+  url.port = "";
+  return NextResponse.redirect(url, 308);
 }
 
 function loginRedirect(request: NextRequest) {
@@ -82,6 +80,9 @@ function loginRedirect(request: NextRequest) {
 }
 
 export function middleware(request: NextRequest) {
+  const canonicalRedirect = redirectWwwToCanonical(request);
+  if (canonicalRedirect) return canonicalRedirect;
+
   const legacyId =
     request.nextUrl.searchParams.get("page_id") ?? request.nextUrl.searchParams.get("p");
 
@@ -89,8 +90,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = legacyPages[legacyId];
     url.search = "";
-    const redirect = NextResponse.redirect(url, 308);
-    return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(redirect) : redirect;
+    return NextResponse.redirect(url, 308);
   }
 
   const pathname = request.nextUrl.pathname;
@@ -99,8 +99,7 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = retiredTarget;
     url.search = "";
-    const redirect = NextResponse.redirect(url, 308);
-    return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(redirect) : redirect;
+    return NextResponse.redirect(url, 308);
   }
 
   // Middleware only performs the cheap presence gate. Every protected page/API
@@ -110,8 +109,8 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  if (isPrivateRoute(pathname)) return applyPrivateHeaders(response);
-  return isNonCanonicalHost(request) ? applyNonCanonicalHeaders(response) : response;
+  if (isAdminRoute(pathname)) return applyPrivateHeaders(response);
+  return response;
 }
 
 export const config = {
