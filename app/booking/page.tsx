@@ -8,7 +8,17 @@ export const metadata: Metadata = {
   title: "Онлайн-запис | RESET Clinic",
   description: "Оберіть послугу або лікаря, перегляньте актуальні вільні години та запишіться в RESET Clinic у Львові онлайн.",
   alternates: { canonical: "https://resetclinic.org/booking/" },
-  robots: { index: false, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     title: "Онлайн-запис | RESET Clinic",
     description: "Актуальний розклад RESET Clinic: послуга або лікар → день → час → підтвердження.",
