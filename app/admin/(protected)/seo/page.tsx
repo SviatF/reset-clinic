@@ -1,11 +1,11 @@
 import { requireAdmin } from "../../../../lib/admin-auth";
 import { averageSeoScore, getGscRows, getSeoPages } from "../../../../lib/admin-data";
 import {
-  SEO_MARKET_CLUSTERS,
-  SEO_MARKET_MAP,
-  SEO_MARKET_STATS,
-  type SeoMarketStatus,
-} from "../../../../lib/seo-market-map";
+  SEO_MASTER_MARKET_CLUSTERS,
+  SEO_MASTER_MARKET_MAP,
+  SEO_MASTER_MARKET_STATS,
+} from "../../../../lib/seo-market-master";
+import type { SeoMarketStatus } from "../../../../lib/seo-market-map";
 
 type Props = { searchParams: Promise<{ audited?: string; failed?: string }> };
 
@@ -66,20 +66,20 @@ export default async function AdminSeoPage({ searchParams }: Props) {
       </section>
 
       <section className="admin-section">
-        <div className="admin-section-header"><h2>Lviv Market Coverage</h2><span>{SEO_MARKET_STATS.total} цільових URL / intent</span></div>
+        <div className="admin-section-header"><h2>Lviv Market Coverage</h2><span>{SEO_MASTER_MARKET_STATS.total} цільових URL / intent</span></div>
         <div className="admin-grid">
-          <div className="admin-card"><div className="admin-label">Повна карта</div><div className="admin-metric">{SEO_MARKET_STATS.total}</div><div className="admin-kpi-note">Потенційне topical coverage Львова</div></div>
-          <div className="admin-card"><div className="admin-label">LIVE</div><div className="admin-metric">{SEO_MARKET_STATS.live}</div><div className="admin-kpi-note">Вже в production architecture</div></div>
-          <div className="admin-card"><div className="admin-label">P0 + P1</div><div className="admin-metric">{SEO_MARKET_STATS.p0p1}</div><div className="admin-kpi-note">Перші на виробництво / оптимізацію</div></div>
-          <div className="admin-card"><div className="admin-label">Pipeline</div><div className="admin-metric">{SEO_MARKET_STATS.drafts + SEO_MARKET_STATS.planned}</div><div className="admin-kpi-note">Draft review: {SEO_MARKET_STATS.drafts} · Planned: {SEO_MARKET_STATS.planned}</div></div>
+          <div className="admin-card"><div className="admin-label">Повна карта</div><div className="admin-metric">{SEO_MASTER_MARKET_STATS.total}</div><div className="admin-kpi-note">Потенційне topical coverage Львова</div></div>
+          <div className="admin-card"><div className="admin-label">LIVE</div><div className="admin-metric">{SEO_MASTER_MARKET_STATS.live}</div><div className="admin-kpi-note">Вже в production architecture</div></div>
+          <div className="admin-card"><div className="admin-label">P0 + P1</div><div className="admin-metric">{SEO_MASTER_MARKET_STATS.p0p1}</div><div className="admin-kpi-note">Перші на виробництво / оптимізацію</div></div>
+          <div className="admin-card"><div className="admin-label">Pipeline</div><div className="admin-metric">{SEO_MASTER_MARKET_STATS.drafts + SEO_MASTER_MARKET_STATS.planned}</div><div className="admin-kpi-note">Draft review: {SEO_MASTER_MARKET_STATS.drafts} · Planned: {SEO_MASTER_MARKET_STATS.planned}</div></div>
         </div>
         <div className="admin-alert admin-section">
-          Стратегія: не створювати районні doorway-сторінки або дублікати під синоніми. Новий URL переходить у production тільки якщо має окремий search intent, достатній унікальний контент, внутрішні посилання, conversion path і медичний review. Confirm service: {SEO_MARKET_STATS.confirmService}. Cannibalization hold: {SEO_MARKET_STATS.cannibalizationHold}.
+          Стратегія: не створювати районні doorway-сторінки або дублікати під синоніми. Новий URL переходить у production тільки якщо має окремий search intent, достатній унікальний контент, внутрішні посилання, conversion path і медичний review. Confirm service: {SEO_MASTER_MARKET_STATS.confirmService}. Cannibalization hold: {SEO_MASTER_MARKET_STATS.cannibalizationHold}.
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead><tr><th>Кластер</th><th>Coverage</th></tr></thead>
-            <tbody>{SEO_MARKET_CLUSTERS.map(([cluster, count]) => <tr key={cluster}><td><strong>{CLUSTER_LABELS[cluster] || cluster}</strong></td><td>{count}</td></tr>)}</tbody>
+            <tbody>{SEO_MASTER_MARKET_CLUSTERS.map(([cluster, count]) => <tr key={cluster}><td><strong>{CLUSTER_LABELS[cluster] || cluster}</strong></td><td>{count}</td></tr>)}</tbody>
           </table>
         </div>
       </section>
@@ -98,7 +98,7 @@ export default async function AdminSeoPage({ searchParams }: Props) {
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead><tr><th>Priority</th><th>Cluster / asset</th><th>URL / intent</th><th>Status</th><th>Conversion</th></tr></thead>
-            <tbody>{SEO_MARKET_MAP.map((item) => <tr key={item.path}>
+            <tbody>{SEO_MASTER_MARKET_MAP.map((item) => <tr key={item.path}>
               <td><strong>{item.priority}</strong></td>
               <td>{CLUSTER_LABELS[item.cluster] || item.cluster}<br /><span className="admin-kpi-note">{item.asset}</span></td>
               <td><strong>{item.title}</strong><br /><span className="admin-code">{item.path}</span>{item.notes ? <><br /><span className="admin-kpi-note">{item.notes}</span></> : null}</td>
