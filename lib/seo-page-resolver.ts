@@ -8,6 +8,7 @@ import { applyExtraMarketingCopy } from "./seo-marketing-copy-extra";
 import { sanitizeSeoLandingPublicCopy } from "./seo-public-copy";
 import { applyPrioritySeoEnhancements } from "./seo-priority-pages";
 import { applyFinalSeoCopyPolish } from "./seo-final-polish";
+import { applyNewPageConversionCopy } from "./seo-new-page-conversion";
 import { SEO_LANDINGS, normalizeSeoPath, type SeoLanding } from "./seo-pages";
 
 const RETIRED_SEO_PATHS = new Set([
@@ -165,6 +166,7 @@ export const ALL_SEO_LANDINGS = dedupeByPath(RAW_SEO_LANDINGS)
   .map(applyPrioritySeoEnhancements)
   .map(sanitizeSeoLandingPublicCopy)
   .map(applyFinalSeoCopyPolish)
+  .map(applyNewPageConversionCopy)
   .map(normalizeHeadingTypography)
   .map(stripRetiredInternalLinks);
 
