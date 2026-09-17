@@ -54,8 +54,6 @@ export const DOCTORS: DoctorProfile[] = [
       "/cosmetology/hardware/ipl/",
       "/cosmetology/hardware/microneedle-rf/",
 
-      "/nutrition/medical-weight-loss/",
-
       "/skin-problems/acne/",
       "/skin-problems/rosacea/",
       "/skin-problems/pigmentation/",
