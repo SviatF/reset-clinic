@@ -3,36 +3,29 @@ import Link from "next/link";
 import { cache } from "react";
 import { PublicSiteFooter, PublicSiteHeader } from "./PublicSiteChrome";
 import { blogPostPath, getPublishedPostsByCategory } from "../lib/blog";
-import {
-  BLOG_CATEGORY_MIN_INDEXABLE_POSTS,
-  blogCategoryPath,
-  getBlogCategory,
-  type BlogCategorySlug,
-} from "../lib/blog-categories";
+import { blogCategoryPath, getBlogCategory, type BlogCategorySlug } from "../lib/blog-categories";
 import { DEFAULT_OG_IMAGE, jsonLd, SITE_NAME, SITE_URL } from "../lib/seo";
 
 const categoryState = cache(async (slug: BlogCategorySlug) => {
   const category = getBlogCategory(slug);
   if (!category) return null;
   const posts = await getPublishedPostsByCategory(slug, 200);
-  const indexablePosts = posts.filter((post) => post.indexable);
-  const indexable = indexablePosts.length >= BLOG_CATEGORY_MIN_INDEXABLE_POSTS;
-  return { category, posts, indexablePosts, indexable };
+  return { category, posts };
 });
 
 export async function buildBlogCategoryMetadata(slug: BlogCategorySlug): Promise<Metadata> {
   const state = await categoryState(slug);
-  if (!state) return { title: SITE_NAME, robots: { index: false, follow: false } };
+  if (!state) return { title: SITE_NAME };
   const path = blogCategoryPath(slug);
   return {
     title: state.category.title,
     description: state.category.description,
     alternates: { canonical: path },
     robots: {
-      index: state.indexable,
+      index: true,
       follow: true,
       googleBot: {
-        index: state.indexable,
+        index: true,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
@@ -75,7 +68,7 @@ export default async function BlogCategoryPage({ slug }: { slug: BlogCategorySlu
         breadcrumb: { "@id": `${SITE_URL}${path}#breadcrumb` },
         mainEntity: {
           "@type": "ItemList",
-          itemListElement: state.indexablePosts.map((post, index) => ({
+          itemListElement: state.posts.map((post, index) => ({
             "@type": "ListItem",
             position: index + 1,
             url: `${SITE_URL}${blogPostPath(post)}`,
