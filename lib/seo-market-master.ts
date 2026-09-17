@@ -1,17 +1,18 @@
 import { SEO_MARKET_MAP } from "./seo-market-map";
 import { SEO_WAVE5_OPPORTUNITIES } from "./seo-market-wave5-opportunities";
+import { SEO_WAVE4_LANDINGS } from "./seo-wave4-pages";
 import { SEO_WAVE5_LANDINGS } from "./seo-wave5-pages";
 import type { SeoMarketPage, SeoMarketStatus } from "./seo-market-map";
 
 const merged = new Map<string, SeoMarketPage>();
 
-// Research inventory goes first; existing live/draft/planned architecture wins on duplicates.
+// Research inventory goes first; existing architecture wins on duplicates.
 for (const item of SEO_WAVE5_OPPORTUNITIES) merged.set(item.path, item);
 for (const item of SEO_MARKET_MAP) merged.set(item.path, item);
 
-// Once an opportunity has a complete production draft, it moves into MED REVIEW.
-// This overlay does not make it indexable: seo-review-status.ts remains the launch gate.
-for (const landing of SEO_WAVE5_LANDINGS) {
+// Review-gated drafts may be present in ALL_SEO_LANDINGS so the clinic can open them,
+// but they must never be represented as LIVE before explicit medical approval.
+for (const landing of [...SEO_WAVE4_LANDINGS, ...SEO_WAVE5_LANDINGS]) {
   const current = merged.get(landing.path);
   if (!current) continue;
   merged.set(landing.path, {
