@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 const navItems = [
   { href: "/admin/", label: "Dashboard", icon: "dashboard" },
   { href: "/admin/leads/", label: "Заявки", icon: "leads" },
-  { href: "/admin/seo/", label: "SEO", icon: "seo" },
+  { href: "/admin/seo/", label: "SEO Command", icon: "seo" },
   { href: "/admin/doctors/", label: "Doctor E-E-A-T", icon: "doctors" },
   { href: "/admin/content-authority/", label: "Content Authority", icon: "authority" },
   { href: "/admin/blog/", label: "Блог / CMS", icon: "blog" },
