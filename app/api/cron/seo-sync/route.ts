@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isCronAuthorized } from "../../../../../lib/cron-auth";
-import { syncGoogleSeo } from "../../../../../lib/google-seo-sync";
+import { isCronAuthorized } from "../../../../lib/cron-auth";
+import { syncGoogleSeo } from "../../../../lib/google-seo-sync";
 import {
   getSeoAutomationState,
   kyivDateString,
   kyivHour,
-} from "../../../../../lib/seo-command-center";
+} from "../../../../lib/seo-command-center";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
