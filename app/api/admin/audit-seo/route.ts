@@ -3,6 +3,7 @@ import { getAdminSession } from "../../../../lib/admin-auth";
 import { getSeoPages, saveSeoAudit } from "../../../../lib/admin-data";
 import { isSeoLandingIndexable } from "../../../../lib/seo-compliance";
 import { ALL_SEO_LANDINGS } from "../../../../lib/seo-page-resolver";
+import { SITE_URL } from "../../../../lib/seo";
 
 function first(html: string, pattern: RegExp) {
   return html.match(pattern)?.[1]?.replace(/<[^>]+>/g, "").trim() ?? "";
@@ -47,7 +48,7 @@ function audit(html: string, indexable: boolean, expectedPath: string) {
 
   if (canonical) {
     try {
-      const canonicalPath = new URL(canonical, "https://resetclinic.org").pathname;
+      const canonicalPath = new URL(canonical, SITE_URL).pathname;
       if (canonicalPath === expectedPath) score += 10;
       else issues.push(`Canonical веде на ${canonicalPath}, очікується ${expectedPath}`);
     } catch {
@@ -81,7 +82,7 @@ function audit(html: string, indexable: boolean, expectedPath: string) {
 
 export async function POST(request: NextRequest) {
   const session = await getAdminSession();
-  if (!session) return NextResponse.redirect(new URL("/admin/login/", request.url), 303);
+  if (!session) return NextResponse.redirect(new URL("/admin/login/", SITE_URL), 303);
 
   const registeredPages = (await getSeoPages())
     .filter((page) => page.status === "published")
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     new Map([...registeredPages, ...landingPages].map((page) => [page.path, page])).values(),
   );
 
-  const base = process.env.SEO_AUDIT_BASE_URL || request.nextUrl.origin;
+  const base = process.env.SEO_AUDIT_BASE_URL || SITE_URL;
   let audited = 0;
   let failed = 0;
 
@@ -114,5 +115,5 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL(`/admin/seo/?audited=${audited}&failed=${failed}`, request.url), 303);
+  return NextResponse.redirect(new URL(`/admin/seo/?audited=${audited}&failed=${failed}`, SITE_URL), 303);
 }
