@@ -53,7 +53,8 @@ export default async function AdminIntegrationsPage({ searchParams }: Props) {
         <div className="admin-card">
           <h2>Google sync</h2>
           <p>Service account повинен мати read-доступ до Search Console property та GA4 property.</p>
-          <p>Один sync завантажує останні 28 днів GSC/GA4 і перевіряє індексацію до 100 indexable URL.</p>
+          <p>Один sync завантажує останні 90 днів GSC/GA4 і перевіряє індексацію до 200 indexable URL.</p>
+          <p className="admin-kpi-note">Автоматизація SEO Command Center: GSC sync о 00:00 Europe/Kyiv, Telegram brief о 10:00 Europe/Kyiv. CityHost може викликати cron endpoints щогодини — реальний запуск контролюється всередині застосунку.</p>
           <form action="/api/admin/sync-google" method="post"><button className="admin-btn" type="submit" disabled={!google || !storage}>Синхронізувати GSC + GA4 + Indexing</button></form>
         </div>
       </section>
