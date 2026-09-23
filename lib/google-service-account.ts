@@ -11,8 +11,6 @@ function base64url(value: string | Buffer) {
 function normalizePrivateKey(rawKey: string) {
   let value = rawKey.trim();
 
-  // Accept an accidentally pasted JSON service-account object as well as the
-  // intended GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY value.
   if (value.startsWith("{")) {
     try {
       const parsed = JSON.parse(value) as { private_key?: string };
@@ -22,8 +20,6 @@ function normalizePrivateKey(rawKey: string) {
     }
   }
 
-  // Some hosting panels preserve surrounding JSON-style quotes. Decode them
-  // when possible before turning escaped newlines into real PEM line breaks.
   if (value.startsWith('"') && value.endsWith('"')) {
     try {
       value = JSON.parse(value) as string;
@@ -81,7 +77,7 @@ export async function getGoogleAccessToken(scopes: string[]) {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth-grant-type:jwt-bearer",
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion,
     }),
     cache: "no-store",
