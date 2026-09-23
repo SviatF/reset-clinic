@@ -6,19 +6,15 @@ import {
 } from "./seo-command-center";
 
 function botToken() {
-  return (process.env.SEO_TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || "").trim();
+  return (process.env.SEO_TELEGRAM_BOT_TOKEN || "").trim();
 }
 
 function chatId() {
-  return (process.env.SEO_TELEGRAM_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "").trim();
+  return (process.env.SEO_TELEGRAM_CHAT_ID || "").trim();
 }
 
 function messageThreadId() {
-  const raw = (
-    process.env.SEO_TELEGRAM_MESSAGE_THREAD_ID ||
-    process.env.TELEGRAM_MESSAGE_THREAD_ID ||
-    ""
-  ).trim();
+  const raw = (process.env.SEO_TELEGRAM_MESSAGE_THREAD_ID || "").trim();
   if (!raw) return null;
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : null;
