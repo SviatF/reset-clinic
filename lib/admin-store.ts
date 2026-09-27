@@ -42,8 +42,13 @@ function localPath(pathname: string) {
  * Traditional Node.js hosting such as CityHost uses a private persistent
  * directory on the hosting account.
  * Cloudflare Workers must use a persistent object store; while that store is
- * not attached, reads return empty/fallback data and writes are refused so no
- * lead/admin data is silently written to Workers' ephemeral filesystem.
+ * not attached, reads return empty/fallback data and ordinary writes are
+ * refused so no admin/SEO data is silently written to ephemeral storage.
+ *
+ * Lead writes are the one emergency exception: while RESET is being cut over
+ * to Workers, the lead API must still be allowed to continue to ClinicCards
+ * and Telegram. The temporary lead object is intentionally not persisted here;
+ * R2 becomes the durable source once its binding is attached.
  */
 function authOptions() {
   const token = staticToken();
@@ -120,8 +125,6 @@ async function putJsonLocal(pathname: string, value: unknown) {
 }
 
 async function readJsonLocal<T>(pathname: string, fallback: T): Promise<T> {
-  // On Workers we deliberately keep the admin readable before persistent
-  // storage is attached. Writes remain blocked by putJsonLocal().
   if (requirePersistentStore()) return fallback;
   try {
     const text = await fs.readFile(localPath(pathname), "utf8");
@@ -150,8 +153,6 @@ async function collectJsonFiles(directory: string): Promise<Array<{ file: string
 }
 
 async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
-  // Same rule as readJsonLocal(): browsing the admin must not 500 merely
-  // because persistent storage has not been bound yet.
   if (requirePersistentStore()) return [];
 
   const files = (await collectJsonFiles(localPath(prefix)))
@@ -172,7 +173,13 @@ async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
 }
 
 export function putJson(pathname: string, value: unknown) {
-  if (!useBlobStore()) return putJsonLocal(pathname, value);
+  if (!useBlobStore()) {
+    if (requirePersistentStore() && pathname.startsWith("reset/leads/")) {
+      console.warn("lead_persistence_deferred_until_r2", pathname);
+      return Promise.resolve({ pathname, persisted: false });
+    }
+    return putJsonLocal(pathname, value);
+  }
   const auth = authOptions();
   return put(pathname, JSON.stringify(value), {
     access: "private",
