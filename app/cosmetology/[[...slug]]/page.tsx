@@ -5,7 +5,6 @@ import { buildCompliantLandingMetadata } from "../../../lib/seo-compliance";
 import { resolveSeoLanding } from "../../../lib/seo-page-resolver";
 import { seoStaticParams } from "../../../lib/seo-static-params";
 
-export const revalidate = 21600;
 export const dynamicParams = false;
 
 type Props = { params: Promise<{ slug?: string[] }> };
