@@ -8,11 +8,11 @@ import { seoStaticParams } from "../../../lib/seo-static-params";
 export const revalidate = 21600;
 export const dynamicParams = false;
 
-type Props = { params: Promise<{ slug: string[] }> };
-const pathFor = (slug: string[]) => `/nutrition/${slug.join("/")}/`;
+type Props = { params: Promise<{ slug?: string[] }> };
+const pathFor = (slug?: string[]) => `/skin-problems/${slug?.length ? `${slug.join("/")}/` : ""}`;
 
 export function generateStaticParams() {
-  return seoStaticParams("/nutrition/").filter(({ slug }) => slug.length > 0);
+  return seoStaticParams("/skin-problems/");
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return landing ? buildCompliantLandingMetadata(landing) : { title: "RESET Clinic" };
 }
 
-export default async function NutritionSeoPage({ params }: Props) {
+export default async function SkinProblemsSeoPage({ params }: Props) {
   const { slug } = await params;
   const landing = resolveSeoLanding(pathFor(slug));
   if (!landing) notFound();
