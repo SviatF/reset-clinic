@@ -10,6 +10,18 @@ function useBlobStore() {
   return Boolean(staticToken() || process.env.VERCEL);
 }
 
+function requirePersistentStore() {
+  return process.env.RESET_REQUIRE_PERSISTENT_STORE === "1";
+}
+
+function assertFilesystemAllowed() {
+  if (requirePersistentStore()) {
+    throw new Error(
+      "Persistent admin storage is required, but BLOB_READ_WRITE_TOKEN is missing. Refusing ephemeral filesystem storage.",
+    );
+  }
+}
+
 function localDataRoot() {
   const configured = process.env.RESET_DATA_DIR?.trim();
   return path.resolve(configured || path.join(process.cwd(), ".reset-data"));
@@ -28,8 +40,9 @@ function localPath(pathname: string) {
 /**
  * Vercel uses Blob through runtime OIDC (or an optional static token).
  * Traditional Node.js hosting such as CityHost uses a private persistent
- * directory on the hosting account, so the production site has no hidden
- * dependency on Vercel for leads/admin/blog data.
+ * directory on the hosting account.
+ * Cloudflare Workers must provide BLOB_READ_WRITE_TOKEN while
+ * RESET_REQUIRE_PERSISTENT_STORE=1; Workers' virtual filesystem is ephemeral.
  */
 function authOptions() {
   const token = staticToken();
@@ -37,10 +50,11 @@ function authOptions() {
 }
 
 export function isAdminStoreConfigured() {
-  return useBlobStore() || Boolean(localDataRoot());
+  return useBlobStore() || !requirePersistentStore();
 }
 
 async function localHealth() {
+  assertFilesystemAllowed();
   const root = localDataRoot();
   const probe = path.join(root, `.health-${process.pid}-${Date.now()}`);
   await fs.mkdir(root, { recursive: true });
@@ -49,6 +63,15 @@ async function localHealth() {
 }
 
 export async function getAdminStoreHealth() {
+  if (!useBlobStore() && requirePersistentStore()) {
+    return {
+      configured: false,
+      ok: false,
+      mode: "unconfigured" as const,
+      error: "BLOB_READ_WRITE_TOKEN is required for persistent storage on Cloudflare Workers",
+    };
+  }
+
   const mode = useBlobStore()
     ? staticToken()
       ? ("token" as const)
@@ -85,6 +108,7 @@ async function findExactBlob(pathname: string) {
 }
 
 async function putJsonLocal(pathname: string, value: unknown) {
+  assertFilesystemAllowed();
   const destination = localPath(pathname);
   const directory = path.dirname(destination);
   const temporary = `${destination}.tmp-${process.pid}-${Date.now()}`;
@@ -95,10 +119,12 @@ async function putJsonLocal(pathname: string, value: unknown) {
 }
 
 async function readJsonLocal<T>(pathname: string, fallback: T): Promise<T> {
+  assertFilesystemAllowed();
   try {
     const text = await fs.readFile(localPath(pathname), "utf8");
     return JSON.parse(text) as T;
-  } catch {
+  } catch (error) {
+    if (requirePersistentStore()) throw error;
     return fallback;
   }
 }
@@ -122,6 +148,7 @@ async function collectJsonFiles(directory: string): Promise<Array<{ file: string
 }
 
 async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
+  assertFilesystemAllowed();
   const files = (await collectJsonFiles(localPath(prefix)))
     .sort((a, b) => b.mtimeMs - a.mtimeMs)
     .slice(0, limit);
