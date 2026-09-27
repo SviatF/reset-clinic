@@ -42,8 +42,13 @@ function localPath(pathname: string) {
  * Traditional Node.js hosting such as CityHost uses a private persistent
  * directory on the hosting account.
  * Cloudflare Workers must use a persistent object store; while that store is
- * not attached, reads return empty/fallback data and writes are refused so no
- * lead/admin data is silently written to Workers' ephemeral filesystem.
+ * not attached, reads return empty/fallback data and ordinary writes are
+ * refused so no admin/SEO state is silently written to ephemeral storage.
+ *
+ * Lead writes are the one temporary exception during the emergency cutover:
+ * the lead API must be able to continue to Cliniccards and Telegram even
+ * before R2 is attached. These temporary lead writes are acknowledged here
+ * but intentionally not persisted; R2 becomes authoritative once connected.
  */
 function authOptions() {
   const token = staticToken();
@@ -172,7 +177,13 @@ async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
 }
 
 export function putJson(pathname: string, value: unknown) {
-  if (!useBlobStore()) return putJsonLocal(pathname, value);
+  if (!useBlobStore()) {
+    if (requirePersistentStore() && pathname.startsWith("reset/leads/")) {
+      console.warn("lead_persistence_deferred_until_r2", pathname);
+      return Promise.resolve({ pathname, persisted: false });
+    }
+    return putJsonLocal(pathname, value);
+  }
   const auth = authOptions();
   return put(pathname, JSON.stringify(value), {
     access: "private",
