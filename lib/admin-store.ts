@@ -17,7 +17,7 @@ function requirePersistentStore() {
 function assertFilesystemAllowed() {
   if (requirePersistentStore()) {
     throw new Error(
-      "Persistent admin storage is required, but BLOB_READ_WRITE_TOKEN is missing. Refusing ephemeral filesystem storage.",
+      "Persistent admin storage is required, but no persistent store is configured. Refusing ephemeral filesystem storage.",
     );
   }
 }
@@ -41,8 +41,9 @@ function localPath(pathname: string) {
  * Vercel uses Blob through runtime OIDC (or an optional static token).
  * Traditional Node.js hosting such as CityHost uses a private persistent
  * directory on the hosting account.
- * Cloudflare Workers must provide BLOB_READ_WRITE_TOKEN while
- * RESET_REQUIRE_PERSISTENT_STORE=1; Workers' virtual filesystem is ephemeral.
+ * Cloudflare Workers must use a persistent object store; while that store is
+ * not attached, reads return empty/fallback data and writes are refused so no
+ * lead/admin data is silently written to Workers' ephemeral filesystem.
  */
 function authOptions() {
   const token = staticToken();
@@ -68,7 +69,7 @@ export async function getAdminStoreHealth() {
       configured: false,
       ok: false,
       mode: "unconfigured" as const,
-      error: "BLOB_READ_WRITE_TOKEN is required for persistent storage on Cloudflare Workers",
+      error: "Persistent storage is not configured on Cloudflare Workers",
     };
   }
 
@@ -119,12 +120,13 @@ async function putJsonLocal(pathname: string, value: unknown) {
 }
 
 async function readJsonLocal<T>(pathname: string, fallback: T): Promise<T> {
-  assertFilesystemAllowed();
+  // On Workers we deliberately keep the admin readable before persistent
+  // storage is attached. Writes remain blocked by putJsonLocal().
+  if (requirePersistentStore()) return fallback;
   try {
     const text = await fs.readFile(localPath(pathname), "utf8");
     return JSON.parse(text) as T;
-  } catch (error) {
-    if (requirePersistentStore()) throw error;
+  } catch {
     return fallback;
   }
 }
@@ -148,7 +150,10 @@ async function collectJsonFiles(directory: string): Promise<Array<{ file: string
 }
 
 async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
-  assertFilesystemAllowed();
+  // Same rule as readJsonLocal(): browsing the admin must not 500 merely
+  // because persistent storage has not been bound yet.
+  if (requirePersistentStore()) return [];
+
   const files = (await collectJsonFiles(localPath(prefix)))
     .sort((a, b) => b.mtimeMs - a.mtimeMs)
     .slice(0, limit);
