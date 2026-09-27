@@ -1,7 +1,10 @@
 node_modules
 .next
+.open-next
+.wrangler
 .reset-data
 .env*
 !.env.example
+.dev.vars
 npm-debug.log*
 .DS_Store
