@@ -1,4 +1,5 @@
-import { getGscRows } from "./admin-data";
+import { getGscRows, type GscRow } from "./admin-data";
+import { fetchLiveGscRows } from "./google-gsc-live";
 import {
   buildSeoCommandCenter,
   kyivDateString,
@@ -64,8 +65,18 @@ function formatDateUa(date: string) {
   return `${day}.${month}.${year}`;
 }
 
+async function reportRows(): Promise<GscRow[]> {
+  try {
+    return await fetchLiveGscRows(90);
+  } catch (liveError) {
+    const stored = await getGscRows(50000).catch(() => [] as GscRow[]);
+    if (stored.length) return stored;
+    throw liveError;
+  }
+}
+
 export async function buildDailySeoTelegramMessage(date = kyivSeoReportDate()) {
-  const rows = await getGscRows(50000);
+  const rows = await reportRows();
   const data = buildSeoCommandCenter(rows, date);
 
   if (!data.hasRequestedDate) {
@@ -185,6 +196,7 @@ export async function sendDailySeoTelegramReport(date = kyivSeoReportDate()) {
     lastReportKyivDate: date,
     lastReportMessageId: messageId,
     lastError: null,
-  });
+  }).catch(() => undefined);
+
   return { messageId, text };
 }
