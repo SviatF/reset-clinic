@@ -1,7 +1,8 @@
 import { getGscRows } from "./admin-data";
 import {
   buildSeoCommandCenter,
-  kyivYesterday,
+  kyivDateString,
+  shiftDate,
   updateSeoAutomationState,
 } from "./seo-command-center";
 
@@ -22,6 +23,10 @@ function messageThreadId() {
 
 export function isSeoTelegramConfigured() {
   return Boolean(botToken() && chatId());
+}
+
+export function kyivSeoReportDate(date = new Date()) {
+  return shiftDate(kyivDateString(date), -2);
 }
 
 function compactNumber(value: number) {
@@ -59,7 +64,7 @@ function formatDateUa(date: string) {
   return `${day}.${month}.${year}`;
 }
 
-export async function buildDailySeoTelegramMessage(date = kyivYesterday()) {
+export async function buildDailySeoTelegramMessage(date = kyivSeoReportDate()) {
   const rows = await getGscRows(50000);
   const data = buildSeoCommandCenter(rows, date);
 
@@ -68,9 +73,9 @@ export async function buildDailySeoTelegramMessage(date = kyivYesterday()) {
     return [
       `📈 RESET Clinic · SEO за ${formatDateUa(date)}`,
       "",
-      "⚠️ Google Search Console ще не віддав дані за вчора.",
+      "⚠️ Google Search Console ще не віддав дані за звітну дату.",
       `Остання доступна дата в GSC: ${latest}.`,
-      "Звіт не підміняє вчорашні дані старішою датою.",
+      "Звіт не підміняє запитану дату старішими даними.",
     ].join("\n");
   }
 
@@ -145,7 +150,7 @@ type TelegramResponse = {
   result?: { message_id?: number };
 };
 
-export async function sendDailySeoTelegramReport(date = kyivYesterday()) {
+export async function sendDailySeoTelegramReport(date = kyivSeoReportDate()) {
   const token = botToken();
   const targetChat = chatId();
   if (!token || !targetChat) throw new Error("SEO Telegram bot/chat is not configured");
