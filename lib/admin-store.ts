@@ -2,6 +2,58 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { get, list, put } from "@vercel/blob";
 
+type R2ObjectLike = {
+  key: string;
+  uploaded?: Date | string;
+};
+
+type R2ObjectBodyLike = R2ObjectLike & {
+  text(): Promise<string>;
+};
+
+type R2BucketLike = {
+  get(key: string): Promise<R2ObjectBodyLike | null>;
+  put(
+    key: string,
+    value: string,
+    options?: { httpMetadata?: { contentType?: string } },
+  ): Promise<unknown>;
+  list(options?: {
+    prefix?: string;
+    limit?: number;
+    cursor?: string;
+  }): Promise<{
+    objects: R2ObjectLike[];
+    truncated?: boolean;
+    cursor?: string;
+  }>;
+};
+
+type ResetRuntimeGlobal = typeof globalThis & {
+  __RESET_DATA_R2?: R2BucketLike;
+  [key: symbol]: unknown;
+};
+
+function runtimeR2Store(): R2BucketLike | null {
+  const runtime = globalThis as ResetRuntimeGlobal;
+
+  const direct = runtime.__RESET_DATA_R2;
+  if (direct && typeof direct.get === "function" && typeof direct.put === "function") {
+    return direct;
+  }
+
+  // OpenNext exposes the current Cloudflare context under this shared symbol.
+  // This fallback keeps R2 available even if a request is executed inside one
+  // of OpenNext's patched server contexts instead of the wrapper global.
+  const context = runtime[Symbol.for("__cloudflare-context__")] as
+    | { env?: { RESET_DATA_R2?: R2BucketLike } }
+    | undefined;
+  const contextual = context?.env?.RESET_DATA_R2;
+  return contextual && typeof contextual.get === "function" && typeof contextual.put === "function"
+    ? contextual
+    : null;
+}
+
 function staticToken() {
   return process.env.BLOB_READ_WRITE_TOKEN || "";
 }
@@ -38,17 +90,14 @@ function localPath(pathname: string) {
 }
 
 /**
- * Vercel uses Blob through runtime OIDC (or an optional static token).
- * Traditional Node.js hosting such as CityHost uses a private persistent
- * directory on the hosting account.
- * Cloudflare Workers must use a persistent object store; while that store is
- * not attached, reads return empty/fallback data and ordinary writes are
- * refused so no admin/SEO state is silently written to ephemeral storage.
+ * Storage priority:
+ * 1. Cloudflare R2 binding on Workers.
+ * 2. Vercel Blob when running on Vercel / with BLOB_READ_WRITE_TOKEN.
+ * 3. Private filesystem on traditional Node hosting.
  *
- * Lead writes are the one temporary exception during the emergency cutover:
- * the lead API must be able to continue to Cliniccards and Telegram even
- * before R2 is attached. These temporary lead writes are acknowledged here
- * but intentionally not persisted; R2 becomes authoritative once connected.
+ * When RESET_REQUIRE_PERSISTENT_STORE=1, filesystem writes are refused so a
+ * Cloudflare deployment can never silently persist important data to an
+ * ephemeral disk.
  */
 function authOptions() {
   const token = staticToken();
@@ -56,7 +105,7 @@ function authOptions() {
 }
 
 export function isAdminStoreConfigured() {
-  return useBlobStore() || !requirePersistentStore();
+  return Boolean(runtimeR2Store()) || useBlobStore() || !requirePersistentStore();
 }
 
 async function localHealth() {
@@ -69,7 +118,8 @@ async function localHealth() {
 }
 
 export async function getAdminStoreHealth() {
-  if (!useBlobStore() && requirePersistentStore()) {
+  const r2 = runtimeR2Store();
+  if (!r2 && !useBlobStore() && requirePersistentStore()) {
     return {
       configured: false,
       ok: false,
@@ -78,14 +128,18 @@ export async function getAdminStoreHealth() {
     };
   }
 
-  const mode = useBlobStore()
-    ? staticToken()
-      ? ("token" as const)
-      : ("oidc" as const)
-    : ("filesystem" as const);
+  const mode = r2
+    ? ("r2" as const)
+    : useBlobStore()
+      ? staticToken()
+        ? ("token" as const)
+        : ("oidc" as const)
+      : ("filesystem" as const);
 
   try {
-    if (useBlobStore()) {
+    if (r2) {
+      await r2.list({ prefix: "reset/", limit: 1 });
+    } else if (useBlobStore()) {
       await list({ prefix: "reset/", limit: 1, ...authOptions() });
     } else {
       await localHealth();
@@ -113,6 +167,59 @@ async function findExactBlob(pathname: string) {
   return null;
 }
 
+async function putJsonR2(pathname: string, value: unknown, r2: R2BucketLike) {
+  await r2.put(pathname, JSON.stringify(value), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+  return { pathname, persisted: true, store: "r2" as const };
+}
+
+async function readJsonR2<T>(pathname: string, fallback: T, r2: R2BucketLike): Promise<T> {
+  try {
+    const object = await r2.get(pathname);
+    if (!object) return fallback;
+    return JSON.parse(await object.text()) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function listJsonR2<T>(prefix: string, limit: number, r2: R2BucketLike): Promise<T[]> {
+  try {
+    const objects: R2ObjectLike[] = [];
+    let cursor: string | undefined;
+
+    do {
+      const result = await r2.list({ prefix, limit: 1000, cursor });
+      objects.push(...result.objects.filter((object) => object.key.endsWith(".json")));
+      cursor = result.truncated ? result.cursor : undefined;
+    } while (cursor);
+
+    const selected = objects
+      .sort(
+        (a, b) =>
+          new Date(b.uploaded || 0).getTime() - new Date(a.uploaded || 0).getTime(),
+      )
+      .slice(0, limit);
+
+    const rows = await Promise.all(
+      selected.map(async (object): Promise<T | null> => {
+        try {
+          const body = await r2.get(object.key);
+          if (!body) return null;
+          return JSON.parse(await body.text()) as T;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    return rows.filter((row) => row !== null) as T[];
+  } catch {
+    return [];
+  }
+}
+
 async function putJsonLocal(pathname: string, value: unknown) {
   assertFilesystemAllowed();
   const destination = localPath(pathname);
@@ -125,8 +232,6 @@ async function putJsonLocal(pathname: string, value: unknown) {
 }
 
 async function readJsonLocal<T>(pathname: string, fallback: T): Promise<T> {
-  // On Workers we deliberately keep the admin readable before persistent
-  // storage is attached. Writes remain blocked by putJsonLocal().
   if (requirePersistentStore()) return fallback;
   try {
     const text = await fs.readFile(localPath(pathname), "utf8");
@@ -155,8 +260,6 @@ async function collectJsonFiles(directory: string): Promise<Array<{ file: string
 }
 
 async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
-  // Same rule as readJsonLocal(): browsing the admin must not 500 merely
-  // because persistent storage has not been bound yet.
   if (requirePersistentStore()) return [];
 
   const files = (await collectJsonFiles(localPath(prefix)))
@@ -176,68 +279,85 @@ async function listJsonLocal<T>(prefix: string, limit: number): Promise<T[]> {
   return rows.filter((row) => row !== null) as T[];
 }
 
-export function putJson(pathname: string, value: unknown) {
-  if (!useBlobStore()) {
-    if (requirePersistentStore() && pathname.startsWith("reset/leads/")) {
-      console.warn("lead_persistence_deferred_until_r2", pathname);
-      return Promise.resolve({ pathname, persisted: false });
-    }
-    return putJsonLocal(pathname, value);
+export async function putJson(pathname: string, value: unknown) {
+  const r2 = runtimeR2Store();
+  if (r2) return putJsonR2(pathname, value, r2);
+
+  if (useBlobStore()) {
+    const auth = authOptions();
+    return put(pathname, JSON.stringify(value), {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json; charset=utf-8",
+      ...auth,
+    });
   }
-  const auth = authOptions();
-  return put(pathname, JSON.stringify(value), {
-    access: "private",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json; charset=utf-8",
-    ...auth,
-  });
+
+  if (requirePersistentStore() && pathname.startsWith("reset/leads/")) {
+    console.warn("lead_persistence_deferred_until_r2", pathname);
+    return { pathname, persisted: false };
+  }
+
+  return putJsonLocal(pathname, value);
 }
 
 export async function readJson<T>(pathname: string, fallback: T): Promise<T> {
-  if (!useBlobStore()) return readJsonLocal(pathname, fallback);
-  try {
-    const blob = await findExactBlob(pathname);
-    if (!blob) return fallback;
-    const result = await get(blob.url, { access: "private", ...authOptions() });
-    if (!result) return fallback;
-    return JSON.parse(await new Response(result.stream).text()) as T;
-  } catch {
-    return fallback;
+  const r2 = runtimeR2Store();
+  if (r2) return readJsonR2(pathname, fallback, r2);
+
+  if (useBlobStore()) {
+    try {
+      const blob = await findExactBlob(pathname);
+      if (!blob) return fallback;
+      const result = await get(blob.url, { access: "private", ...authOptions() });
+      if (!result) return fallback;
+      return JSON.parse(await new Response(result.stream).text()) as T;
+    } catch {
+      return fallback;
+    }
   }
+
+  return readJsonLocal(pathname, fallback);
 }
 
 export async function listJson<T>(prefix: string, limit = 500): Promise<T[]> {
-  if (!useBlobStore()) return listJsonLocal<T>(prefix, limit);
-  try {
-    const auth = authOptions();
-    const blobs: Array<{ url: string; pathname: string; uploadedAt: Date }> = [];
-    let cursor: string | undefined;
+  const r2 = runtimeR2Store();
+  if (r2) return listJsonR2<T>(prefix, limit, r2);
 
-    do {
-      const result = await list({ prefix, limit: 1000, cursor, ...auth });
-      blobs.push(...result.blobs);
-      cursor = result.cursor;
-    } while (cursor && blobs.length < Math.max(limit * 2, 1000));
+  if (useBlobStore()) {
+    try {
+      const auth = authOptions();
+      const blobs: Array<{ url: string; pathname: string; uploadedAt: Date }> = [];
+      let cursor: string | undefined;
 
-    const selected = blobs
-      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-      .slice(0, limit);
+      do {
+        const result = await list({ prefix, limit: 1000, cursor, ...auth });
+        blobs.push(...result.blobs);
+        cursor = result.cursor;
+      } while (cursor && blobs.length < Math.max(limit * 2, 1000));
 
-    const rows = await Promise.all(
-      selected.map(async (blob): Promise<T | null> => {
-        try {
-          const result = await get(blob.url, { access: "private", ...auth });
-          if (!result) return null;
-          return JSON.parse(await new Response(result.stream).text()) as T;
-        } catch {
-          return null;
-        }
-      }),
-    );
+      const selected = blobs
+        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+        .slice(0, limit);
 
-    return rows.filter((row) => row !== null) as T[];
-  } catch {
-    return [];
+      const rows = await Promise.all(
+        selected.map(async (blob): Promise<T | null> => {
+          try {
+            const result = await get(blob.url, { access: "private", ...auth });
+            if (!result) return null;
+            return JSON.parse(await new Response(result.stream).text()) as T;
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      return rows.filter((row) => row !== null) as T[];
+    } catch {
+      return [];
+    }
   }
+
+  return listJsonLocal<T>(prefix, limit);
 }
