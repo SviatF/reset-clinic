@@ -4,11 +4,11 @@ import { isCronAuthorized } from "../../../../lib/cron-auth";
 import {
   getSeoAutomationState,
   kyivHour,
-  kyivYesterday,
   updateSeoAutomationState,
 } from "../../../../lib/seo-command-center";
 import {
   isSeoTelegramConfigured,
+  kyivSeoReportDate,
   sendDailySeoTelegramReport,
 } from "../../../../lib/seo-telegram";
 
@@ -28,7 +28,7 @@ async function run(request: NextRequest) {
 
   const force = request.nextUrl.searchParams.get("force") === "1";
   const hour = kyivHour();
-  const reportDate = kyivYesterday();
+  const reportDate = kyivSeoReportDate();
   const state = await getSeoAutomationState();
 
   if (!force && hour !== 10) {
