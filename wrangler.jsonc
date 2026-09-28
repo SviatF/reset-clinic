@@ -12,6 +12,12 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "r2_buckets": [
+    {
+      "binding": "RESET_DATA_R2",
+      "bucket_name": "reset-clinic-data"
+    }
+  ],
   "observability": {
     "enabled": true
   },
