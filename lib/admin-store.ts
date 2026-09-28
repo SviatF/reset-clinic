@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { get, list, put } from "@vercel/blob";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 type R2ObjectLike = {
   key: string;
@@ -29,29 +30,20 @@ type R2BucketLike = {
   }>;
 };
 
-type ResetRuntimeGlobal = typeof globalThis & {
-  __RESET_DATA_R2?: R2BucketLike;
-  [key: symbol]: unknown;
-};
-
 function runtimeR2Store(): R2BucketLike | null {
-  const runtime = globalThis as ResetRuntimeGlobal;
-
-  const direct = runtime.__RESET_DATA_R2;
-  if (direct && typeof direct.get === "function" && typeof direct.put === "function") {
-    return direct;
+  try {
+    const context = getCloudflareContext() as {
+      env?: { RESET_DATA_R2?: R2BucketLike };
+    };
+    const bucket = context?.env?.RESET_DATA_R2;
+    if (bucket && typeof bucket.get === "function" && typeof bucket.put === "function") {
+      return bucket;
+    }
+  } catch {
+    // Not running inside the OpenNext Cloudflare runtime. Fall through to
+    // Vercel Blob or the traditional Node filesystem below.
   }
-
-  // OpenNext exposes the current Cloudflare context under this shared symbol.
-  // This fallback keeps R2 available even if a request is executed inside one
-  // of OpenNext's patched server contexts instead of the wrapper global.
-  const context = runtime[Symbol.for("__cloudflare-context__")] as
-    | { env?: { RESET_DATA_R2?: R2BucketLike } }
-    | undefined;
-  const contextual = context?.env?.RESET_DATA_R2;
-  return contextual && typeof contextual.get === "function" && typeof contextual.put === "function"
-    ? contextual
-    : null;
+  return null;
 }
 
 function staticToken() {
