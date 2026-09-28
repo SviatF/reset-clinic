@@ -6,14 +6,11 @@ import { kyivSeoReportDate, sendDailySeoTelegramReport } from "../../../../lib/s
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+async function run(request: NextRequest) {
   const session = await getAdminSession();
   if (!session) return NextResponse.redirect(new URL("/admin/login/", SITE_URL), 303);
 
-  const returnTo = request.nextUrl.searchParams.get("return") === "/admin/seo/"
-    ? "/admin/seo/"
-    : "/admin/seo/";
-  const url = new URL(returnTo, SITE_URL);
+  const url = new URL("/admin/seo/", SITE_URL);
   const reportDate = kyivSeoReportDate();
 
   try {
@@ -27,3 +24,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.redirect(url, 303);
 }
+
+export const GET = run;
+export const POST = run;
