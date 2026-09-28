@@ -7,6 +7,10 @@ function siteUrl(env) {
   return env.NEXT_PUBLIC_SITE_URL || FALLBACK_SITE_URL;
 }
 
+function exposeRuntimeBindings(env) {
+  globalThis.__RESET_DATA_R2 = env.RESET_DATA_R2;
+}
+
 async function invokeProtectedCron(pathname, env, ctx) {
   const secret = env.SEO_CRON_SECRET;
   if (!secret) {
@@ -39,11 +43,13 @@ async function invokeProtectedCron(pathname, env, ctx) {
 
 export default {
   fetch(request, env, ctx) {
+    exposeRuntimeBindings(env);
     return openNextWorker.fetch(request, env, ctx);
   },
 
   async scheduled(controller, env, ctx) {
     if (controller.cron !== HOURLY_CRON) return;
+    exposeRuntimeBindings(env);
 
     const results = await Promise.allSettled([
       invokeProtectedCron("/api/cron/seo-sync/", env, ctx),
