@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import styles from "../../../components/PromoHub.module.css";
+import styles from "../../../components/PromoHub.module.css";\nimport PromoAttributionBridge from "../../../components/PromoAttributionBridge";
 import { PL_PROMO_PATHS, PROMO_SERVICES_PL, polishPromoPath } from "../../../lib/promo-data-pl";
 import { DEFAULT_OG_IMAGE, SITE_NAME } from "../../../lib/seo";
 import type { PromoServiceSlug } from "../../../lib/promo-data";
@@ -104,7 +104,7 @@ const cardMeta: Record<PromoServiceSlug, { index: string; family: string; title:
 
 export default function PolishPromoHubPage() {
   return (
-    <main className={styles.page} lang="pl-PL">
+    <main className={styles.page} lang="pl-PL">\n      <PromoAttributionBridge />
       <header className={styles.header}>
         <Link href="/" className={styles.brand} aria-label="RESÉT clinic">
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} priority />
