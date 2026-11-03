@@ -23,13 +23,34 @@ export function isSeoLandingIndexable(landing: SeoLanding) {
   return coreIsSeoLandingIndexable(landing) && isSeoLandingApprovedForIndex(landing.path);
 }
 
+const POLISH_PROMO_ALTERNATES: Record<string, string> = {
+  "/cosmetology/injection/botulinum-therapy/": "/pl/promo/botoks-lwow/",
+  "/cosmetology/injection/lip-contouring/": "/pl/promo/modelowanie-ust-lwow/",
+  "/cosmetology/hardware/ipl/": "/pl/promo/ipl-twarz-lwow/",
+  "/cosmetology/hardware/aquapure/": "/pl/promo/oczyszczanie-twarzy-lwow/",
+  "/nutrition/medical-weight-loss/": "/pl/promo/kontrola-wagi-lwow/",
+  "/nutrition/nutritionist-lviv/": "/pl/promo/dietetyk-lwow/",
+};
+
 export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
   const base = baseBuildCompliantLandingMetadata(landing);
   const visual = seoLandingVisual(landing.path);
   const index = isSeoLandingIndexable(landing);
 
+  const polishAlternate = POLISH_PROMO_ALTERNATES[landing.path];
+
   return {
     ...base,
+    alternates: polishAlternate
+      ? {
+          ...(base.alternates ?? {}),
+          languages: {
+            "uk-UA": landing.path,
+            "pl-PL": polishAlternate,
+            "x-default": landing.path,
+          },
+        }
+      : base.alternates,
     robots: {
       index,
       follow: true,
