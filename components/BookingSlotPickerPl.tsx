@@ -175,7 +175,7 @@ export default function BookingSlotPickerPl({
       if (!response.ok || !data.ok) setError(data.message || "Nie udało się odświeżyć wolnych terminów.");
     } catch (requestError) {
       console.error("RESET booking availability failed", requestError);
-      setError("Nie udało się odświeżyć wolnych terminów. Спробуйте ще раз.");
+      setError("Nie udało się odświeżyć wolnych terminów. Spróbuj ponownie.");
     } finally {
       setLoading(false);
     }
@@ -350,7 +350,7 @@ export default function BookingSlotPickerPl({
               <strong>{value.weekLabel ? `${value.weekLabel} · ` : ""}{dateLabel(value.date)} · {value.time}</strong>
               {value.doctorName ? <small>{cleanDisplayText(value.doctorName)}</small> : null}
             </div>
-          ) : <p className="booking-slot-required">Wybierz tydzień, день і одну з вільних годин, щоб продовжити.</p>}
+          ) : <p className="booking-slot-required">Wybierz tydzień, dzień i jedną z wolnych godzin, aby kontynuować.</p>}
         </>
       ) : null}
 
