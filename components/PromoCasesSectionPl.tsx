@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { PromoServiceConfig } from "../lib/promo-data";
+import "./PromoCasesSection.css";
 
 type CaseItem = {
   type: "image" | "video";
