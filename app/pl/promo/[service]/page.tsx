@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PromoLandingPagePl from "../../../../components/PromoLandingPagePl";
-import { getPolishPromoByPathSlug, PL_PROMO_SLUGS, PL_PROMO_PATHS } from "../../../../lib/promo-data-pl";
+import { getPolishPromoByPathSlug, PL_PROMO_SLUGS } from "../../../../lib/promo-data-pl";
 import { SITE_NAME, jsonLd, SITE_URL } from "../../../../lib/seo";
 import { PROMO_SERVICES } from "../../../../lib/promo-data";
 
