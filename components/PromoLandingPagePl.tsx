@@ -4,7 +4,7 @@ import { DOCTORS } from "../lib/doctors";
 import { PROMO_SERVICES, type PromoServiceConfig } from "../lib/promo-data";
 import { getPublishedPricesForLanding } from "../lib/price-data";
 import { PROMO_DOCTOR_SLUGS } from "../lib/promo-doctor-map";
-import PromoCasesSectionPl from "./PromoCasesSectionPl";
+import PromoCasesSectionPl from "./PromoCasesSectionPl";\nimport PromoAttributionBridge from "./PromoAttributionBridge";
 import PromoLeadFormPl from "./PromoLeadFormPl";
 
 function uniqPrices(rows: { service: string; price: string }[]) {
@@ -78,7 +78,7 @@ export default function PromoLandingPagePl({
   const bookingService = PROMO_SERVICES[config.slug].serviceName;
 
   return (
-    <main className={`promo-site promo-landing promo-theme-${config.slug}`} lang="pl-PL">
+    <main className={`promo-site promo-landing promo-theme-${config.slug}`} lang="pl-PL">\n      <PromoAttributionBridge />
       <header className="promo-header">
         <Link className="promo-brand" href="/pl/promo/" aria-label="RESÉT clinic — polskie strony promocyjne">
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} priority />
