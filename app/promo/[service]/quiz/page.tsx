@@ -20,10 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
     description: config.quizLead,
     alternates: { canonical: config.canonicalPath },
     robots: {
-      index: true,
+      index: false,
       follow: true,
       googleBot: {
-        index: true,
+        index: false,
         follow: true,
         "max-image-preview": "large",
         "max-snippet": -1,
