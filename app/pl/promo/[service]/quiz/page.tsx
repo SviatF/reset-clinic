@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import PromoQuizClientPl from "../../../../../../components/PromoQuizClientPl";
-import { getPolishPromoByPathSlug, PL_PROMO_SLUGS } from "../../../../../../lib/promo-data-pl";
-import { SITE_NAME } from "../../../../../../lib/seo";
+import PromoQuizClientPl from "../../../../../components/PromoQuizClientPl";
+import { getPolishPromoByPathSlug, PL_PROMO_SLUGS } from "../../../../../lib/promo-data-pl";
+import { SITE_NAME } from "../../../../../lib/seo";
 
 export function generateStaticParams() {
   return PL_PROMO_SLUGS.map((service) => ({ service }));
