@@ -5,6 +5,7 @@ import { DOCTORS, doctorPath } from "../lib/doctors";
 import { SITE_URL } from "../lib/seo";
 import { isSeoLandingIndexable } from "../lib/seo-compliance";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
+import { PL_PROMO_SLUGS } from "../lib/promo-data-pl";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const seo: MetadataRoute.Sitemap = ALL_SEO_LANDINGS
     .filter(isSeoLandingIndexable)
     .map((landing) => ({ url: `${SITE_URL}${landing.path}` }));
+
+  const polishPromo: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/pl/promo/` },
+    ...PL_PROMO_SLUGS.map((slug) => ({ url: `${SITE_URL}/pl/promo/${slug}/` })),
+  ];
 
   const doctors: MetadataRoute.Sitemap = DOCTORS.map((doctor) => ({
     url: `${SITE_URL}${doctorPath(doctor)}`,
@@ -47,5 +53,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(post.updated_at),
   }));
 
-  return [...base, ...seo, ...doctors, ...categories, ...blog];
+  return [...base, ...seo, ...polishPromo, ...doctors, ...categories, ...blog];
 }
