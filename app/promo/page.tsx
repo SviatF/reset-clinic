@@ -8,7 +8,14 @@ const META_DESCRIPTION = "Навігатор RESÉT clinic у Львові: бо
 export const metadata: Metadata = {
   title: META_TITLE,
   description: META_DESCRIPTION,
-  alternates: { canonical: "/promo/" },
+  alternates: {
+    canonical: "/promo/",
+    languages: {
+      "uk-UA": "/promo/",
+      "pl-PL": "/pl/promo/",
+      "x-default": "/promo/",
+    },
+  },
   robots: {
     index: true,
     follow: true,
