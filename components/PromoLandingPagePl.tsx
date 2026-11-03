@@ -21,9 +21,39 @@ function rolePl(role: string) {
 
 function priceServicePl(value: string) {
   return value
+    .replaceAll("Повторна консультація", "Konsultacja kontrolna")
+    .replaceAll("Індивідуальний супровід нутриціолога", "Indywidualne prowadzenie żywieniowe")
+    .replaceAll("консультація", "konsultacja")
     .replaceAll("Консультація", "Konsultacja")
+    .replaceAll("Міжбрів’я", "Okolica między brwiami")
+    .replaceAll("Чоло", "Czoło")
+    .replaceAll("Очі", "Okolica oczu")
+    .replaceAll("Верхня третина", "Górna 1/3 twarzy")
+    .replaceAll("Зморшки носа", "Zmarszczki nosa")
+    .replaceAll("Гінгівальна посмішка", "Uśmiech dziąsłowy")
+    .replaceAll("Кисетні зморшки", "Zmarszczki palacza")
+    .replaceAll("Підборіддя", "Broda")
+    .replaceAll("кутики рота", "kąciki ust")
+    .replaceAll("Платизма", "Platysma")
+    .replaceAll("шия", "szyja")
+    .replaceAll("Шия", "Szyja")
+    .replaceAll("овал", "owal")
+    .replaceAll("всі зони обличчя", "wszystkie obszary twarzy")
+    .replaceAll("Обличчя", "Twarz")
+    .replaceAll("обличчя", "twarz")
+    .replaceAll("декольте", "dekolt")
+    .replaceAll("Декольте", "Dekolt")
+    .replaceAll("Щоки", "Policzki")
+    .replaceAll("Спина", "Plecy")
+    .replaceAll("Кисті рук", "Dłonie")
+    .replaceAll("кисті рук", "dłonie")
+    .replaceAll("Пакет", "Pakiet")
+    .replaceAll("Лікування розацеа", "Terapia zmian związanych z rumieniem")
     .replaceAll("Чистка обличчя", "Oczyszczanie twarzy")
-    .replaceAll("обличчя", "twarzy");
+    .replaceAll("супровід протягом", "prowadzenie przez")
+    .replaceAll("меню на", "jadłospis na")
+    .replaceAll("діє протягом", "ważna przez")
+    .replaceAll("від первинної консультації", "od pierwszej konsultacji");
 }
 
 export default function PromoLandingPagePl({
