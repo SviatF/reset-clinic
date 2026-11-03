@@ -3,14 +3,10 @@ import { notFound } from "next/navigation";
 import PromoLandingPagePl from "../../../../components/PromoLandingPagePl";
 import { getPolishPromoByPathSlug, PL_PROMO_SLUGS, PL_PROMO_PATHS } from "../../../../lib/promo-data-pl";
 import { SITE_NAME, jsonLd, SITE_URL } from "../../../../lib/seo";
-import type { PromoServiceSlug } from "../../../../lib/promo-data";
+import { PROMO_SERVICES } from "../../../../lib/promo-data";
 
 export function generateStaticParams() {
   return PL_PROMO_SLUGS.map((service) => ({ service }));
-}
-
-function ukPromoPath(slug: PromoServiceSlug) {
-  return `/promo/${slug}/`;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ service: string }> }): Promise<Metadata> {
@@ -19,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
   if (!config) return { title: "RESÉT clinic" };
 
   const plPath = `/pl/promo/${service}/`;
-  const ukPath = ukPromoPath(config.slug);
+  const ukPath = PROMO_SERVICES[config.slug].canonicalPath;
 
   return {
     title: config.metaTitle,
