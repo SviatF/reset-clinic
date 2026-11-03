@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import styles from "../../../components/PromoHub.module.css";\nimport PromoAttributionBridge from "../../../components/PromoAttributionBridge";
-import { PL_PROMO_PATHS, PROMO_SERVICES_PL, polishPromoPath } from "../../../lib/promo-data-pl";
+import { PROMO_SERVICES_PL, polishPromoPath } from "../../../lib/promo-data-pl";
 import { DEFAULT_OG_IMAGE, SITE_NAME } from "../../../lib/seo";
 import type { PromoServiceSlug } from "../../../lib/promo-data";
 
