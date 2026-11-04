@@ -196,7 +196,7 @@ export const PROMO_SERVICES_PL: Record<PromoServiceSlug, PromoServiceConfig> = {
     ],
     finalTitle: "Nie zaczynaj kolejnej diety w ciemno. Najpierw sprawdź, jakie podejście ma sens w Twoim przypadku.",
     finalLead: "Konsultacja dotycząca programu BIOPATID w RESÉT clinic rozpoczyna się od oceny lekarskiej. Koszt konsultacji i dalszego prowadzenia zostanie potwierdzony przed wizytą lub rozpoczęciem programu.",
-    primaryCta: "Umów bezpłatną konsultację",
+    primaryCta: "Umów konsultację lekarską",
     quizCta: "Przeanalizuj mój problem w 30 sekund",
     quizKicker: "Bez diagnozowania w quizie",
     quizTitle: "Co najbardziej utrudnia Ci teraz kontrolę masy ciała?",
@@ -204,7 +204,7 @@ export const PROMO_SERVICES_PL: Record<PromoServiceSlug, PromoServiceConfig> = {
     quizQuestions: [
       { id: "barrier", title: "Co najbardziej utrudnia Ci redukcję masy ciała?", answers: ["Stały głód", "Duże porcje", "Przejadanie się", "Masa ciała ciągle wraca", "Nie rozumiem przyczyny"] },
       { id: "attempts", title: "Czego już próbowałaś lub próbowałeś?", answers: ["Diet", "Liczenia kalorii", "Aktywności fizycznej", "Pracy ze specjalistą żywieniowym", "Kilku metod"] },
-      { id: "timing", title: "Kiedy chcesz omówić program?", answers: ["W najbliższym czasie", "W ciągu miesiąca", "Na razie chcę bezpłatnej konsultacji"] },
+      { id: "timing", title: "Kiedy chcesz omówić program?", answers: ["W najbliższym czasie", "W ciągu miesiąca", "Na razie chcę porozmawiać z lekarzem"] },
     ],
     quizFinalTitle: "Kolejny krok to konsultacja lekarska i ocena wskazań.",
     quizFinalLead: "Zostaw numer telefonu. Administrator uzgodni termin, a lekarz podczas konsultacji oceni, czy program medyczny jest dla Ciebie odpowiedni.",
