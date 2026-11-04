@@ -718,3 +718,98 @@
   }
   .promo-landing .promo-inline-cta a > span { right: 17px; }
 }
+
+
+/*
+ * Compact service concerns on desktop (UA + PL).
+ * Replace the tall asymmetric bento layout with six legible editorial cards.
+ * Mobile layout remains unchanged.
+ */
+@media (min-width: 801px) {
+  .promo-site.promo-landing .promo-pain-section {
+    padding-top: 72px;
+    padding-bottom: 76px;
+  }
+
+  .promo-site.promo-landing .promo-pain-section .promo-section-heading h2 {
+    font-size: clamp(43px, 4.2vw, 61px);
+    line-height: .99;
+  }
+
+  .promo-site.promo-landing .promo-pain-section .promo-section-heading > p:not(.promo-kicker) {
+    margin-top: 16px;
+    line-height: 1.58;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid > article:nth-child(n) {
+    display: grid;
+    grid-column: auto;
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-content: start;
+    column-gap: 13px;
+    row-gap: 7px;
+    min-width: 0;
+    min-height: 0;
+    padding: 23px 22px 24px;
+    border-radius: 22px;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid > article:nth-child(n)::before {
+    right: 6px;
+    bottom: -24px;
+    font-size: 94px;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid > article > span {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0;
+    padding: 3px 0 0;
+    border: 0;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid h3 {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: clamp(24px, 2.15vw, 31px);
+    line-height: 1.03;
+    overflow-wrap: break-word;
+  }
+
+  .promo-site.promo-landing .promo-pain-grid p {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.54;
+  }
+
+  .promo-site.promo-landing .promo-inline-cta {
+    margin-top: 19px;
+  }
+
+  .promo-site.promo-landing .promo-inline-cta a {
+    min-height: 85px;
+    padding-top: 19px;
+    padding-bottom: 19px;
+    font-size: clamp(23px, 2.25vw, 29px);
+  }
+}
+
+@media (min-width: 801px) and (max-width: 979px) {
+  .promo-site.promo-landing .promo-pain-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
