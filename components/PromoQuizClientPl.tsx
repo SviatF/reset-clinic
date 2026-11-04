@@ -6,7 +6,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import type { BookingSelection } from "../lib/booking-types";
 import { PROMO_SERVICES, type PromoServiceConfig } from "../lib/promo-data";
 import { trackLeadConversion, trackPromoCustomEvent } from "../lib/marketing-pixels";
-import BookingSlotPickerPl from "./BookingSlotPickerPl";\nimport PromoAttributionBridge from "./PromoAttributionBridge";
+import BookingSlotPickerPl from "./BookingSlotPickerPl";
+import PromoAttributionBridge from "./PromoAttributionBridge";
 
 const TRACKING_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "ttclid"] as const;
 
@@ -259,7 +260,8 @@ export default function PromoQuizClientPl({
   }
 
   return (
-    <main className={`promo-site promo-quiz-site promo-theme-${config.slug}${finished ? " promo-quiz-booking-stage" : ""}`} lang="pl-PL">\n      <PromoAttributionBridge />
+    <main className={`promo-site promo-quiz-site promo-theme-${config.slug}${finished ? " promo-quiz-booking-stage" : ""}`} lang="pl-PL">
+      <PromoAttributionBridge />
       <header className="promo-quiz-header">
         <Link href={landingPath} className="promo-brand" aria-label="RESÉT clinic — wróć do strony usługi">
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={150} height={46} priority />
