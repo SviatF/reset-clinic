@@ -46,7 +46,7 @@ for (const code of [localized, read("lib/promo-data.ts")]) {
   assert(start >= 0 && end > start, "BIOPATID config not found");
   const body = code.slice(start, end);
   assert(!/price:\s*"0 ₴"/.test(body), "Unverified 0 ₴ medical price");
-  assert(!/bezpłatn|Безкоштовна|безкоштовна|безкоштовн/.test(body), "Unverified free-consultation claim");
+  assert(!/bezpłatn|darmow|Безкоштовн|безкоштовн|безоплатн/.test(body), "Unverified free-consultation claim");
 }
 
 assert(!sitemap.includes('url: `${SITE_URL}/booking/`'), "noindex booking should not be in sitemap");
