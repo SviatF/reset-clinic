@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import PromoLandingPage from "../../../components/PromoLandingPage";
 import { getPromoService, PROMO_SLUGS } from "../../../lib/promo-data";
 import { SITE_NAME } from "../../../lib/seo";
+import { PROMO_LOCALE_PAIRS } from "../../../lib/promo-locale-pairs";
 
 export function generateStaticParams() {
   return PROMO_SLUGS.map((service) => ({ service }));
@@ -14,10 +15,20 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
   if (!config) return { title: "RESÉT clinic" };
 
   const promoPath = `/promo/${config.slug}/`;
+  const weightAlternate = config.slug === "biopatid" ? PROMO_LOCALE_PAIRS.biopatid : null;
   return {
     title: config.metaTitle,
     description: config.metaDescription,
-    alternates: { canonical: config.canonicalPath },
+    alternates: {
+      canonical: weightAlternate ? promoPath : config.canonicalPath,
+      ...(weightAlternate ? {
+        languages: {
+          "uk-UA": weightAlternate.uk,
+          "pl-PL": weightAlternate.pl,
+          "x-default": weightAlternate.uk,
+        },
+      } : {}),
+    },
     robots: {
       index: true,
       follow: true,
