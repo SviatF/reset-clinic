@@ -15,11 +15,20 @@ const TRACKING_KEYS = [
 
 export default function PromoAttributionBridge() {
   useEffect(() => {
+    // Client document language for accessibility on the existing shared root.
+    // Avoid making the entire statically generated site request-dynamic.
+    const isPolish = window.location.pathname.startsWith("/pl/");
+    const previousLang = document.documentElement.lang;
+    if (isPolish) document.documentElement.lang = "pl-PL";
+
     const params = new URLSearchParams(window.location.search);
     TRACKING_KEYS.forEach((key) => {
       const value = params.get(key);
       if (value) sessionStorage.setItem(`reset_${key}`, value);
     });
+    return () => {
+      if (isPolish) document.documentElement.lang = previousLang;
+    };
   }, []);
 
   return null;
