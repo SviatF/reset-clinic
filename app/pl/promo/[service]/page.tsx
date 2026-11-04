@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import PromoLandingPagePl from "../../../../components/PromoLandingPagePl";
 import { getPolishPromoByPathSlug, PL_PROMO_SLUGS } from "../../../../lib/promo-data-pl";
 import { SITE_NAME, jsonLd, SITE_URL } from "../../../../lib/seo";
-import { PROMO_SERVICES } from "../../../../lib/promo-data";
+import { PROMO_LOCALE_PAIRS } from "../../../../lib/promo-locale-pairs";
 
 export function generateStaticParams() {
   return PL_PROMO_SLUGS.map((service) => ({ service }));
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ service: 
   if (!config) return { title: "RESÉT clinic" };
 
   const plPath = `/pl/promo/${service}/`;
-  const ukPath = PROMO_SERVICES[config.slug].canonicalPath;
+  const ukPath = PROMO_LOCALE_PAIRS[config.slug].uk;
 
   return {
     title: config.metaTitle,
@@ -74,6 +74,19 @@ export default async function PolishPromoServicePage({ params }: { params: Promi
       areaServed: { "@type": "City", name: "Lwów" },
       provider: { "@id": `${SITE_URL}/#clinic` },
       inLanguage: "pl-PL",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${url}#webpage`,
+      url,
+      name: config.metaTitle,
+      description: config.metaDescription,
+      inLanguage: "pl-PL",
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${url}#service` },
+      breadcrumb: { "@id": `${url}#breadcrumb` },
+      primaryImageOfPage: { "@type": "ImageObject", url: `${SITE_URL}${config.heroImage}` },
     },
     {
       "@context": "https://schema.org",
