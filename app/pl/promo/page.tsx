@@ -197,7 +197,7 @@ export default function PolishPromoHubPage() {
           <span>Lwów, Ukraina · ul. Kulparkowska 93/2</span>
           <a href="tel:+380932828888">+380 93 282 88 88</a>
         </div>
-        <nav><Link href="/contacts/">Kontakt</Link><Link href="/price/">Cennik</Link></nav>
+        <nav><Link href="/contacts/" hrefLang="uk-UA">Kontakt (po ukraińsku)</Link><Link href="/price/" hrefLang="uk-UA">Cennik (po ukraińsku)</Link></nav>
       </footer>
     </main>
   );
