@@ -436,3 +436,28 @@
   .promo-case-play b,
   .promo-cases-cta { transition: none !important; }
 }
+
+
+/* UA + PL: keep the case-section quiz CTA legible against the dark background.
+   .promo-site a uses an inherited color with greater specificity than the
+   original .promo-cases-cta rule. Explicit scoped states avoid that override. */
+.promo-site.promo-landing .promo-cases-cta,
+.promo-site.promo-landing .promo-cases-cta:link,
+.promo-site.promo-landing .promo-cases-cta:visited {
+  color: #fff;
+  background: #2b211c;
+  text-align: center;
+}
+.promo-site.promo-landing .promo-cases-cta:hover,
+.promo-site.promo-landing .promo-cases-cta:focus-visible {
+  color: #fff;
+  background: #423027;
+}
+.promo-site.promo-landing .promo-cases-cta > span {
+  color: #fff;
+  flex: 0 0 32px;
+}
+.promo-site.promo-landing .promo-cases-cta:focus-visible {
+  outline: 3px solid #a78c61;
+  outline-offset: 4px;
+}
