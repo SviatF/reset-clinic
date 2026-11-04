@@ -27,5 +27,7 @@ jobs:
         run: npm install --no-save @opennextjs/cloudflare@1.14.4
       - name: Typecheck
         run: npx tsc --noEmit
+      - name: Polish SEO regression audit
+        run: node scripts/check-pl-promo-seo.mjs
       - name: Production build
         run: npm run build

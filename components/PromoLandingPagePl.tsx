@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DOCTORS } from "../lib/doctors";
-import { PROMO_SERVICES, type PromoServiceConfig } from "../lib/promo-data";
+import { PROMO_SERVICES, type PromoServiceConfig, type PromoServiceSlug } from "../lib/promo-data";
+import { PROMO_SERVICES_PL, polishPromoPath } from "../lib/promo-data-pl";
 import { getPublishedPricesForLanding } from "../lib/price-data";
 import { PROMO_DOCTOR_SLUGS } from "../lib/promo-doctor-map";
 import PromoCasesSectionPl from "./PromoCasesSectionPl";
@@ -57,6 +58,15 @@ function priceServicePl(value: string) {
     .replaceAll("від первинної консультації", "od pierwszej konsultacji");
 }
 
+const RELATED_DIRECTIONS: Record<PromoServiceSlug, PromoServiceSlug[]> = {
+  botulinotherapy: ["lips", "ipl-face"],
+  lips: ["botulinotherapy", "facial-cleaning"],
+  "ipl-face": ["facial-cleaning", "botulinotherapy"],
+  "facial-cleaning": ["ipl-face", "lips"],
+  biopatid: ["nutrition"],
+  nutrition: ["biopatid"],
+};
+
 export default function PromoLandingPagePl({
   config,
   pathSlug,
@@ -66,7 +76,8 @@ export default function PromoLandingPagePl({
 }) {
   const published = config.priceLandingPaths.flatMap((path) => getPublishedPricesForLanding(path, 8));
   const prices = uniqPrices([
-    ...published.map(({ service, price }) => ({ service: priceServicePl(service), price })),
+    ...published.map(({ service, price }) => ({ service: priceServicePl(service), price }))
+      .filter(({ service }) => !/[\u0400-\u04FF]/.test(service)),
     ...(config.manualPriceRows ?? []),
   ]).slice(0, 8);
 
@@ -77,6 +88,10 @@ export default function PromoLandingPagePl({
 
   const quizPath = `/pl/promo/${pathSlug}/quiz/`;
   const bookingService = PROMO_SERVICES[config.slug].serviceName;
+  const relatedDirections = RELATED_DIRECTIONS[config.slug].map((slug) => ({
+    title: PROMO_SERVICES_PL[slug].serviceName,
+    href: polishPromoPath(slug),
+  }));
 
   return (
     <main className={`promo-site promo-landing promo-theme-${config.slug}`} lang="pl-PL">
@@ -234,6 +249,9 @@ export default function PromoLandingPagePl({
                   <span>{rolePl(doctor.role)}</span>
                   <strong>{doctor.name}</strong>
                   <p>Specjalista RESÉT clinic. Zakres procedury lub plan konsultacji jest ustalany indywidualnie po ocenie pacjenta.</p>
+                  <Link className="promo-doctor-profile-link" href={`/doctors/${doctor.slug}/`} hrefLang="uk-UA">
+                    Profil lekarza (po ukraińsku) →
+                  </Link>
                 </div>
               </article>
             ))}
@@ -257,7 +275,7 @@ export default function PromoLandingPagePl({
                   </div>
                 ))
               : <div className="promo-price-empty">Aktualną cenę potwierdzi administrator kliniki.</div>}
-            <Link href="/price/">Pełny cennik kliniki →</Link>
+            <Link href="/price/" hrefLang="uk-UA">Pełny cennik kliniki (po ukraińsku) →</Link>
           </div>
         </div>
       </section>
@@ -278,6 +296,21 @@ export default function PromoLandingPagePl({
               </details>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="promo-related-pl" aria-labelledby="promo-related-heading">
+        <div className="promo-shell">
+          <p className="promo-kicker">Poznaj inne możliwości</p>
+          <h2 id="promo-related-heading">Powiązane konsultacje i zabiegi we Lwowie</h2>
+          <nav aria-label="Powiązane polskojęzyczne strony usług" className="promo-related-pl-links">
+            {relatedDirections.map((direction) => (
+              <Link key={direction.href} href={direction.href}>
+                {direction.title}<span aria-hidden="true">↗</span>
+              </Link>
+            ))}
+          </nav>
+          <p className="promo-related-pl-note">RESÉT clinic znajduje się we Lwowie, w Ukrainie. O wyborze zabiegu decyduje konsultacja i ocena wskazań.</p>
         </div>
       </section>
 
@@ -316,7 +349,7 @@ export default function PromoLandingPagePl({
           <nav>
             <Link href="/pl/promo/">Wszystkie kierunki</Link>
             <Link href={quizPath}>Quiz</Link>
-            <Link href="/contacts/">Kontakt</Link>
+            <Link href="/contacts/" hrefLang="uk-UA">Kontakt (po ukraińsku)</Link>
           </nav>
         </div>
       </footer>

@@ -813,3 +813,73 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+/* PL topical links: native-language pathways without keyword-stuffed menus. */
+.promo-site.promo-landing .promo-related-pl {
+  padding: clamp(46px, 6vw, 80px) 0;
+  background: #f6f6ee;
+  border-top: 1px solid rgba(41, 32, 27, .11);
+}
+.promo-site.promo-landing .promo-related-pl h2 {
+  max-width: 850px;
+  margin: 10px 0 24px;
+  color: #29201b;
+  font: 600 clamp(34px, 4vw, 54px)/1.01 "Cormorant Garamond", Georgia, serif;
+  letter-spacing: -.025em;
+}
+.promo-site.promo-landing .promo-related-pl-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+.promo-site.promo-landing .promo-related-pl-links a {
+  display: flex;
+  min-width: 0;
+  min-height: 80px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  border: 1px solid rgba(41, 32, 27, .15);
+  border-radius: 18px;
+  background: #fffdf8;
+  color: #29201b;
+  font: 600 clamp(20px, 2.15vw, 28px)/1.1 "Cormorant Garamond", Georgia, serif;
+  text-decoration: none;
+  transition: border-color .2s ease, background .2s ease;
+}
+.promo-site.promo-landing .promo-related-pl-links a:hover,
+.promo-site.promo-landing .promo-related-pl-links a:focus-visible {
+  border-color: #a18b6c;
+  background: #efeae1;
+}
+.promo-site.promo-landing .promo-related-pl-links a span {
+  flex: 0 0 auto;
+  font-family: Manrope, Arial, sans-serif;
+  font-size: 18px;
+}
+.promo-site.promo-landing .promo-related-pl-note {
+  margin: 19px 0 0;
+  color: #685c51;
+  font: 500 12px/1.7 Manrope, Arial, sans-serif;
+}
+.promo-site.promo-landing .promo-doctor-profile-link,
+.promo-site.promo-landing .promo-doctor-profile-link:visited {
+  display: inline-block;
+  margin-top: 14px;
+  color: #2d231e;
+  font: 700 11px/1.6 Manrope, Arial, sans-serif;
+  text-decoration: underline;
+  text-decoration-color: #9d8061;
+  text-underline-offset: 4px;
+}
+.promo-site.promo-landing .promo-related-pl-links a:focus-visible,
+.promo-site.promo-landing .promo-doctor-profile-link:focus-visible {
+  outline: 3px solid #a18b6c;
+  outline-offset: 3px;
+}
+@media (max-width: 720px) {
+  .promo-site.promo-landing .promo-related-pl-links { grid-template-columns: 1fr; }
+  .promo-site.promo-landing .promo-related-pl-links a { min-height: 70px; padding: 16px 18px; }
+}

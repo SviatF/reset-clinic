@@ -6,6 +6,7 @@ import { SITE_URL } from "../lib/seo";
 import { isSeoLandingIndexable } from "../lib/seo-compliance";
 import { ALL_SEO_LANDINGS } from "../lib/seo-page-resolver";
 import { PL_PROMO_SLUGS } from "../lib/promo-data-pl";
+import { PROMO_LOCALE_PAIRS } from "../lib/promo-locale-pairs";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +18,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/price/` },
     { url: `${SITE_URL}/about/` },
     { url: `${SITE_URL}/contacts/` },
-    { url: `${SITE_URL}/booking/` },
     { url: `${SITE_URL}/blog/` },
   ];
 
   const seo: MetadataRoute.Sitemap = ALL_SEO_LANDINGS
     .filter(isSeoLandingIndexable)
     .map((landing) => ({ url: `${SITE_URL}${landing.path}` }));
+
+  const ukrainianWeightPromo: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}${PROMO_LOCALE_PAIRS.biopatid.uk}` },
+  ];
 
   const polishPromo: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/pl/promo/` },
@@ -53,5 +57,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(post.updated_at),
   }));
 
-  return [...base, ...seo, ...polishPromo, ...doctors, ...categories, ...blog];
+  return [...base, ...seo, ...ukrainianWeightPromo, ...polishPromo, ...doctors, ...categories, ...blog];
 }

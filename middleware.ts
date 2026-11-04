@@ -109,6 +109,10 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+  // Polish acquisition routes are served in Polish; no automatic geo redirects.
+  if (pathname === "/pl" || pathname.startsWith("/pl/")) {
+    response.headers.set("Content-Language", "pl-PL");
+  }
   if (isAdminRoute(pathname)) return applyPrivateHeaders(response);
   return response;
 }
