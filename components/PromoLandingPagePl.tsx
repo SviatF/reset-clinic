@@ -249,7 +249,7 @@ export default function PromoLandingPagePl({
                   <span>{rolePl(doctor.role)}</span>
                   <strong>{doctor.name}</strong>
                   <p>Specjalista RESÉT clinic. Zakres procedury lub plan konsultacji jest ustalany indywidualnie po ocenie pacjenta.</p>
-                  <Link className="promo-doctor-profile-link" href={`/doctors/${doctor.slug}/`} lang="uk-UA">
+                  <Link className="promo-doctor-profile-link" href={`/doctors/${doctor.slug}/`} hrefLang="uk-UA">
                     Profil lekarza (po ukraińsku) →
                   </Link>
                 </div>
@@ -275,7 +275,7 @@ export default function PromoLandingPagePl({
                   </div>
                 ))
               : <div className="promo-price-empty">Aktualną cenę potwierdzi administrator kliniki.</div>}
-            <Link href="/price/" lang="uk-UA">Pełny cennik kliniki (po ukraińsku) →</Link>
+            <Link href="/price/" hrefLang="uk-UA">Pełny cennik kliniki (po ukraińsku) →</Link>
           </div>
         </div>
       </section>
@@ -349,7 +349,7 @@ export default function PromoLandingPagePl({
           <nav>
             <Link href="/pl/promo/">Wszystkie kierunki</Link>
             <Link href={quizPath}>Quiz</Link>
-            <Link href="/contacts/" lang="uk-UA">Kontakt (po ukraińsku)</Link>
+            <Link href="/contacts/" hrefLang="uk-UA">Kontakt (po ukraińsku)</Link>
           </nav>
         </div>
       </footer>
