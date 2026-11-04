@@ -215,7 +215,7 @@ export const PROMO_SERVICES_PL: Record<PromoServiceSlug, PromoServiceConfig> = {
     serviceName: "Konsultacja żywieniowa",
     eyebrow: "Żywienie i kontrola masy ciała · RESÉT clinic · Lwów",
     canonicalPath: "/pl/promo/dietetyk-lwow/",
-    metaTitle: "Dietetyk we Lwowie – odchudzanie i zdrowe żywienie | RESÉT clinic",
+    metaTitle: "Konsultacja żywieniowa we Lwowie | RESÉT clinic",
     metaDescription: "Konsultacja żywieniowa we Lwowie w RESÉT clinic: analiza realnego jadłospisu, nawyków i celu bez uniwersalnych, restrykcyjnych diet.",
     heroTitle: "Konsultacja żywieniowa we Lwowie — plan dopasowany do codzienności",
     heroLead: "Bez jadłospisu oderwanego od codzienności, lęku przed „zakazanymi” produktami i ciągłego zaczynania od poniedziałku. Analizujemy realne żywienie i budujemy system, który można utrzymać długoterminowo.",
