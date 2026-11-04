@@ -11,6 +11,7 @@ import {
 import { isSeoLandingApprovedForIndex } from "./seo-review-status";
 import { SITE_NAME, SITE_URL } from "./seo";
 import { seoLandingVisual } from "./seo-visuals";
+import { alternateForUkrainianCorePath } from "./promo-locale-pairs";
 
 export {
   displayH1ForLanding,
@@ -23,21 +24,12 @@ export function isSeoLandingIndexable(landing: SeoLanding) {
   return coreIsSeoLandingIndexable(landing) && isSeoLandingApprovedForIndex(landing.path);
 }
 
-const POLISH_PROMO_ALTERNATES: Record<string, string> = {
-  "/cosmetology/injection/botulinum-therapy/": "/pl/promo/botoks-lwow/",
-  "/cosmetology/injection/lip-contouring/": "/pl/promo/modelowanie-ust-lwow/",
-  "/cosmetology/hardware/ipl/": "/pl/promo/ipl-twarz-lwow/",
-  "/cosmetology/hardware/aquapure/": "/pl/promo/oczyszczanie-twarzy-lwow/",
-  "/nutrition/medical-weight-loss/": "/pl/promo/kontrola-wagi-lwow/",
-  "/nutrition/nutritionist-lviv/": "/pl/promo/dietetyk-lwow/",
-};
-
 export function buildCompliantLandingMetadata(landing: SeoLanding): Metadata {
   const base = baseBuildCompliantLandingMetadata(landing);
   const visual = seoLandingVisual(landing.path);
   const index = isSeoLandingIndexable(landing);
 
-  const polishAlternate = POLISH_PROMO_ALTERNATES[landing.path];
+  const polishAlternate = alternateForUkrainianCorePath(landing.path);
 
   return {
     ...base,
