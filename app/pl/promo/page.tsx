@@ -112,7 +112,7 @@ export default function PolishPromoHubPage() {
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} priority />
         </Link>
         <div className={styles.headerMeta}>
-          <span>RESÉT clinic · Lwów</span>
+          <span>RESÉT clinic · Lwów, Ukraina</span>
           <a href="tel:+380932828888">+380 93 282 88 88</a>
         </div>
         <a className={styles.headerFinder} href="#kierunki">Wybierz kierunek <span>↓</span></a>
@@ -194,7 +194,7 @@ export default function PolishPromoHubPage() {
           <Image src="/assets/logo-main.png" alt="RESÉT clinic" width={154} height={47} />
         </Link>
         <div>
-          <span>Lwów, ul. Kulparkowska 93/2</span>
+          <span>Lwów, Ukraina · ul. Kulparkowska 93/2</span>
           <a href="tel:+380932828888">+380 93 282 88 88</a>
         </div>
         <nav><Link href="/contacts/">Kontakt</Link><Link href="/price/">Cennik</Link></nav>
