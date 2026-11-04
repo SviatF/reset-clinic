@@ -259,3 +259,112 @@
     transition: none;
   }
 }
+
+
+/* Profiles without a mid-card portrait must not reserve an empty 112px photo
+   track. Size the CTA against its *container*, because doctor content has a
+   narrower column than the browser viewport. */
+.seo-cro-mid-mount {
+  container-type: inline-size;
+}
+
+.seo-cro-mid.no-photo {
+  grid-template-columns: minmax(0, 1fr) minmax(185px, 220px);
+}
+
+.seo-cro-mid.has-photo {
+  grid-template-columns: 96px minmax(0, 1fr) minmax(185px, 205px);
+}
+
+.seo-cro-mid.has-photo .seo-cro-mid-photo {
+  width: 96px;
+  height: 112px;
+}
+
+.seo-cro-mid-copy {
+  min-width: 0;
+}
+
+.seo-cro-mid-copy h3 {
+  font-size: clamp(25px, 2.15vw, 32px);
+  line-height: 1.12;
+  overflow-wrap: break-word;
+}
+
+.seo-cro-mid-copy p {
+  line-height: 1.6;
+}
+
+.seo-cro-mid-actions {
+  width: 100%;
+  min-width: 0;
+  max-width: 230px;
+}
+
+.seo-cro-mid-actions > a {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Override the global .seo-site a { color: inherit } for conversion links. */
+.seo-site .seo-cro-primary,
+.seo-site .seo-cro-primary:link,
+.seo-site .seo-cro-primary:visited,
+.seo-site .seo-cro-primary:hover,
+.seo-site .seo-cro-primary:focus-visible {
+  color: #fff;
+}
+
+.seo-site .seo-cro-secondary,
+.seo-site .seo-cro-secondary:link,
+.seo-site .seo-cro-secondary:visited,
+.seo-site .seo-cro-secondary:hover,
+.seo-site .seo-cro-secondary:focus-visible {
+  color: #2b201b;
+}
+
+.seo-site .seo-cro-primary:focus-visible,
+.seo-site .seo-cro-secondary:focus-visible {
+  outline: 3px solid #a78c61;
+  outline-offset: 3px;
+}
+
+/* Content-column-aware breakpoints: prevent narrow headline columns even
+   when the browser viewport itself is a wide desktop. */
+@container (max-width: 760px) {
+  .seo-cro-mid.no-photo,
+  .seo-cro-mid.has-photo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .seo-cro-mid.has-photo .seo-cro-mid-photo {
+    display: none;
+  }
+
+  .seo-cro-mid-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+    gap: 10px;
+  }
+
+  .seo-cro-mid-copy h3 {
+    font-size: clamp(25px, 3vw, 30px);
+  }
+}
+
+@container (max-width: 430px) {
+  .seo-cro-mid {
+    padding: 18px;
+  }
+
+  .seo-cro-mid-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seo-cro-mid-copy h3 {
+    font-size: clamp(23px, 6vw, 28px);
+  }
+}

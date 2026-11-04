@@ -190,7 +190,7 @@ export default function SeoConversionLayer() {
           </figcaption>
         </figure>
       ) : null}
-      <aside className="seo-cro-mid" aria-label="Запис на консультацію">
+      <aside className={`seo-cro-mid ${state.doctorImage ? "has-photo" : "no-photo"}`} aria-label="Запис на консультацію">
         {state.doctorImage ? (
           <div className="seo-cro-mid-photo" aria-hidden="true">
             <img src={state.doctorImage} alt="" />
