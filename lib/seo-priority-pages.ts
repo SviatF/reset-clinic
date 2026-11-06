@@ -1,6 +1,8 @@
 import type { SeoLanding } from "./seo-pages";
 
 const PRIORITY_DOCTORS: Partial<Record<string, string[]>> = {
+  // Nutrition hub: show only the relevant family doctor and nutrition specialist.
+  "/nutrition/": ["olha-hrytsuta"],
   "/cosmetology/injection/botulinum-therapy/": ["tetiana-hrytsuta", "adriana-sokhan", "khrystyna-milkovych"],
   "/cosmetology/injection/lip-contouring/": ["tetiana-hrytsuta"],
   "/nutrition/medical-weight-loss/": ["tetiana-hrytsuta"],
