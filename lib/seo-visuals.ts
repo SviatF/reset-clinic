@@ -256,6 +256,12 @@ const PRIORITY_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
   "/skin-problems/hair-thinning/": ABOUT_VISUAL_04,
 
   "/nutrition/nutritionist-lviv/": NUTRITION_VISUAL,
+  // The vitamin/mineral-deficiency article needs a relevant nutrition visual,
+  // not the unrelated interior shots selected by the generic nutrition pool.
+  "/nutrition/vitamin-mineral-deficiencies/": {
+    src: "/assets/img-landings/nutriciology.webp",
+    alt: "Нутриціологія та індивідуальний підхід до харчування в RESET Clinic",
+  },
 };
 
 // Supporting visuals are curated independently so the long-form content does
@@ -310,6 +316,7 @@ const PRIORITY_SUPPORTING_VISUALS: Partial<Record<string, SeoLandingVisual>> = {
   "/skin-problems/hair-thinning/": EQUIPMENT_VISUAL,
 
   "/nutrition/nutritionist-lviv/": ABOUT_VISUAL,
+  "/nutrition/vitamin-mineral-deficiencies/": CONSULTATION_VISUAL,
 };
 
 function stableIndex(path: string, length: number) {
