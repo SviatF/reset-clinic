@@ -120,28 +120,29 @@ export default function BlackFridayShopSticker() {
 
       <div className="reset-bf-content">
         <p className="reset-bf-title">{copy.event}</p>
-        <div className="reset-bf-offer">
-          <strong className="reset-bf-discount">
-            <small>{copy.upTo}</small>
-            <span>−20%</span>
-          </strong>
-          <p className="reset-bf-subline">{copy.product}</p>
-          <p className="reset-bf-date">{copy.ends}</p>
-        </div>
+        <strong className="reset-bf-discount">
+          <small>{copy.upTo}</small>
+          <span>−20%</span>
+        </strong>
+        <p className="reset-bf-subline">{copy.product}</p>
+        <p className="reset-bf-date">{copy.ends}</p>
       </div>
 
       <div className="reset-bf-footer">
-        <div
-          className="reset-bf-timer"
-          role="timer"
-          aria-live="off"
-          aria-label={`${copy.remaining}: ${days} ${copy.days}, ${hours}:${twoDigits(minutes)}:${twoDigits(seconds)}`}
-        >
-          <span className="reset-bf-live-dot" aria-hidden="true" />
-          <strong>{days}<small>{copy.days}</small></strong>
-          <span className="reset-bf-clock-digits">
-            {twoDigits(hours)}:{twoDigits(minutes)}:{twoDigits(seconds)}
-          </span>
+        <div className="reset-bf-countdown">
+          <span className="reset-bf-timer-label">{copy.remaining}</span>
+          <div
+            className="reset-bf-timer"
+            role="timer"
+            aria-live="off"
+            aria-label={`${copy.remaining}: ${days} ${copy.days}, ${hours}:${twoDigits(minutes)}:${twoDigits(seconds)}`}
+          >
+            <span className="reset-bf-live-dot" aria-hidden="true" />
+            <strong>{days}<small>{copy.days}</small></strong>
+            <span className="reset-bf-clock-digits">
+              {twoDigits(hours)}:{twoDigits(minutes)}:{twoDigits(seconds)}
+            </span>
+          </div>
         </div>
         <a
           className="reset-bf-shop-link"
