@@ -120,15 +120,13 @@ export default function BlackFridayShopSticker() {
 
       <div className="reset-bf-content">
         <p className="reset-bf-title">{copy.event}</p>
-        <div className="reset-bf-offer-row">
+        <div className="reset-bf-offer">
           <strong className="reset-bf-discount">
             <small>{copy.upTo}</small>
             <span>−20%</span>
           </strong>
-          <p className="reset-bf-subline">
-            <span>{copy.product}</span>
-            <span className="reset-bf-date">{copy.ends}</span>
-          </p>
+          <p className="reset-bf-subline">{copy.product}</p>
+          <p className="reset-bf-date">{copy.ends}</p>
         </div>
       </div>
 
