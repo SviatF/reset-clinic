@@ -1,6 +1,5 @@
-/* RESET CLINIC / SHOP · Black Friday 2026
-   Centered campaign hierarchy: bold headline, sale, product, live countdown.
-   Scoped to the sitewide dismissible sticker, without affecting page templates. */
+/* RESET Clinic / Black Friday 2026: premium, compact campaign coupon.
+   Distinct promotional visual hierarchy without a heavy full-page overlay. */
 .reset-bf-sticker,
 .reset-bf-sticker * {
   box-sizing: border-box;
@@ -11,56 +10,53 @@
   z-index: 320;
   right: max(16px, env(safe-area-inset-right));
   bottom: calc(18px + env(safe-area-inset-bottom));
-  width: min(390px, calc(100vw - 24px));
-  padding: 15px 18px 13px;
+  width: min(365px, calc(100vw - 24px));
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid #dfd1c5;
-  border-radius: 14px;
-  background:
-    radial-gradient(ellipse at 50% 60%, rgba(186, 107, 87, .065), transparent 66%),
-    linear-gradient(155deg, #fffdf9 0%, #f9f4ee 100%);
-  box-shadow: 0 14px 38px rgba(41, 29, 25, .18), 0 2px 10px rgba(41, 29, 25, .05);
-  color: #2c2420;
+  border: 1px solid rgba(79, 47, 43, .22);
+  border-radius: 15px;
+  background: #fbf4ec;
+  color: #302520;
+  box-shadow: 0 18px 45px rgba(25, 16, 17, .23), 0 3px 10px rgba(25, 16, 17, .07);
   font-family: Manrope, Arial, sans-serif;
   text-align: center;
   transform-origin: 80% 100%;
   animation: reset-bf-arrive 1.45s ease-out 1 both;
 }
 
-.reset-bf-sticker::before {
+.reset-bf-content {
+  position: relative;
+  min-width: 0;
+  padding: 19px 15px 14px;
+  background:
+    radial-gradient(ellipse at 50% 115%, rgba(160, 77, 70, .32), transparent 65%),
+    linear-gradient(145deg, #241a1d 0%, #342025 57%, #21191d 100%);
+  color: #fff6ee;
+}
+
+.reset-bf-content::before {
   content: "";
   position: absolute;
   top: 0;
   left: 50%;
-  width: 116px;
-  height: 3px;
-  border-radius: 0 0 4px 4px;
-  background: linear-gradient(90deg, #8e3f3a, #ca7867, #8e3f3a);
+  width: 95px;
+  height: 2px;
   transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, #efb7a6 35%, #ffd5b7 65%, transparent);
   pointer-events: none;
 }
-
-.reset-bf-content { min-width: 0; }
 
 .reset-bf-title {
   display: block;
   width: 100%;
-  margin: 3px 0 5px !important;
-  padding: 0 18px;
-  color: #292220 !important;
-  font: 900 37px/.99 Manrope, Arial, sans-serif !important;
-  letter-spacing: -.065em;
+  margin: 0 0 3px !important;
+  padding: 0 12px;
+  color: #fff8ef !important;
+  font: 900 36px/1 Manrope, Arial, sans-serif !important;
+  letter-spacing: -.06em;
   text-align: center;
   white-space: nowrap;
-}
-
-.reset-bf-offer {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  text-transform: uppercase;
 }
 
 .reset-bf-discount {
@@ -68,142 +64,158 @@
   justify-content: center;
   align-items: baseline;
   gap: 8px;
-  margin: 0;
-  color: #a74d44 !important;
-  font: 900 65px/.99 Manrope, Arial, sans-serif;
-  font-variant-numeric: lining-nums;
+  margin: 0 auto;
+  color: #f2b19f !important;
+  font: 900 68px/.94 Manrope, Arial, sans-serif;
   letter-spacing: -.078em;
+  font-variant-numeric: lining-nums;
   white-space: nowrap;
 }
+
 .reset-bf-discount > small {
-  color: #a74d44;
-  font: 900 19px/1 Manrope, Arial, sans-serif;
-  letter-spacing: -.015em;
+  color: #f0b6a2 !important;
+  font: 800 18px/1 Manrope, Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 .reset-bf-discount > span { display: inline; }
 
 .reset-bf-subline {
   display: block;
   width: 100%;
-  margin: 1px 0 0 !important;
-  color: #382d28 !important;
-  font: 800 15px/1.28 Manrope, Arial, sans-serif !important;
+  margin: 3px 0 0 !important;
+  color: #fff3eb !important;
+  font: 800 13px/1.35 Manrope, Arial, sans-serif !important;
   text-align: center;
 }
 
 .reset-bf-date {
   display: block;
-  margin: 3px 0 0 !important;
-  color: #947b6d !important;
-  font: 650 11px/1.3 Manrope, Arial, sans-serif !important;
+  margin: 4px 0 0 !important;
+  color: #e1bcae !important;
+  font: 650 10px/1.3 Manrope, Arial, sans-serif !important;
   text-align: center;
-  white-space: nowrap;
 }
 
 .reset-bf-close {
   position: absolute;
-  top: 8px;
+  z-index: 3;
+  top: 7px;
   right: 8px;
-  z-index: 2;
   display: grid;
-  width: 25px;
-  height: 25px;
-  padding: 0;
+  width: 26px;
+  height: 26px;
   place-items: center;
+  padding: 0;
   border: 0 !important;
   border-radius: 50%;
-  background: transparent !important;
-  color: #8a7770 !important;
-  font: 400 19px/1 Arial, sans-serif;
+  background: rgba(255, 247, 237, .10) !important;
+  color: #f9e7de !important;
+  font: 400 20px/1 Arial, sans-serif;
   cursor: pointer;
-  transition: background-color .2s ease, color .2s ease;
+  transition: background-color .2s ease, transform .2s ease;
 }
 .reset-bf-close:hover {
-  background: #eee5dd !important;
-  color: #382b28 !important;
+  background: rgba(255, 247, 237, .21) !important;
+  transform: rotate(90deg);
 }
 
 .reset-bf-footer {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(103, 77, 64, .17);
+  padding: 12px 14px 11px;
+  background: #faf4ec;
+  border-top: 1px solid #eddbce;
+  text-align: left;
+}
+
+.reset-bf-countdown {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+
+.reset-bf-timer-label {
+  color: #967a6c;
+  font: 800 8px/1.15 Manrope, Arial, sans-serif;
+  letter-spacing: .045em;
 }
 
 .reset-bf-timer {
   display: flex;
   align-items: baseline;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
-  color: #3b2e29;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
 .reset-bf-live-dot {
   align-self: center;
-  flex: 0 0 7px;
-  width: 7px;
-  height: 7px;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #b75b50;
-  box-shadow: 0 0 0 3px rgba(183, 91, 80, .13);
+  background: #b24c45;
+  box-shadow: 0 0 0 3px rgba(178, 76, 69, .12);
 }
 .reset-bf-timer strong {
-  color: #332923;
+  color: #302420;
   font: 800 15px/1 Manrope, Arial, sans-serif;
-  letter-spacing: -.02em;
+  letter-spacing: -.025em;
 }
 .reset-bf-timer strong small {
-  margin-left: 3px;
-  color: #8d786c;
-  font: 650 10px/1 Manrope, Arial, sans-serif;
+  margin-left: 2px;
+  color: #8a6f61;
+  font: 650 9px/1 Manrope, Arial, sans-serif;
 }
 .reset-bf-clock-digits {
-  color: #332923;
+  color: #302420;
   font: 800 14px/1 Manrope, Arial, sans-serif;
-  letter-spacing: .02em;
+  letter-spacing: .025em;
 }
 
 .reset-bf-sticker .reset-bf-shop-link,
 .reset-bf-sticker .reset-bf-shop-link:link,
 .reset-bf-sticker .reset-bf-shop-link:visited {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex: 0 0 auto;
+  justify-content: center;
+  align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 8px 12px;
+  min-height: 37px;
+  padding: 9px 12px;
   border: 0;
   border-radius: 8px;
-  background: #302623 !important;
-  color: #fffaf5 !important;
-  font: 800 11px/1.2 Manrope, Arial, sans-serif;
+  background: #a44c46 !important;
+  color: #fff8ef !important;
+  font: 800 11px/1.15 Manrope, Arial, sans-serif;
   white-space: nowrap;
   text-decoration: none !important;
   transition: background-color .2s ease, transform .2s ease;
 }
 .reset-bf-sticker .reset-bf-shop-link:hover,
 .reset-bf-sticker .reset-bf-shop-link:focus-visible {
-  background: #a74d44 !important;
-  color: #fffaf5 !important;
+  background: #812f2c !important;
+  color: #fff8ef !important;
   transform: translateY(-1px);
 }
 .reset-bf-arrow {
-  color: #fffaf5 !important;
-  font: 800 15px/1 Manrope, Arial, sans-serif;
+  color: #fff8ef !important;
+  font: 800 16px/1 Manrope, Arial, sans-serif;
 }
 .reset-bf-close:focus-visible,
 .reset-bf-sticker .reset-bf-shop-link:focus-visible {
-  outline: 2px solid #a74d44;
+  outline: 2px solid #f0b6a2;
   outline-offset: 3px;
 }
 
-/* Keep the booking bar and quiz helper accessible on affected templates. */
+/* Preserve clearance around conversion buttons on promo and quiz routes. */
 .reset-bf-sticker--promo { bottom: calc(148px + env(safe-area-inset-bottom)); }
 .reset-bf-sticker--quiz { bottom: calc(128px + env(safe-area-inset-bottom)); }
 
@@ -211,33 +223,31 @@
   .reset-bf-sticker {
     right: max(10px, env(safe-area-inset-right));
     bottom: calc(94px + env(safe-area-inset-bottom));
-    width: min(345px, calc(100vw - 20px));
-    padding: 12px 13px 11px;
-    border-radius: 12px;
+    width: min(326px, calc(100vw - 20px));
+    border-radius: 13px;
   }
+  .reset-bf-content { padding: 16px 13px 12px; }
   .reset-bf-title {
-    margin: 3px 0 4px !important;
-    padding: 0 13px;
     font-size: 31px !important;
-    letter-spacing: -.065em;
+    padding: 0 8px;
   }
-  .reset-bf-discount { font-size: 56px; gap: 6px; }
-  .reset-bf-discount > small { font-size: 16px; }
-  .reset-bf-subline { font-size: 13px !important; }
+  .reset-bf-discount { font-size: 60px; gap: 6px; }
+  .reset-bf-discount > small { font-size: 15px; }
+  .reset-bf-subline { font-size: 12px !important; }
   .reset-bf-date { font-size: 10px !important; }
-  .reset-bf-footer { margin-top: 10px; padding-top: 9px; }
+  .reset-bf-footer { padding: 10px 11px; gap: 6px; }
+  .reset-bf-timer-label { font-size: 7.5px; }
   .reset-bf-timer { gap: 5px; }
   .reset-bf-timer strong { font-size: 13px; }
   .reset-bf-clock-digits { font-size: 12px; }
   .reset-bf-sticker .reset-bf-shop-link,
   .reset-bf-sticker .reset-bf-shop-link:link,
   .reset-bf-sticker .reset-bf-shop-link:visited {
-    min-height: 33px;
-    padding: 7px 9px;
-    gap: 5px;
+    padding: 8px 10px;
+    min-height: 34px;
     font-size: 10px;
   }
-  .reset-bf-close { top: 7px; right: 6px; }
+  .reset-bf-close { top: 6px; right: 7px; }
   .reset-bf-sticker--promo { bottom: calc(153px + env(safe-area-inset-bottom)); }
   .reset-bf-sticker--quiz { bottom: calc(134px + env(safe-area-inset-bottom)); }
 }
@@ -246,19 +256,20 @@
   .reset-bf-sticker {
     right: 8px;
     width: calc(100vw - 16px);
-    padding: 10px 11px;
   }
-  .reset-bf-title { font-size: 27px !important; padding: 0 10px; }
-  .reset-bf-discount { font-size: 48px; gap: 5px; }
+  .reset-bf-title { font-size: 27px !important; padding: 0 5px; }
+  .reset-bf-discount { font-size: 54px; }
   .reset-bf-discount > small { font-size: 14px; }
-  .reset-bf-subline { font-size: 12px !important; }
+  .reset-bf-content { padding: 14px 9px 11px; }
+  .reset-bf-footer { padding: 10px 9px; }
   .reset-bf-timer { gap: 4px; }
   .reset-bf-timer strong { font-size: 12px; }
   .reset-bf-clock-digits { font-size: 11px; }
   .reset-bf-sticker .reset-bf-shop-link,
   .reset-bf-sticker .reset-bf-shop-link:link,
   .reset-bf-sticker .reset-bf-shop-link:visited {
-    padding: 7px 8px;
+    gap: 5px;
+    padding: 7px 9px;
     font-size: 9px;
   }
 }
@@ -269,7 +280,7 @@
   .reset-bf-sticker .reset-bf-shop-link { transition: none; }
 }
 
-/* Slide in once from the right, settle, bounce twice, then stop. */
+/* Enter from right once, then bounce exactly twice and remain still. */
 @keyframes reset-bf-arrive {
   0%   { opacity: 0; transform: translate3d(120%, 0, 0) scale(.96); }
   32%  { opacity: 1; transform: translate3d(-12px, 0, 0) scale(1); }
