@@ -8,8 +8,8 @@
   z-index: 320;
   right: max(16px, env(safe-area-inset-right));
   bottom: calc(18px + env(safe-area-inset-bottom));
-  width: min(350px, calc(100vw - 24px));
-  padding: 13px 16px 12px;
+  width: min(386px, calc(100vw - 24px));
+  padding: 14px 16px 13px;
   overflow: hidden;
   isolation: isolate;
   border: 1px solid #d5cabd;
@@ -20,14 +20,15 @@
   box-shadow: 0 11px 30px rgba(30, 23, 20, .16), 0 2px 6px rgba(30, 23, 20, .06);
   font-family: Manrope, Arial, sans-serif;
   text-align: left;
-  animation: reset-bf-arrive .35s ease-out both;
+  transform-origin: 80% 100%;
+  animation: reset-bf-arrive 1.45s ease-out 1 both;
 }
 
 .reset-bf-content { min-width: 0; }
 
 .reset-bf-headline {
   display: flex;
-  gap: 11px;
+  gap: 10px;
   align-items: baseline;
   justify-content: flex-start;
   margin: 0 !important;
@@ -38,13 +39,13 @@
 
 .reset-bf-title {
   color: #2c2422 !important;
-  font: 800 15px/1.1 Manrope, Arial, sans-serif;
-  letter-spacing: .07em;
+  font: 900 20px/1.05 Manrope, Arial, sans-serif;
+  letter-spacing: -.02em;
 }
 
 .reset-bf-discount {
   color: #a24e48;
-  font: 800 28px/1 Manrope, Arial, sans-serif;
+  font: 900 35px/1 Manrope, Arial, sans-serif;
   letter-spacing: -.065em;
   white-space: nowrap;
 }
@@ -52,7 +53,7 @@
 .reset-bf-discount small {
   margin-right: 2px;
   color: #9b4d47;
-  font: 700 12px/1 Manrope, Arial, sans-serif;
+  font: 800 14px/1 Manrope, Arial, sans-serif;
   letter-spacing: 0;
 }
 
@@ -63,12 +64,12 @@
   flex-wrap: wrap;
   margin: 5px 0 0;
   color: #4b413b;
-  font: 600 11px/1.35 Manrope, Arial, sans-serif;
+  font: 700 13px/1.35 Manrope, Arial, sans-serif;
 }
 
 .reset-bf-date {
   color: #947f70;
-  font: 600 10px/1.2 Manrope, Arial, sans-serif;
+  font: 650 11px/1.2 Manrope, Arial, sans-serif;
   white-space: nowrap;
 }
 
@@ -184,16 +185,16 @@
   .reset-bf-sticker {
     right: max(10px, env(safe-area-inset-right));
     bottom: calc(94px + env(safe-area-inset-bottom));
-    width: min(325px, calc(100vw - 20px));
+    width: min(340px, calc(100vw - 20px));
     padding: 11px 12px 10px;
     border-radius: 9px;
   }
   .reset-bf-headline { gap: 8px; padding-right: 16px; }
-  .reset-bf-title { font-size: 12px; letter-spacing: .055em; }
-  .reset-bf-discount { font-size: 24px; }
-  .reset-bf-discount small { font-size: 10px; }
-  .reset-bf-subline { margin-top: 5px; font-size: 10px; gap: 5px; }
-  .reset-bf-date { font-size: 9px; }
+  .reset-bf-title { font-size: 16px; letter-spacing: -.015em; }
+  .reset-bf-discount { font-size: 30px; }
+  .reset-bf-discount small { font-size: 12px; }
+  .reset-bf-subline { margin-top: 5px; font-size: 12px; gap: 6px; }
+  .reset-bf-date { font-size: 10px; }
   .reset-bf-footer { margin-top: 8px; padding-top: 8px; }
   .reset-bf-timer { gap: 5px; }
   .reset-bf-timer strong { font-size: 12px; }
@@ -214,9 +215,9 @@
 @media (max-width: 359px) {
   .reset-bf-sticker { width: calc(100vw - 16px); right: 8px; padding: 10px 9px; }
   .reset-bf-headline { gap: 5px; }
-  .reset-bf-title { font-size: 11px; letter-spacing: .035em; }
-  .reset-bf-discount { font-size: 22px; }
-  .reset-bf-discount small { font-size: 9px; }
+  .reset-bf-title { font-size: 14px; letter-spacing: -.025em; }
+  .reset-bf-discount { font-size: 27px; }
+  .reset-bf-discount small { font-size: 11px; }
   .reset-bf-timer { gap: 4px; }
   .reset-bf-timer strong { font-size: 11px; }
   .reset-bf-clock-digits { font-size: 11px; }
@@ -228,7 +229,13 @@
   .reset-bf-sticker .reset-bf-shop-link { transition: none; }
 }
 
+/* Slide in once from the right, then bounce upward exactly twice. */
 @keyframes reset-bf-arrive {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  0%   { opacity: 0; transform: translate3d(120%, 0, 0) scale(.96); }
+  32%  { opacity: 1; transform: translate3d(-12px, 0, 0) scale(1); }
+  44%  { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  56%  { transform: translate3d(0, -10px, 0) scale(1); }
+  67%  { transform: translate3d(0, 0, 0) scale(1); }
+  78%  { transform: translate3d(0, -7px, 0) scale(1); }
+  88%, 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
