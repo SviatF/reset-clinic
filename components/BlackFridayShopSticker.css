@@ -342,10 +342,10 @@
   }
   .bf26-event { font-size: clamp(24px, 6.8vw, 31px); }
   .bf26-separator { height: 77px; }
-  .bf26-offer { padding: 0 10px 0 0; }
+  .bf26-offer { padding: 0 2px 0 0; }
   .bf26-discount { gap: 3px; }
   .bf26-discount > span { margin-top: 5px; font-size: 10px; }
-  .bf26-discount strong { font-size: clamp(38px, 11.4vw, 50px); }
+  .bf26-discount strong { font-size: clamp(36px, 10.2vw, 44px); }
   .bf26-product {
     margin-top: 3px;
     font-size: 9px;
@@ -386,7 +386,7 @@
   .bf26-sticker { right: 7px; width: calc(100vw - 14px); padding: 14px 10px 11px; }
   .bf26-main { gap: 8px; }
   .bf26-event { font-size: 24px; }
-  .bf26-discount strong { font-size: 38px; }
+  .bf26-discount strong { font-size: 35px; }
   .bf26-product { font-size: 8.5px; }
   .bf26-time { padding: 4px 3px; }
   .bf26-time strong { font-size: 11px; }
