@@ -4,35 +4,33 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { trackPromoCustomEvent } from "../lib/marketing-pixels";
 
-const CAMPAIGN_END_AT = Date.parse("2026-11-27T23:59:59+02:00"); // Kyiv, Nov 27 inclusive
+const CAMPAIGN_END_AT = Date.parse("2026-11-27T23:59:59+02:00"); // Kyiv; Nov 27 inclusive
 const DISMISS_KEY = "reset_bf_shop_sticker_closed_2026";
 const SHOP_URL =
   "https://shop.resetclinic.org/?utm_source=resetclinic&utm_medium=floating_sticker&utm_campaign=black_friday_2026";
 
 const COPY = {
   uk: {
-    label: "RESET CLINIC / SHOP",
     event: "BLACK FRIDAY",
-    upTo: "ДО",
-    product: "на професійну косметику",
-    ends: "До 27.11 включно",
-    remaining: "До завершення",
-    units: ["дн.", "год.", "хв.", "сек."] as const,
+    upTo: "до",
+    product: "На професійну косметику",
+    ends: "до 27.11",
+    remaining: "До завершення акції",
+    days: "дн",
     action: "В магазин",
     close: "Закрити пропозицію Black Friday",
-    aria: "Знижки до 20% у магазині косметики RESET Clinic до 27 листопада",
+    aria: "Black Friday: знижки до 20% у магазині косметики RESET Clinic до 27 листопада",
   },
   pl: {
-    label: "RESET CLINIC / SHOP",
     event: "BLACK FRIDAY",
-    upTo: "DO",
-    product: "na profesjonalne kosmetyki",
-    ends: "Do 27.11 włącznie",
+    upTo: "do",
+    product: "Na profesjonalne kosmetyki",
+    ends: "do 27.11",
     remaining: "Do końca promocji",
-    units: ["dni", "godz.", "min", "sek."] as const,
+    days: "dni",
     action: "Do sklepu",
     close: "Zamknij ofertę Black Friday",
-    aria: "Rabaty do 20% w sklepie RESET Clinic do 27 listopada",
+    aria: "Black Friday: rabaty do 20% w sklepie RESET Clinic do 27 listopada",
   },
 } as const;
 
@@ -46,6 +44,8 @@ function timeParts(remainingMs: number) {
   ];
 }
 
+const twoDigits = (value: number) => String(value).padStart(2, "0");
+
 export default function BlackFridayShopSticker() {
   const pathname = usePathname() || "/";
   const [now, setNow] = useState<number | null>(null);
@@ -56,13 +56,12 @@ export default function BlackFridayShopSticker() {
     try {
       setDismissed(window.sessionStorage.getItem(DISMISS_KEY) === "yes");
     } catch {
-      // The campaign stays dismissible even if storage is disabled.
+      // The sticker can still be closed when storage is blocked.
     }
     const interval = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(interval);
   }, []);
 
-  // Only public site pages; the admin area should not display marketing UI.
   if (
     now === null ||
     dismissed ||
@@ -77,7 +76,7 @@ export default function BlackFridayShopSticker() {
   const promo = pathname.startsWith("/promo/") || pathname.startsWith("/pl/promo/");
   const quiz = pathname.includes("/quiz/");
   const copy = polish ? COPY.pl : COPY.uk;
-  const units = timeParts(CAMPAIGN_END_AT - now);
+  const [days, hours, minutes, seconds] = timeParts(CAMPAIGN_END_AT - now);
   const className = [
     "reset-bf-sticker",
     promo ? "reset-bf-sticker--promo" : "",
@@ -89,7 +88,7 @@ export default function BlackFridayShopSticker() {
     try {
       window.sessionStorage.setItem(DISMISS_KEY, "yes");
     } catch {
-      // No persistence when sessionStorage is unavailable.
+      // No persistence when sessionStorage is disabled.
     }
     trackPromoCustomEvent("bf_shop_sticker_close", {
       campaign: "black_friday_2026",
@@ -119,32 +118,31 @@ export default function BlackFridayShopSticker() {
         <span aria-hidden="true">×</span>
       </button>
 
-      <div className="reset-bf-top">
-        <span>{copy.label}</span>
-        <span className="reset-bf-year">2026 / 27 NOV</span>
-      </div>
-
-      <div className="reset-bf-offer">
-        <p className="reset-bf-event">{copy.event}</p>
-        <div className="reset-bf-discount">
-          <span className="reset-bf-up-to">{copy.upTo}</span>
-          <strong>−20<span>%</span></strong>
+      <div className="reset-bf-content">
+        <p className="reset-bf-headline">
+          <span className="reset-bf-title">{copy.event}</span>
+          <strong className="reset-bf-discount">
+            <small>{copy.upTo}</small> −20%
+          </strong>
+        </p>
+        <div className="reset-bf-subline">
+          <span>{copy.product}</span>
+          <span className="reset-bf-date">{copy.ends}</span>
         </div>
-        <p className="reset-bf-product">{copy.product}</p>
-        <p className="reset-bf-date">{copy.ends}</p>
       </div>
 
-      <div className="reset-bf-bottom">
-        <div className="reset-bf-countdown" aria-label={copy.remaining}>
-          <p>{copy.remaining}</p>
-          <div className="reset-bf-clock" role="timer" aria-live="off">
-            {units.map((amount, index) => (
-              <span className="reset-bf-time-unit" key={copy.units[index]}>
-                <strong>{String(amount).padStart(2, "0")}</strong>
-                <small>{copy.units[index]}</small>
-              </span>
-            ))}
-          </div>
+      <div className="reset-bf-footer">
+        <div
+          className="reset-bf-timer"
+          role="timer"
+          aria-live="off"
+          aria-label={`${copy.remaining}: ${days} ${copy.days}, ${hours}:${twoDigits(minutes)}:${twoDigits(seconds)}`}
+        >
+          <span className="reset-bf-live-dot" aria-hidden="true" />
+          <strong>{days}<small>{copy.days}</small></strong>
+          <span className="reset-bf-clock-digits">
+            {twoDigits(hours)}:{twoDigits(minutes)}:{twoDigits(seconds)}
+          </span>
         </div>
         <a
           className="reset-bf-shop-link"
