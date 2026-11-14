@@ -1,7 +1,10 @@
-/* RESET CLINIC / SHOP — restrained editorial Black Friday micro-banner.
-   Bold hierarchy, clear offer, and compact height across public pages. */
+/* RESET CLINIC / SHOP · Black Friday 2026
+   Centered campaign hierarchy: bold headline, sale, product, live countdown.
+   Scoped to the sitewide dismissible sticker, without affecting page templates. */
 .reset-bf-sticker,
-.reset-bf-sticker * { box-sizing: border-box; }
+.reset-bf-sticker * {
+  box-sizing: border-box;
+}
 
 .reset-bf-sticker {
   position: fixed;
@@ -9,117 +12,134 @@
   right: max(16px, env(safe-area-inset-right));
   bottom: calc(18px + env(safe-area-inset-bottom));
   width: min(390px, calc(100vw - 24px));
-  padding: 15px 17px 13px;
+  padding: 15px 18px 13px;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid #dbcec2;
-  border-radius: 13px;
-  color: #302824;
-  background: linear-gradient(145deg, #fffdf9 0%, #f8f3ed 69%, #f3ebe3 100%);
-  box-shadow: 0 14px 38px rgba(37, 27, 23, .18), 0 2px 8px rgba(37, 27, 23, .045);
+  border: 1px solid #dfd1c5;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 50% 60%, rgba(186, 107, 87, .065), transparent 66%),
+    linear-gradient(155deg, #fffdf9 0%, #f9f4ee 100%);
+  box-shadow: 0 14px 38px rgba(41, 29, 25, .18), 0 2px 10px rgba(41, 29, 25, .05);
+  color: #2c2420;
   font-family: Manrope, Arial, sans-serif;
-  text-align: left;
+  text-align: center;
   transform-origin: 80% 100%;
   animation: reset-bf-arrive 1.45s ease-out 1 both;
 }
 
-/* Fine oxblood foil detail, not a large decorative ornament. */
 .reset-bf-sticker::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 17px;
-  width: 75px;
+  left: 50%;
+  width: 116px;
   height: 3px;
   border-radius: 0 0 4px 4px;
-  background: #a64f47;
+  background: linear-gradient(90deg, #8e3f3a, #ca7867, #8e3f3a);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
+
 .reset-bf-content { min-width: 0; }
 
 .reset-bf-title {
   display: block;
-  margin: 0 28px 9px 0 !important;
-  color: #28211f !important;
-  font: 900 27px/.98 Manrope, Arial, sans-serif !important;
-  letter-spacing: -.055em;
+  width: 100%;
+  margin: 3px 0 5px !important;
+  padding: 0 18px;
+  color: #292220 !important;
+  font: 900 37px/.99 Manrope, Arial, sans-serif !important;
+  letter-spacing: -.065em;
+  text-align: center;
   white-space: nowrap;
 }
 
-.reset-bf-offer-row {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 15px;
-  align-items: center;
-  min-width: 0;
-}
-.reset-bf-discount {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
-  color: #a34b43 !important;
-  font: 900 46px/.96 Manrope, Arial, sans-serif;
-  font-variant-numeric: lining-nums;
-  letter-spacing: -.07em;
-  white-space: nowrap;
-}
-.reset-bf-discount > small {
-  color: #a34b43;
-  font: 800 15px/1 Manrope, Arial, sans-serif;
-  letter-spacing: 0;
-}
-.reset-bf-discount > span { display: inline; }
-.reset-bf-subline {
+.reset-bf-offer {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 !important;
-  color: #473a35 !important;
-  font: 700 14px/1.22 Manrope, Arial, sans-serif;
+  align-items: center;
+  gap: 0;
 }
-.reset-bf-date {
-  color: #8f786e !important;
-  font: 650 11px/1.25 Manrope, Arial, sans-serif;
+
+.reset-bf-discount {
+  display: inline-flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  color: #a74d44 !important;
+  font: 900 65px/.99 Manrope, Arial, sans-serif;
+  font-variant-numeric: lining-nums;
+  letter-spacing: -.078em;
   white-space: nowrap;
 }
+.reset-bf-discount > small {
+  color: #a74d44;
+  font: 900 19px/1 Manrope, Arial, sans-serif;
+  letter-spacing: -.015em;
+}
+.reset-bf-discount > span { display: inline; }
+
+.reset-bf-subline {
+  display: block;
+  width: 100%;
+  margin: 1px 0 0 !important;
+  color: #382d28 !important;
+  font: 800 15px/1.28 Manrope, Arial, sans-serif !important;
+  text-align: center;
+}
+
+.reset-bf-date {
+  display: block;
+  margin: 3px 0 0 !important;
+  color: #947b6d !important;
+  font: 650 11px/1.3 Manrope, Arial, sans-serif !important;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .reset-bf-close {
   position: absolute;
-  top: 11px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 2;
   display: grid;
-  width: 26px;
-  height: 26px;
+  width: 25px;
+  height: 25px;
   padding: 0;
   place-items: center;
   border: 0 !important;
   border-radius: 50%;
   background: transparent !important;
-  color: #80746e !important;
-  font: 400 21px/1 Arial, sans-serif;
+  color: #8a7770 !important;
+  font: 400 19px/1 Arial, sans-serif;
   cursor: pointer;
   transition: background-color .2s ease, color .2s ease;
 }
 .reset-bf-close:hover {
-  background: #ece2d9 !important;
-  color: #352b27 !important;
+  background: #eee5dd !important;
+  color: #382b28 !important;
 }
+
 .reset-bf-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   min-width: 0;
-  margin-top: 13px;
+  margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgba(90, 66, 54, .16);
+  border-top: 1px solid rgba(103, 77, 64, .17);
 }
+
 .reset-bf-timer {
   display: flex;
   align-items: baseline;
   gap: 7px;
   min-width: 0;
-  color: #43352e;
+  color: #3b2e29;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -129,32 +149,33 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #b55b51;
-  box-shadow: 0 0 0 3px rgba(181, 91, 81, .12);
+  background: #b75b50;
+  box-shadow: 0 0 0 3px rgba(183, 91, 80, .13);
 }
 .reset-bf-timer strong {
-  color: #332823;
+  color: #332923;
   font: 800 15px/1 Manrope, Arial, sans-serif;
-  letter-spacing: -.025em;
+  letter-spacing: -.02em;
 }
 .reset-bf-timer strong small {
   margin-left: 3px;
-  color: #8a776a;
+  color: #8d786c;
   font: 650 10px/1 Manrope, Arial, sans-serif;
 }
 .reset-bf-clock-digits {
-  color: #332823;
+  color: #332923;
   font: 800 14px/1 Manrope, Arial, sans-serif;
-  letter-spacing: .025em;
+  letter-spacing: .02em;
 }
+
 .reset-bf-sticker .reset-bf-shop-link,
 .reset-bf-sticker .reset-bf-shop-link:link,
 .reset-bf-sticker .reset-bf-shop-link:visited {
   display: inline-flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   gap: 8px;
-  min-width: 0;
   min-height: 36px;
   padding: 8px 12px;
   border: 0;
@@ -168,7 +189,7 @@
 }
 .reset-bf-sticker .reset-bf-shop-link:hover,
 .reset-bf-sticker .reset-bf-shop-link:focus-visible {
-  background: #a34b43 !important;
+  background: #a74d44 !important;
   color: #fffaf5 !important;
   transform: translateY(-1px);
 }
@@ -178,11 +199,11 @@
 }
 .reset-bf-close:focus-visible,
 .reset-bf-sticker .reset-bf-shop-link:focus-visible {
-  outline: 2px solid #a34b43;
+  outline: 2px solid #a74d44;
   outline-offset: 3px;
 }
 
-/* Clear clinic booking bars and quiz helpers. */
+/* Keep the booking bar and quiz helper accessible on affected templates. */
 .reset-bf-sticker--promo { bottom: calc(148px + env(safe-area-inset-bottom)); }
 .reset-bf-sticker--quiz { bottom: calc(128px + env(safe-area-inset-bottom)); }
 
@@ -192,18 +213,18 @@
     bottom: calc(94px + env(safe-area-inset-bottom));
     width: min(345px, calc(100vw - 20px));
     padding: 12px 13px 11px;
-    border-radius: 11px;
+    border-radius: 12px;
   }
-  .reset-bf-sticker::before { left: 13px; }
   .reset-bf-title {
-    margin-bottom: 8px !important;
-    font-size: 24px !important;
+    margin: 3px 0 4px !important;
+    padding: 0 13px;
+    font-size: 31px !important;
+    letter-spacing: -.065em;
   }
-  .reset-bf-offer-row { gap: 9px; }
-  .reset-bf-discount { font-size: 40px; gap: 3px; }
-  .reset-bf-discount > small { font-size: 12px; }
-  .reset-bf-subline { font-size: 12px; }
-  .reset-bf-date { font-size: 10px; }
+  .reset-bf-discount { font-size: 56px; gap: 6px; }
+  .reset-bf-discount > small { font-size: 16px; }
+  .reset-bf-subline { font-size: 13px !important; }
+  .reset-bf-date { font-size: 10px !important; }
   .reset-bf-footer { margin-top: 10px; padding-top: 9px; }
   .reset-bf-timer { gap: 5px; }
   .reset-bf-timer strong { font-size: 13px; }
@@ -211,7 +232,7 @@
   .reset-bf-sticker .reset-bf-shop-link,
   .reset-bf-sticker .reset-bf-shop-link:link,
   .reset-bf-sticker .reset-bf-shop-link:visited {
-    min-height: 32px;
+    min-height: 33px;
     padding: 7px 9px;
     gap: 5px;
     font-size: 10px;
@@ -227,23 +248,28 @@
     width: calc(100vw - 16px);
     padding: 10px 11px;
   }
-  .reset-bf-title { font-size: 22px !important; }
-  .reset-bf-discount { font-size: 35px; }
-  .reset-bf-discount > small { font-size: 11px; }
-  .reset-bf-subline { font-size: 11px; }
-  .reset-bf-offer-row { gap: 7px; }
+  .reset-bf-title { font-size: 27px !important; padding: 0 10px; }
+  .reset-bf-discount { font-size: 48px; gap: 5px; }
+  .reset-bf-discount > small { font-size: 14px; }
+  .reset-bf-subline { font-size: 12px !important; }
   .reset-bf-timer { gap: 4px; }
+  .reset-bf-timer strong { font-size: 12px; }
   .reset-bf-clock-digits { font-size: 11px; }
   .reset-bf-sticker .reset-bf-shop-link,
   .reset-bf-sticker .reset-bf-shop-link:link,
-  .reset-bf-sticker .reset-bf-shop-link:visited { font-size: 9px; padding: 6px 7px; }
+  .reset-bf-sticker .reset-bf-shop-link:visited {
+    padding: 7px 8px;
+    font-size: 9px;
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
   .reset-bf-sticker { animation: none; }
   .reset-bf-close,
   .reset-bf-sticker .reset-bf-shop-link { transition: none; }
 }
-/* Enter from right, bounce twice, then remain still. */
+
+/* Slide in once from the right, settle, bounce twice, then stop. */
 @keyframes reset-bf-arrive {
   0%   { opacity: 0; transform: translate3d(120%, 0, 0) scale(.96); }
   32%  { opacity: 1; transform: translate3d(-12px, 0, 0) scale(1); }
