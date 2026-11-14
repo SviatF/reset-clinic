@@ -121,8 +121,53 @@ export default function BlackFridayShopSticker() {
 
   return (
     <aside className={className} aria-label={copy.aria} lang={polish ? "pl-PL" : "uk-UA"}>
-      <span className="bf26-ribbon bf26-ribbon--left" aria-hidden="true" />
-      <span className="bf26-ribbon bf26-ribbon--right" aria-hidden="true" />
+      {/* Satin-like curved foil ribbons, rendered as crisp vector artwork. */}
+      <svg className="bf26-art bf26-art--upper" viewBox="0 0 480 240" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="bf26-upper-satin" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#4c151b" stopOpacity=".98" />
+            <stop offset="35%" stopColor="#b1464c" stopOpacity=".78" />
+            <stop offset="51%" stopColor="#f09280" stopOpacity=".73" />
+            <stop offset="58%" stopColor="#9d2f37" stopOpacity=".68" />
+            <stop offset="100%" stopColor="#381017" stopOpacity=".11" />
+          </linearGradient>
+          <linearGradient id="bf26-upper-edge" x1="0" y1=".6" x2="1" y2="0">
+            <stop offset="0%" stopColor="#d75f5c" stopOpacity=".15" />
+            <stop offset="46%" stopColor="#ffad93" stopOpacity=".95" />
+            <stop offset="73%" stopColor="#fff2d9" />
+            <stop offset="100%" stopColor="#d95a4a" stopOpacity=".12" />
+          </linearGradient>
+          <filter id="bf26-upper-blur" x="-25%" y="-150%" width="150%" height="400%">
+            <feGaussianBlur stdDeviation="5" />
+          </filter>
+        </defs>
+        <path d="M-54 142 C53 107 132 66 241 5 C300 -29 377 -53 488 -52 L436 11 C327 52 211 126 105 173 L-54 226Z" fill="url(#bf26-upper-satin)" />
+        <path d="M-54 142 C53 107 132 66 241 5 C300 -29 377 -53 488 -52" fill="none" stroke="url(#bf26-upper-edge)" strokeWidth="7" filter="url(#bf26-upper-blur)" />
+        <path d="M-54 142 C53 107 132 66 241 5 C300 -29 377 -53 488 -52" fill="none" stroke="url(#bf26-upper-edge)" strokeWidth="2.2" />
+        <path d="M-54 226 C28 185 117 175 211 126 C303 78 364 41 436 11" fill="none" stroke="#f08078" strokeWidth="1" strokeOpacity=".48" />
+      </svg>
+      <svg className="bf26-art bf26-art--lower" viewBox="0 0 480 290" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="bf26-lower-satin" x1=".22" y1="1" x2=".85" y2=".02">
+            <stop offset="0%" stopColor="#430e16" stopOpacity=".1" />
+            <stop offset="42%" stopColor="#9d3139" stopOpacity=".48" />
+            <stop offset="68%" stopColor="#bc4a4e" stopOpacity=".72" />
+            <stop offset="100%" stopColor="#51151c" stopOpacity=".85" />
+          </linearGradient>
+          <linearGradient id="bf26-lower-edge" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stopColor="#e96757" stopOpacity="0" />
+            <stop offset="42%" stopColor="#ff987b" stopOpacity=".67" />
+            <stop offset="69%" stopColor="#ffe2bc" />
+            <stop offset="100%" stopColor="#f17e70" stopOpacity=".35" />
+          </linearGradient>
+          <filter id="bf26-lower-blur" x="-25%" y="-130%" width="150%" height="360%">
+            <feGaussianBlur stdDeviation="5" />
+          </filter>
+        </defs>
+        <path d="M-42 305 C92 258 185 181 288 126 C370 82 424 62 512 32 L512 316Z" fill="url(#bf26-lower-satin)" />
+        <path d="M-42 305 C92 258 185 181 288 126 C370 82 424 62 512 32" fill="none" stroke="url(#bf26-lower-edge)" strokeWidth="8" filter="url(#bf26-lower-blur)" />
+        <path d="M-42 305 C92 258 185 181 288 126 C370 82 424 62 512 32" fill="none" stroke="url(#bf26-lower-edge)" strokeWidth="2.2" />
+      </svg>
       <button
         className="bf26-close"
         type="button"
