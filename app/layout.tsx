@@ -11,12 +11,14 @@ import "../components/PromoPages.css";
 import "../components/PromoWow.css";
 import "../components/PromoConversionLayer.css";
 import "../components/PromoQuizMobile.css";
+import "../components/BlackFridayShopSticker.css";
 import "../components/BookingSlotPicker.css";
 import MarketingTracking from "../components/MarketingTracking";
 import SeoComplianceClient from "../components/SeoComplianceClient";
 import SeoConversionLayer from "../components/SeoConversionLayer";
 import PremiumMotion from "../components/PremiumMotion";
 import LegacyLiveBookingBridge from "../components/LegacyLiveBookingBridge";
+import BlackFridayShopSticker from "../components/BlackFridayShopSticker";
 import {
   clinicJsonLd,
   DEFAULT_OG_IMAGE,
@@ -147,6 +149,7 @@ fbq('track', 'PageView');`}
         <PremiumMotion />
         <LegacyLiveBookingBridge />
         {children}
+        <BlackFridayShopSticker />
       </body>
     </html>
   );
