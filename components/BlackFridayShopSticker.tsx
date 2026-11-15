@@ -13,14 +13,14 @@ const SHOP_URL =
 const COPY = {
   uk: {
     sale: "до",
-    product: "На професійну косметику",
+    product: "У МАГАЗИНІ КОСМЕТИКИ ВІД RESET",
     action: "В магазин",
     close: "Закрити пропозицію Black Friday",
     aria: "Black Friday: знижки до 20 відсотків на професійну косметику в RESET Clinic Shop",
   },
   pl: {
     sale: "do",
-    product: "Na profesjonalne kosmetyki",
+    product: "W SKLEPIE KOSMETYCZNYM RESET",
     action: "Do sklepu",
     close: "Zamknij ofertę Black Friday",
     aria: "Black Friday: rabaty do 20 procent na profesjonalne kosmetyki w RESET Clinic Shop",
