@@ -447,9 +447,6 @@
   .bf26-swing { animation: none; }
   .bf26-suspension { transform: rotate(3deg); }
   .bf26-tag { animation: none; }
-  @media (max-width: 700px) {
-    .bf26-suspension { transform: none !important; }
-  }
   .bf26-close,
   .bf26-tag .bf26-cta { transition: none; }
 }
