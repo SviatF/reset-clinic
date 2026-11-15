@@ -299,8 +299,8 @@
    The full surface continues to link to the shop; no ropes or eyelets. */
 @media (max-width: 700px) {
   .bf26-hanger {
-    left: max(14px, env(safe-area-inset-left));
-    right: max(14px, env(safe-area-inset-right));
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
     bottom: calc(12px + env(safe-area-inset-bottom));
     width: auto;
     height: auto;
@@ -327,23 +327,23 @@
   .bf26-tag {
     position: relative;
     display: grid;
-    grid-template-columns: 95px minmax(0, 1fr) 31px;
+    grid-template-columns: 84px minmax(0, 1fr) 28px;
     grid-template-rows: auto auto;
     grid-template-areas:
       "discount title close"
       "discount product cta";
-    column-gap: 12px;
-    row-gap: 7px;
+    column-gap: 9px;
+    row-gap: 4px;
     align-items: center;
     top: auto;
     left: auto;
-    width: min(100%, 370px);
-    min-height: 80px;
+    width: min(100%, 304px);
+    min-height: 70px;
     margin-inline: auto;
-    padding: 11px 12px 11px 13px;
+    padding: 10px 10px 9px 11px;
     overflow: visible;
     border: 1px solid rgba(236, 185, 157, .67);
-    border-radius: 16px;
+    border-radius: 14px;
     background:
       radial-gradient(ellipse at 0 0, rgba(182, 82, 80, .17), transparent 61%),
       linear-gradient(122deg, #411820 0%, #270e16 60%, #3b1520 100%);
@@ -355,13 +355,13 @@
     transform: none;
     animation: bf26-mobile-enter .48s cubic-bezier(.22, .74, .31, 1) both;
   }
-  .bf26-tag::before { border-radius: 14px; }
+  .bf26-tag::before { border-radius: 12px; }
   .bf26-tag::after { left: 22%; right: 22%; opacity: .6; }
   .bf26-satin {
     z-index: -1;
     top: 0;
     height: 30px;
-    border-radius: 15px 15px 0 0;
+    border-radius: 13px 13px 0 0;
     background: linear-gradient(160deg, rgba(255, 189, 154, .12), transparent 55%);
   }
   .bf26-hit-area { border-radius: inherit; }
@@ -385,9 +385,11 @@
     letter-spacing: .08em;
   }
   .bf26-discount strong {
-    font-size: 34px;
-    line-height: .98;
-    letter-spacing: -.082em;
+    font-size: 29px;
+    line-height: 1.22;
+    padding-bottom: 5px; /* Extra glyph paint space prevents % from clipping. */
+    margin-bottom: -5px;
+    letter-spacing: -.075em;
     filter: drop-shadow(0 2px 5px rgba(255, 164, 116, .1));
     white-space: nowrap;
   }
@@ -396,7 +398,7 @@
     grid-area: title;
     min-width: 0;
     margin: 0 !important;
-    font: italic 900 14px/1.08 "Arial Black", Arial, sans-serif !important;
+    font: italic 900 12.5px/1.1 "Arial Black", Arial, sans-serif !important;
     letter-spacing: -.038em;
     white-space: nowrap;
   }
@@ -406,9 +408,9 @@
     max-width: none;
     margin: 0 !important;
     color: #eec9b8 !important;
-    font: 750 9px/1.35 Manrope, Arial, sans-serif !important;
-    letter-spacing: .005em;
-    padding-top: 2px;
+    font: 750 8.5px/1.32 Manrope, Arial, sans-serif !important;
+    letter-spacing: 0;
+    padding-top: 1px;
     text-align: left;
     text-wrap: balance;
   }
@@ -422,9 +424,9 @@
     position: relative;
     z-index: 4;
     display: grid;
-    width: 31px;
-    height: 31px;
-    min-height: 31px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
     padding: 0;
     place-items: center;
     border: 1px solid rgba(255, 250, 242, .88);
@@ -453,7 +455,7 @@
     border-radius: 0;
     background: transparent;
     color: #30171a !important;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
   }
 
@@ -468,41 +470,43 @@
     bottom: auto;
     left: auto;
     z-index: 6;
-    width: 25px;
-    height: 25px;
-    border: 1px solid rgba(245, 205, 176, .5) !important;
+    width: 26px;
+    height: 26px;
+    border: 0 !important;
+    outline: 0;
     border-radius: 50%;
-    background: #3a171d !important;
+    background: transparent !important;
     color: #fff0e1 !important;
-    font-size: 17px;
-    box-shadow: 0 3px 9px rgba(32, 9, 14, .25);
+    font-size: 19px;
+    box-shadow: none !important;
   }
-  .bf26-close:hover { background: #69303a !important; }
+  .bf26-close:hover { background: rgba(255, 241, 228, .12) !important; }
+  .bf26-close:focus-visible { outline: 2px solid #ffcfad; outline-offset: 2px; }
 }
 
 @media (max-width: 359px) {
   .bf26-hanger {
-    left: max(10px, env(safe-area-inset-left));
-    right: max(10px, env(safe-area-inset-right));
+    left: max(9px, env(safe-area-inset-left));
+    right: max(9px, env(safe-area-inset-right));
   }
   .bf26-tag {
-    grid-template-columns: 86px minmax(0, 1fr) 28px;
-    column-gap: 8px;
-    padding: 10px 10px;
-    min-height: 75px;
+    grid-template-columns: 76px minmax(0, 1fr) 26px;
+    column-gap: 7px;
+    padding: 9px 9px;
+    min-height: 68px;
   }
-  .bf26-discount strong { font-size: 31px; }
+  .bf26-discount strong { font-size: 27px; }
   .bf26-title { font-size: 12px !important; }
-  .bf26-product { font-size: 8.5px !important; }
+  .bf26-product { font-size: 8px !important; }
   .bf26-tag .bf26-cta,
   .bf26-tag .bf26-cta:link,
   .bf26-tag .bf26-cta:visited {
-    width: 28px;
-    height: 28px;
-    min-height: 28px;
+    width: 26px;
+    height: 26px;
+    min-height: 26px;
   }
-  .bf26-close { width: 23px; height: 23px; }
-  .bf26-cta-arrow { font-size: 18px; }
+  .bf26-close { width: 24px; height: 24px; }
+  .bf26-cta-arrow { font-size: 17px; }
 }
 @keyframes bf26-mobile-enter {
   from { opacity: 0; transform: translate3d(0, 18px, 0); }
