@@ -136,6 +136,7 @@
   border: 3px solid #cc9e7c;
   border-radius: 50%;
   background: #180a0f;
+  pointer-events: none;
   box-shadow: 0 0 0 1px rgba(255, 228, 191, .33),
               inset 0 0 0 2px rgba(29, 9, 15, .9),
               0 1px 5px rgba(16, 5, 5, .45);
