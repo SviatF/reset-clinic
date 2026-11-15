@@ -278,7 +278,7 @@
 /* The string lengths never change: they and the tag rotate from one shared pin.
    Intro: arrive, overshoot, then damped pendulum. Idle: very gentle movement. */
 @keyframes bf26-hang-arrive {
-  0%   { opacity: 0; transform: translate3d(35px, -45px, 0) rotate(-15deg) scale(.86); }
+  0%   { opacity: 0; transform: rotate(-22deg); }
   31%  { opacity: 1; transform: rotate(10deg); }
   51%  { transform: rotate(-4deg); }
   70%  { transform: rotate(6deg); }
