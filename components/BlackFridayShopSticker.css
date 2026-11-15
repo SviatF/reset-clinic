@@ -295,18 +295,19 @@
 .bf26-hanger--promo { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .bf26-hanger--quiz { bottom: calc(139px + env(safe-area-inset-bottom)); }
 
-/* Compact, touch-friendly sticky promotion on phones.
-   No hook, cords, metal eyelets, scaled rig or swinging animation. */
+/* Mobile: a restrained premium micro-toast, not a stretched ad card.
+   The full surface continues to link to the shop; no ropes or eyelets. */
 @media (max-width: 700px) {
   .bf26-hanger {
-    left: max(10px, env(safe-area-inset-left));
-    right: max(10px, env(safe-area-inset-right));
+    left: max(14px, env(safe-area-inset-left));
+    right: max(14px, env(safe-area-inset-right));
     bottom: calc(12px + env(safe-area-inset-bottom));
     width: auto;
     height: auto;
     transform: none;
   }
-  .bf26-hanger--promo { bottom: calc(119px + env(safe-area-inset-bottom)); }
+  /* Keep the important sticky conversion CTA visible on promo and quiz. */
+  .bf26-hanger--promo { bottom: calc(117px + env(safe-area-inset-bottom)); }
   .bf26-hanger--quiz { bottom: calc(110px + env(safe-area-inset-bottom)); }
 
   .bf26-hook,
@@ -326,105 +327,180 @@
   .bf26-tag {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 102px minmax(0, 1fr) 35px;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "title discount"
-      "product cta";
-    column-gap: 8px;
-    row-gap: 8px;
+      "discount title cta"
+      "discount product cta";
+    column-gap: 11px;
+    row-gap: 4px;
     align-items: center;
     top: auto;
     left: auto;
-    width: min(100%, 380px);
+    width: min(100%, 370px);
+    min-height: 78px;
     margin-inline: auto;
-    padding: 12px 34px 12px 13px;
-    border-radius: 14px;
+    padding: 12px 13px 12px 14px;
+    overflow: visible;
+    border: 1px solid rgba(236, 185, 157, .67);
+    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 0 0, rgba(182, 82, 80, .17), transparent 61%),
+      linear-gradient(122deg, #411820 0%, #270e16 60%, #3b1520 100%);
+    box-shadow:
+      0 12px 27px rgba(40, 17, 20, .23),
+      0 2px 6px rgba(40, 17, 20, .09),
+      inset 0 1px 0 rgba(255, 231, 209, .15);
     text-align: left;
     transform: none;
-    animation: bf26-mobile-enter .55s cubic-bezier(.2,.7,.25,1) both;
+    animation: bf26-mobile-enter .48s cubic-bezier(.22, .74, .31, 1) both;
   }
-
-  .bf26-tag::before { border-radius: 12px; }
+  .bf26-tag::before { border-radius: 14px; }
+  .bf26-tag::after { left: 22%; right: 22%; opacity: .6; }
   .bf26-satin {
+    z-index: -1;
+    top: 0;
     height: 30px;
-    border-radius: 14px 14px 0 0;
+    border-radius: 15px 15px 0 0;
+    background: linear-gradient(160deg, rgba(255, 189, 154, .12), transparent 55%);
+  }
+  .bf26-hit-area { border-radius: inherit; }
+
+  .bf26-discount {
+    grid-area: discount;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    align-self: stretch;
+    min-width: 0;
+  }
+  .bf26-discount > span {
+    margin: 0 0 1px 4px;
+    color: #f5c2ad;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: .08em;
+  }
+  .bf26-discount strong {
+    font-size: 43px;
+    line-height: .95;
+    letter-spacing: -.082em;
+    filter: drop-shadow(0 2px 5px rgba(255, 164, 116, .1));
+    white-space: nowrap;
   }
 
   .bf26-title {
     grid-area: title;
+    min-width: 0;
     margin: 0 !important;
-    font-size: 16px !important;
-    line-height: 1.05 !important;
-    letter-spacing: -.035em;
-    text-align: left;
+    font: italic 900 15px/1.02 "Arial Black", Arial, sans-serif !important;
+    letter-spacing: -.038em;
+    white-space: nowrap;
   }
-
-  .bf26-discount {
-    grid-area: discount;
-    gap: 4px;
-    justify-content: flex-end;
-  }
-  .bf26-discount > span { font-size: 10px; }
-  .bf26-discount strong { font-size: 31px; }
-
   .bf26-product {
     grid-area: product;
-    margin: 0 !important;
+    min-width: 0;
     max-width: none;
-    font-size: 9.5px !important;
-    line-height: 1.25 !important;
+    margin: 0 !important;
+    color: #eec9b8 !important;
+    font: 750 9px/1.28 Manrope, Arial, sans-serif !important;
+    letter-spacing: .015em;
     text-align: left;
     text-wrap: balance;
   }
 
+  /* Arrow-only CTA: the complete surface is already clickable. */
   .bf26-tag .bf26-cta,
   .bf26-tag .bf26-cta:link,
   .bf26-tag .bf26-cta:visited {
     grid-area: cta;
     justify-self: end;
-    min-height: 31px;
-    padding: 4px 5px 4px 9px;
-    gap: 5px;
-    font-size: 10px;
+    position: relative;
+    z-index: 4;
+    display: grid;
+    width: 35px;
+    height: 35px;
+    min-height: 35px;
+    padding: 0;
+    place-items: center;
+    border: 1px solid rgba(255, 250, 242, .88);
+    border-radius: 50%;
+    background: linear-gradient(140deg, #fff5e5, #f6d9c8) !important;
+    color: #2a1715 !important;
+    box-shadow: 0 4px 11px rgba(20, 8, 10, .17);
+  }
+  .bf26-tag .bf26-cta > span:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .bf26-cta-arrow {
-    width: 20px;
-    height: 20px;
-    flex-basis: 20px;
-    font-size: 13px;
+    display: grid;
+    flex: none;
+    width: auto;
+    height: auto;
+    place-items: center;
+    border-radius: 0;
+    background: transparent;
+    color: #30171a !important;
+    font-size: 20px;
+    line-height: 1;
   }
 
+  /* A small, independent close control that doesn't cover the headline. */
   .bf26-close {
-    top: 3px;
-    right: 3px;
+    top: -9px;
+    right: -9px;
     bottom: auto;
     left: auto;
-    width: 25px;
-    height: 25px;
-    font-size: 18px;
     z-index: 6;
+    width: 29px;
+    height: 29px;
+    border: 1px solid rgba(245, 205, 176, .5) !important;
+    border-radius: 50%;
+    background: #3a171d !important;
+    color: #fff0e1 !important;
+    font-size: 17px;
+    box-shadow: 0 3px 9px rgba(32, 9, 14, .25);
   }
+  .bf26-close:hover { background: #69303a !important; }
 }
 
 @media (max-width: 359px) {
   .bf26-hanger {
-    left: max(7px, env(safe-area-inset-left));
-    right: max(7px, env(safe-area-inset-right));
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
   }
-  .bf26-tag { padding: 11px 29px 11px 11px; column-gap: 5px; }
-  .bf26-title { font-size: 14px !important; }
-  .bf26-discount strong { font-size: 27px; }
-  .bf26-discount > span { font-size: 9px; }
-  .bf26-product { font-size: 9px !important; }
+  .bf26-tag {
+    grid-template-columns: 92px minmax(0, 1fr) 31px;
+    column-gap: 8px;
+    padding: 11px 11px;
+    min-height: 73px;
+  }
+  .bf26-discount strong { font-size: 38px; }
+  .bf26-title { font-size: 13px !important; }
+  .bf26-product { font-size: 8px !important; }
   .bf26-tag .bf26-cta,
   .bf26-tag .bf26-cta:link,
-  .bf26-tag .bf26-cta:visited { font-size: 9px; padding-left: 7px; }
+  .bf26-tag .bf26-cta:visited {
+    width: 31px;
+    height: 31px;
+    min-height: 31px;
+  }
+  .bf26-cta-arrow { font-size: 18px; }
 }
-
 @keyframes bf26-mobile-enter {
-  from { opacity: 0; transform: translateY(22px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
 /* The string lengths never change: they and the tag rotate from one shared pin.
