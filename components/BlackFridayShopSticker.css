@@ -327,20 +327,20 @@
   .bf26-tag {
     position: relative;
     display: grid;
-    grid-template-columns: 102px minmax(0, 1fr) 35px;
+    grid-template-columns: 95px minmax(0, 1fr) 31px;
     grid-template-rows: auto auto;
     grid-template-areas:
-      "discount title cta"
+      "discount title close"
       "discount product cta";
-    column-gap: 11px;
-    row-gap: 4px;
+    column-gap: 12px;
+    row-gap: 7px;
     align-items: center;
     top: auto;
     left: auto;
     width: min(100%, 370px);
-    min-height: 78px;
+    min-height: 80px;
     margin-inline: auto;
-    padding: 12px 13px 12px 14px;
+    padding: 11px 12px 11px 13px;
     overflow: visible;
     border: 1px solid rgba(236, 185, 157, .67);
     border-radius: 16px;
@@ -385,8 +385,8 @@
     letter-spacing: .08em;
   }
   .bf26-discount strong {
-    font-size: 43px;
-    line-height: .95;
+    font-size: 34px;
+    line-height: .98;
     letter-spacing: -.082em;
     filter: drop-shadow(0 2px 5px rgba(255, 164, 116, .1));
     white-space: nowrap;
@@ -396,7 +396,7 @@
     grid-area: title;
     min-width: 0;
     margin: 0 !important;
-    font: italic 900 15px/1.02 "Arial Black", Arial, sans-serif !important;
+    font: italic 900 14px/1.08 "Arial Black", Arial, sans-serif !important;
     letter-spacing: -.038em;
     white-space: nowrap;
   }
@@ -406,8 +406,9 @@
     max-width: none;
     margin: 0 !important;
     color: #eec9b8 !important;
-    font: 750 9px/1.28 Manrope, Arial, sans-serif !important;
-    letter-spacing: .015em;
+    font: 750 9px/1.35 Manrope, Arial, sans-serif !important;
+    letter-spacing: .005em;
+    padding-top: 2px;
     text-align: left;
     text-wrap: balance;
   }
@@ -421,9 +422,9 @@
     position: relative;
     z-index: 4;
     display: grid;
-    width: 35px;
-    height: 35px;
-    min-height: 35px;
+    width: 31px;
+    height: 31px;
+    min-height: 31px;
     padding: 0;
     place-items: center;
     border: 1px solid rgba(255, 250, 242, .88);
@@ -456,15 +457,19 @@
     line-height: 1;
   }
 
-  /* A small, independent close control that doesn't cover the headline. */
+  /* Both controls live inside the card in separate right-hand grid cells. */
   .bf26-close {
-    top: -9px;
-    right: -9px;
+    position: relative;
+    grid-area: close;
+    justify-self: end;
+    align-self: center;
+    top: auto;
+    right: auto;
     bottom: auto;
     left: auto;
     z-index: 6;
-    width: 29px;
-    height: 29px;
+    width: 25px;
+    height: 25px;
     border: 1px solid rgba(245, 205, 176, .5) !important;
     border-radius: 50%;
     background: #3a171d !important;
@@ -481,21 +486,22 @@
     right: max(10px, env(safe-area-inset-right));
   }
   .bf26-tag {
-    grid-template-columns: 92px minmax(0, 1fr) 31px;
+    grid-template-columns: 86px minmax(0, 1fr) 28px;
     column-gap: 8px;
-    padding: 11px 11px;
-    min-height: 73px;
+    padding: 10px 10px;
+    min-height: 75px;
   }
-  .bf26-discount strong { font-size: 38px; }
-  .bf26-title { font-size: 13px !important; }
-  .bf26-product { font-size: 8px !important; }
+  .bf26-discount strong { font-size: 31px; }
+  .bf26-title { font-size: 12px !important; }
+  .bf26-product { font-size: 8.5px !important; }
   .bf26-tag .bf26-cta,
   .bf26-tag .bf26-cta:link,
   .bf26-tag .bf26-cta:visited {
-    width: 31px;
-    height: 31px;
-    min-height: 31px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
   }
+  .bf26-close { width: 23px; height: 23px; }
   .bf26-cta-arrow { font-size: 18px; }
 }
 @keyframes bf26-mobile-enter {
