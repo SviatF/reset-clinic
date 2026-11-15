@@ -114,6 +114,15 @@ export default function BlackFridayShopSticker() {
             <span className="bf26-eyelet bf26-eyelet--left" aria-hidden="true" />
             <span className="bf26-eyelet bf26-eyelet--right" aria-hidden="true" />
             <span className="bf26-satin" aria-hidden="true" />
+            {/* The full card is one shop link; the separate close button remains clickable. */}
+            <a
+              className="bf26-hit-area"
+              href={SHOP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={copy.aria}
+              onClick={trackShopClick}
+            />
 
         <button
           className="bf26-close"
