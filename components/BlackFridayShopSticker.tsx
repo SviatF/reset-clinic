@@ -92,13 +92,28 @@ export default function BlackFridayShopSticker() {
 
   return (
     <div className={className} lang={polish ? "pl-PL" : "uk-UA"}>
-      {/* A real visual attachment: anchor on the screen edge, taut cord and tag eyelet. */}
+      {/* One stationary hook, two cords and one rigid swinging assembly.
+          The cord ends and eyelets share coordinates and always move together. */}
       <span className="bf26-hook" aria-hidden="true" />
-      <span className="bf26-cord" aria-hidden="true" />
+      <div className="bf26-suspension">
+        <div className="bf26-swing">
+          <svg className="bf26-strings" viewBox="0 0 370 285" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="bf26-twine" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fff5dc" />
+                <stop offset="46%" stopColor="#d2aa86" />
+                <stop offset="100%" stopColor="#89604a" />
+              </linearGradient>
+            </defs>
+            <path className="bf26-string-shadow" d="M 202 13 L 51 115 M 202 13 L 313 115" />
+            <path className="bf26-string-body" d="M 202 13 L 51 115 M 202 13 L 313 115" stroke="url(#bf26-twine)" />
+            <path className="bf26-string-light" d="M 202 13 L 51 115 M 202 13 L 313 115" />
+          </svg>
 
-      <aside className="bf26-tag" aria-label={copy.aria}>
-        <span className="bf26-eyelet" aria-hidden="true" />
-        <span className="bf26-satin" aria-hidden="true" />
+          <aside className="bf26-tag" aria-label={copy.aria}>
+            <span className="bf26-eyelet bf26-eyelet--left" aria-hidden="true" />
+            <span className="bf26-eyelet bf26-eyelet--right" aria-hidden="true" />
+            <span className="bf26-satin" aria-hidden="true" />
 
         <button
           className="bf26-close"
@@ -127,7 +142,9 @@ export default function BlackFridayShopSticker() {
           <span>{copy.action}</span>
           <span className="bf26-cta-arrow" aria-hidden="true">↗</span>
         </a>
-      </aside>
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }

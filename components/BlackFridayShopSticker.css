@@ -1,6 +1,5 @@
-/* RESET CLINIC / Black Friday 2026
-   A real-looking half-size tag suspended from the side of the viewport.
-   No clock or date; keeps the campaign expiry, dismissal and tracking in React. */
+/* RESET CLINIC · Black Friday 2026 — suspended double-cord mini sticker.
+   Both twines and both eyelets move as ONE rigid assembly around a fixed hook. */
 .bf26-hanger,
 .bf26-hanger * { box-sizing: border-box; }
 
@@ -8,54 +7,90 @@
   position: fixed;
   z-index: 320;
   right: 0;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(22px + env(safe-area-inset-bottom));
   width: 370px;
-  height: 264px;
+  height: 285px;
   overflow: visible;
   pointer-events: none;
   isolation: isolate;
 }
 
-/* Metallic anchor point at the right-hand screen edge. */
+/* Nail/hook is stationary; the hanging assembly rotates around its center. */
 .bf26-hook {
   position: absolute;
-  top: 5px;
-  right: 6px;
-  z-index: 3;
-  width: 17px;
-  height: 17px;
-  border: 2px solid #9a6451;
+  top: 4px;
+  left: 193px;
+  z-index: 5;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #98725b;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 28%, #fff1d4, #cb997a 42%, #654033 75%);
-  box-shadow: 0 2px 5px rgba(44, 20, 18, .18), inset 0 1px 1px rgba(255, 247, 230, .55);
+  background: radial-gradient(circle at 31% 29%, #fff4db, #d6aa83 40%, #77513e 78%);
+  box-shadow: 0 2px 5px rgba(36, 16, 13, .22),
+              inset 0 1px 1px rgba(255, 249, 233, .65);
+}
+.bf26-hook::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: #583629;
+  box-shadow: inset 0 1px 2px rgba(18, 6, 5, .38);
 }
 
-/* The cord runs from the edge hook down-left to the eyelet on the tag. */
-.bf26-cord {
+/* The entrance animation and quiet continuing sway are on separate wrappers
+   so both cords and the tag stay aligned at every frame. */
+.bf26-suspension,
+.bf26-swing {
   position: absolute;
-  z-index: 2;
-  top: 15px;
-  right: 14px;
-  width: 109px;
-  height: 2px;
-  background: linear-gradient(90deg, #c6a084, #fff0d5 49%, #9b6951);
-  box-shadow: 0 1px 3px rgba(34, 14, 13, .27);
-  transform-origin: right center;
-  transform: rotate(-57deg);
-  animation: bf26-pull-cord 1.10s ease-out both;
+  inset: 0;
+  transform-origin: 202px 13px;
+  pointer-events: none;
+}
+.bf26-suspension {
+  animation: bf26-hang-arrive 1.75s cubic-bezier(.17,.72,.26,1) both;
+}
+.bf26-swing {
+  animation: bf26-soft-sway 8s ease-in-out 1.75s infinite;
+}
+
+/* True double-point suspension: apex (202,13), eyelets (51,115) and
+   (313,115). Shared SVG coordinates match the tag's physical eyelets. */
+.bf26-strings {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 370px;
+  height: 285px;
+  overflow: visible;
+  pointer-events: none;
+}
+.bf26-strings path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bf26-string-shadow {
+  stroke: rgba(40, 18, 13, .33);
+  stroke-width: 4.2;
+  transform: translate(0, 1.5px);
+}
+.bf26-string-body { stroke-width: 2.3; }
+.bf26-string-light {
+  stroke: rgba(255, 246, 223, .55);
+  stroke-width: .7;
+  transform: translate(-.6px, -.5px);
 }
 
 .bf26-tag {
   position: absolute;
-  top: 98px;
-  right: 52px;
-  width: 300px;
-  padding: 15px 17px 15px;
+  z-index: 2;
+  top: 105px;
+  left: 35px;
+  width: 294px;
+  padding: 16px 16px 14px;
   overflow: visible;
   isolation: isolate;
   pointer-events: auto;
   border: 1.5px solid #e8b999;
-  border-radius: 19px;
+  border-radius: 18px;
   background:
     radial-gradient(ellipse at 80% 100%, rgba(171, 62, 65, .31), transparent 60%),
     radial-gradient(ellipse at 6% 0%, rgba(189, 68, 71, .27), transparent 46%),
@@ -68,18 +103,15 @@
     inset 0 0 0 1px rgba(245, 189, 152, .07);
   font-family: Manrope, Arial, sans-serif;
   text-align: center;
-  transform: rotate(8deg);
-  transform-origin: calc(100% - 20px) 9px;
-  animation: bf26-tag-hang 1.65s cubic-bezier(.2, .72, .27, 1) both;
 }
-
 .bf26-tag::before {
   content: "";
   position: absolute;
   z-index: -1;
   inset: 1px;
-  border-radius: 17px;
-  background: linear-gradient(130deg, rgba(255, 209, 179, .11), transparent 29%, transparent 67%, rgba(205, 90, 91, .1));
+  border-radius: 16px;
+  background: linear-gradient(130deg, rgba(255, 209, 179, .11), transparent 29%,
+                               transparent 67%, rgba(205, 90, 91, .1));
   pointer-events: none;
 }
 .bf26-tag::after {
@@ -94,21 +126,23 @@
   pointer-events: none;
 }
 
+/* Holes are exactly at the two SVG string endpoints, including during motion. */
 .bf26-eyelet {
   position: absolute;
   z-index: 4;
-  top: -1px;
-  right: 11px;
+  top: 1px;
   width: 18px;
   height: 18px;
   border: 3px solid #cc9e7c;
   border-radius: 50%;
   background: #180a0f;
-  box-shadow:
-    0 0 0 1px rgba(255, 228, 191, .33),
-    inset 0 0 0 2px rgba(29, 9, 15, .9),
-    0 1px 5px rgba(16, 5, 5, .45);
+  box-shadow: 0 0 0 1px rgba(255, 228, 191, .33),
+              inset 0 0 0 2px rgba(29, 9, 15, .9),
+              0 1px 5px rgba(16, 5, 5, .45);
 }
+.bf26-eyelet--left { left: 7px; }
+.bf26-eyelet--right { right: 7px; }
+
 .bf26-satin {
   position: absolute;
   z-index: -1;
@@ -117,35 +151,34 @@
   right: -1px;
   height: 55px;
   overflow: hidden;
-  border-radius: 19px 19px 0 0;
+  border-radius: 18px 18px 0 0;
   background: linear-gradient(162deg,
     rgba(255, 182, 154, .21) 0%,
-    rgba(205, 91, 91, .19) 22%,
-    transparent 24%,
-    transparent 73%,
-    rgba(255, 184, 145, .05) 100%);
+    rgba(205, 91, 91, .19) 22%, transparent 24%,
+    transparent 73%, rgba(255, 184, 145, .05) 100%);
   pointer-events: none;
 }
 
+/* Close control sits away from both working eyelets. */
 .bf26-close {
   position: absolute;
-  top: 8px;
-  left: 9px;
-  display: grid;
   z-index: 5;
-  width: 24px;
-  height: 24px;
+  bottom: 10px;
+  left: 10px;
+  display: grid;
+  width: 28px;
+  height: 28px;
   padding: 0;
   place-items: center;
   border: 0 !important;
   border-radius: 50%;
-  background: rgba(255, 241, 228, .1) !important;
+  background: rgba(255, 241, 228, .13) !important;
   color: #ffe4d4 !important;
-  font: 400 19px/1 Arial, sans-serif;
+  font: 400 20px/1 Arial, sans-serif;
   cursor: pointer;
-  transition: background-color .2s ease, transform .2s ease;
+  transition: background-color .2s ease;
 }
-.bf26-close:hover { background: rgba(255, 241, 228, .24) !important; transform: rotate(90deg); }
+.bf26-close:hover { background: rgba(255, 241, 228, .25) !important; }
 
 .bf26-title {
   margin: 0 18px 4px !important;
@@ -154,7 +187,6 @@
   letter-spacing: -.048em;
   white-space: nowrap;
 }
-
 .bf26-discount {
   display: flex;
   justify-content: center;
@@ -179,13 +211,11 @@
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 9px rgba(255, 165, 112, .12));
 }
-
 .bf26-product {
   margin: 5px 0 10px !important;
   color: #ffece1 !important;
   font: 700 11px/1.35 Manrope, Arial, sans-serif !important;
 }
-
 .bf26-tag .bf26-cta,
 .bf26-tag .bf26-cta:link,
 .bf26-tag .bf26-cta:visited {
@@ -228,71 +258,43 @@
   outline-offset: 3px;
 }
 
-/* Keep booking and conversion controls visible on promo / quiz funnels. */
+/* Booking and quiz bars retain priority on conversion funnels. */
 .bf26-hanger--promo { bottom: calc(150px + env(safe-area-inset-bottom)); }
 .bf26-hanger--quiz { bottom: calc(139px + env(safe-area-inset-bottom)); }
 
 @media (max-width: 700px) {
   .bf26-hanger {
-    width: 302px;
-    height: 238px;
     bottom: calc(100px + env(safe-area-inset-bottom));
+    transform: scale(.82);
+    transform-origin: right bottom;
   }
-  .bf26-hook { top: 1px; right: 2px; width: 15px; height: 15px; }
-  .bf26-cord { top: 9px; right: 10px; width: 85px; }
-  .bf26-tag {
-    top: 74px;
-    right: 38px;
-    width: 250px;
-    padding: 12px 12px 12px;
-    transform-origin: calc(100% - 20px) 9px;
-    border-radius: 16px;
-  }
-  .bf26-eyelet { width: 16px; height: 16px; right: 12px; }
-  .bf26-satin { border-radius: 16px 16px 0 0; }
-  .bf26-title { font-size: 20px !important; margin-bottom: 3px !important; }
-  .bf26-discount strong { font-size: 43px; }
-  .bf26-discount > span { font-size: 11px; }
-  .bf26-product { font-size: 10px !important; margin: 4px 0 8px !important; }
-  .bf26-tag .bf26-cta,
-  .bf26-tag .bf26-cta:link,
-  .bf26-tag .bf26-cta:visited {
-    min-height: 32px;
-    padding: 5px 7px 5px 11px;
-    font-size: 10px;
-  }
-  .bf26-cta-arrow { width: 21px; height: 21px; flex-basis: 21px; }
-  .bf26-close { top: 6px; left: 7px; width: 22px; height: 22px; }
   .bf26-hanger--promo { bottom: calc(160px + env(safe-area-inset-bottom)); }
   .bf26-hanger--quiz { bottom: calc(148px + env(safe-area-inset-bottom)); }
 }
-
 @media (max-width: 359px) {
-  .bf26-hanger { width: 284px; }
-  .bf26-tag { right: 36px; width: 233px; }
-  .bf26-cord { width: 80px; }
-  .bf26-title { font-size: 18px !important; }
-  .bf26-discount strong { font-size: 39px; }
-  .bf26-product { font-size: 9px !important; }
+  .bf26-hanger { transform: scale(.73); }
 }
 
-/* Cord is drawn from the screen edge; the smaller card swings and settles. */
-@keyframes bf26-pull-cord {
-  0% { opacity: 0; transform: rotate(-57deg) scaleX(.12); }
-  28% { opacity: .9; }
-  70%, 100% { opacity: 1; transform: rotate(-57deg) scaleX(1); }
+/* The string lengths never change: they and the tag rotate from one shared pin.
+   Intro: arrive, overshoot, then damped pendulum. Idle: very gentle movement. */
+@keyframes bf26-hang-arrive {
+  0%   { opacity: 0; transform: rotate(-22deg); }
+  31%  { opacity: 1; transform: rotate(10deg); }
+  51%  { transform: rotate(-4deg); }
+  70%  { transform: rotate(6deg); }
+  85%  { transform: rotate(1.5deg); }
+  100% { opacity: 1; transform: rotate(3deg); }
 }
-@keyframes bf26-tag-hang {
-  0% { opacity: 0; transform: translate3d(110px, -84px, 0) rotate(-18deg) scale(.68); }
-  31% { opacity: 1; transform: translate3d(0, 0, 0) rotate(16deg) scale(1); }
-  48% { transform: rotate(4deg); }
-  66% { transform: rotate(12deg); }
-  83% { transform: rotate(6deg); }
-  100% { opacity: 1; transform: rotate(8deg); }
+@keyframes bf26-soft-sway {
+  0%, 12%, 88%, 100% { transform: rotate(0deg); }
+  31% { transform: rotate(1.25deg); }
+  58% { transform: rotate(-1.1deg); }
+  72% { transform: rotate(.45deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bf26-cord,
-  .bf26-tag { animation: none; }
+  .bf26-suspension,
+  .bf26-swing { animation: none; }
+  .bf26-suspension { transform: rotate(3deg); }
   .bf26-close,
   .bf26-tag .bf26-cta { transition: none; }
 }
