@@ -212,9 +212,13 @@
   filter: drop-shadow(0 2px 9px rgba(255, 165, 112, .12));
 }
 .bf26-product {
-  margin: 5px 0 10px !important;
-  color: #ffece1 !important;
-  font: 700 11px/1.35 Manrope, Arial, sans-serif !important;
+  max-width: 265px;
+  margin: 7px auto 11px !important;
+  color: #fff0df !important;
+  font: 850 12px/1.3 Manrope, Arial, sans-serif !important;
+  letter-spacing: .01em;
+  text-align: center;
+  text-wrap: balance;
 }
 .bf26-tag .bf26-cta,
 .bf26-tag .bf26-cta:link,
